@@ -1,9 +1,50 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import type { ReactNode } from 'react'
+import { createClient } from '@/lib/supabase/server'
+import { signOut } from '@/lib/actions/auth'
 
-const navigation = [["Resumen", "/"], ["Transacciones", "/transacciones"], ["Revisión", "/revision"], ["Presupuestos", "/presupuestos/categorias"], ["Cuentas", "/cuentas"], ["Reglas", "/reglas"], ["Correo", "/correo"], ["Configuración", "/configuracion"]];
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect("/login");
-  return <div className="shell md:flex"><aside className="w-full border-b border-stone-300 p-6 md:min-h-screen md:w-64 md:border-b-0 md:border-r"><Link href="/" className="text-2xl">Mis gastos</Link><p className="mb-8 mt-1 text-sm text-stone-500">{user.email}</p><nav className="grid gap-2 text-sm">{navigation.map(([label, href]) => <Link className="p-2 hover:bg-white" href={href} key={href}>{label}</Link>)}</nav></aside><main className="max-w-6xl flex-1 p-6 md:p-10">{children}</main></div>;
+const NAV_ITEMS = [
+  { href: '/', label: 'Resumen' },
+  { href: '/transacciones', label: 'Transacciones' },
+  { href: '/revision', label: 'Revisión' },
+  { href: '/presupuestos/categorias', label: 'Presupuesto por categoría' },
+  { href: '/presupuestos/bolsillos', label: 'Presupuesto por bolsillo' },
+  { href: '/cuentas', label: 'Cuentas' },
+  { href: '/reglas', label: 'Reglas' },
+  { href: '/correo', label: 'Correo' },
+]
+
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  return (
+    <div className="min-h-screen bg-ledger-paper">
+      <div className="mx-auto flex max-w-6xl">
+        <aside className="hidden w-56 shrink-0 border-r border-black/10 px-4 py-8 md:block">
+          <h1 className="font-serif text-lg text-ledger-text">Control de gastos</h1>
+          <div className="mt-2 h-px w-8 bg-ledger-green" />
+          <nav className="mt-8 flex flex-col gap-1">
+            {NAV_ITEMS.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-sm px-2 py-1.5 text-sm text-ledger-muted hover:bg-black/5 hover:text-ledger-text"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+          <div className="mt-10 border-t border-black/10 pt-4">
+            <p className="truncate text-xs text-ledger-muted">{user?.email}</p>
+            <form action={signOut}>
+              <button className="mt-2 text-sm text-ledger-green hover:underline">
+                Salir
+              </button>
+            </form>
+          </div>
+        </aside>
+        <main className="min-w-0 flex-1 px-6 py-8">{children}</main>
+      </div>
+    </div>
+  )
 }
