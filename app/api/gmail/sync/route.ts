@@ -65,7 +65,7 @@ async function syncUserGmail(
 
   let created = 0
 
-  for (const messageId of messageIds) {
+  for (const messageId of Array.from(messageIds)) {
     const message = await getMessage(access_token, messageId)
     const { from, text } = extractSenderAndText(message)
 
