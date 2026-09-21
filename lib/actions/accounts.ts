@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/types/database.types'
 
 export async function createAccount(formData: FormData) {
   const supabase = await createClient()
