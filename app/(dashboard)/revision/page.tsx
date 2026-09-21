@@ -70,7 +70,7 @@ export default async function RevisionPage() {
                   <input type="hidden" name="id" value={t.id} />
                   <input type="hidden" name="matched_transaction_id" value={t.match?.id ?? ''} />
                   <input type="hidden" name="was_duplicate" value="true" />
-                  <button type="submit" className="rounded-sm border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-100">
+                  <button type="submit" className="btn btn-danger btn-sm">
                     Sí, es duplicado
                   </button>
                 </form>
@@ -78,7 +78,7 @@ export default async function RevisionPage() {
                   <input type="hidden" name="id" value={t.id} />
                   <input type="hidden" name="matched_transaction_id" value={t.match?.id ?? ''} />
                   <input type="hidden" name="was_duplicate" value="false" />
-                  <button type="submit" className="rounded-sm bg-ledger-green px-3 py-1.5 text-sm font-medium text-white hover:bg-ledger-green/90">
+                  <button type="submit" className="btn btn-primary btn-sm">
                     No, es válida
                   </button>
                 </form>

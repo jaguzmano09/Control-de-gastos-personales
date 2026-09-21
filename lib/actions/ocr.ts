@@ -27,8 +27,12 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let extracted
   try {
     extracted = await extractTransactionFromImage(base64, file.type, categoryNames)
-  } catch {
-    redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudo leer la factura. Intenta con otra foto.'))
+  } catch (err) {
+    const message = (err as Error).message
+    const userMessage = /Gemini error: (429|503)\b|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(message)
+      ? 'El lector automático está temporalmente ocupado. Intenta de nuevo más tarde o registra la transacción manualmente.'
+      : message
+    redirect('/transacciones/ocr?error=' + encodeURIComponent(userMessage))
   }
 
   // Rules-first: una regla aprendida/manual tiene prioridad sobre la sugerencia de Gemini.

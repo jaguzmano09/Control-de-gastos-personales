@@ -37,13 +37,23 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <div className="mt-10 border-t border-black/10 pt-4">
             <p className="truncate text-xs text-ledger-muted">{user?.email}</p>
             <form action={signOut}>
-              <button className="mt-2 text-sm text-ledger-green hover:underline">
+              <button className="btn-link mt-2 px-0 text-ledger-green hover:bg-transparent hover:underline">
                 Salir
               </button>
             </form>
           </div>
         </aside>
-        <main className="min-w-0 flex-1 px-6 py-8">{children}</main>
+        <main className="min-w-0 flex-1 px-6 py-8">
+          <div className="mb-6 flex justify-end">
+            <a
+              href="/"
+              className="btn btn-secondary"
+            >
+              Volver al inicio
+            </a>
+          </div>
+          {children}
+        </main>
       </div>
     </div>
   )

@@ -88,8 +88,11 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
           </div>
         )}
 
-        <div className="col-span-2 mt-1">
-          <button type="submit" className="rounded-sm bg-ledger-green px-3 py-1.5 text-sm font-medium text-white hover:bg-ledger-green/90">
+        <div className="col-span-2 mt-2">
+          <button
+            type="submit"
+            className="btn btn-primary btn-full"
+          >
             Confirmar
           </button>
         </div>
@@ -97,7 +100,10 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
 
       <form action={discardTransaction} className="mt-2">
         <input type="hidden" name="id" value={transaction.id} />
-        <button type="submit" className="text-sm text-red-700 hover:underline">
+        <button
+          type="submit"
+          className="btn btn-danger btn-full"
+        >
           Descartar (no es un gasto real)
         </button>
       </form>

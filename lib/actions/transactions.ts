@@ -49,3 +49,52 @@ export async function createManualTransaction(formData: FormData) {
   revalidatePath('/')
   redirect('/transacciones')
 }
+
+export async function updateTransaction(formData: FormData) {
+  const supabase = await createClient()
+  const id = formData.get('id') as string
+
+  const occurred_at = formData.get('occurred_at') as string
+  const type = formData.get('type') as TransactionType
+  const category_id = (formData.get('category_id') as string) || null
+  const account_id = formData.get('account_id') as string
+  const wallet_id = (formData.get('wallet_id') as string) || null
+  const description = (formData.get('description') as string) || null
+  const amount = Number(formData.get('amount'))
+  const isNecessaryRaw = formData.get('is_necessary') as string | null
+  const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
+
+  if (!id || !occurred_at || !type || !account_id || !amount || amount <= 0) {
+    redirect(`/transacciones/${id}?error=` + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
+  }
+
+  const { error } = await supabase
+    .from('transactions')
+    .update({ occurred_at, type, category_id, account_id, wallet_id, description, amount, is_necessary })
+    .eq('id', id)
+
+  if (error) {
+    redirect(`/transacciones/${id}?error=` + encodeURIComponent(error.message))
+  }
+
+  revalidatePath('/transacciones')
+  revalidatePath(`/transacciones/${id}`)
+  revalidatePath('/')
+  revalidatePath('/presupuestos/categorias')
+  revalidatePath('/presupuestos/bolsillos')
+  redirect('/transacciones')
+}
+
+export async function deleteTransaction(formData: FormData) {
+  const supabase = await createClient()
+  const id = formData.get('id') as string
+
+  const { error } = await supabase.from('transactions').delete().eq('id', id)
+  if (error) throw error
+
+  revalidatePath('/transacciones')
+  revalidatePath('/')
+  revalidatePath('/presupuestos/categorias')
+  revalidatePath('/presupuestos/bolsillos')
+  redirect('/transacciones')
+}

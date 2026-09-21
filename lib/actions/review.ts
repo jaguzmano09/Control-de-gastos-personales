@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function confirmTransaction(formData: FormData) {
@@ -18,11 +19,13 @@ export async function confirmTransaction(formData: FormData) {
     .eq('id', id)
     .single()
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('transactions')
     .update({ status: 'confirmada', category_id, account_id, wallet_id, description, amount })
     .eq('id', id)
+    .select('id')
   if (error) throw error
+  if (!updated || updated.length === 0) throw new Error('No se encontró la transacción para confirmar')
 
   // Aprendizaje: si corregiste la categoría sugerida, crea/actualiza una regla
   if (current && category_id && current.category_id !== category_id && description) {
@@ -58,6 +61,7 @@ export async function confirmTransaction(formData: FormData) {
   revalidatePath('/revision')
   revalidatePath('/transacciones')
   revalidatePath('/')
+  redirect('/transacciones')
 }
 
 export async function discardTransaction(formData: FormData) {
@@ -66,6 +70,8 @@ export async function discardTransaction(formData: FormData) {
   const { error } = await supabase.from('transactions').update({ status: 'descartada' }).eq('id', id)
   if (error) throw error
   revalidatePath('/revision')
+  revalidatePath('/transacciones')
+  redirect('/transacciones')
 }
 
 export async function resolveDuplicate(formData: FormData) {

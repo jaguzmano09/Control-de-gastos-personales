@@ -38,13 +38,13 @@ export default async function ReglasPage() {
                 <form action={toggleRuleActive}>
                   <input type="hidden" name="id" value={rule.id} />
                   <input type="hidden" name="is_active" value={(!rule.is_active).toString()} />
-                  <button type="submit" className="text-xs text-ledger-muted hover:text-ledger-text hover:underline">
+                  <button type="submit" className="btn-link btn-sm">
                     {rule.is_active ? 'Desactivar' : 'Reactivar'}
                   </button>
                 </form>
                 <form action={deleteRule}>
                   <input type="hidden" name="id" value={rule.id} />
-                  <button type="submit" className="text-xs text-red-700 hover:underline">
+                  <button type="submit" className="btn-link-danger btn-sm">
                     Borrar
                   </button>
                 </form>
@@ -77,7 +77,7 @@ export default async function ReglasPage() {
             </select>
           </div>
           <div className="col-span-2">
-            <button type="submit" className="rounded-sm bg-ledger-green px-4 py-2 text-sm font-medium text-white hover:bg-ledger-green/90">
+            <button type="submit" className="btn btn-primary">
               Crear regla
             </button>
           </div>

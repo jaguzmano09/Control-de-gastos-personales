@@ -37,7 +37,7 @@ export default async function CorreoPage({
         )}
         <a
           href="/api/gmail/connect"
-          className="mt-3 inline-block rounded-sm bg-ledger-green px-4 py-2 text-sm font-medium text-white hover:bg-ledger-green/90"
+          className="btn btn-primary mt-3"
         >
           {connection ? 'Reconectar Gmail' : 'Conectar Gmail'}
         </a>
@@ -55,7 +55,7 @@ export default async function CorreoPage({
               <form action={toggleEmailSourceActive}>
                 <input type="hidden" name="id" value={s.id} />
                 <input type="hidden" name="is_active" value={(!s.is_active).toString()} />
-                <button type="submit" className="text-xs text-ledger-muted hover:text-ledger-text hover:underline">
+                <button type="submit" className="btn-link btn-sm">
                   {s.is_active ? 'Desactivar' : 'Reactivar'}
                 </button>
               </form>
@@ -74,7 +74,7 @@ export default async function CorreoPage({
               {(accounts ?? []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
-          <button type="submit" className="rounded-sm bg-ledger-green px-4 py-2 text-sm font-medium text-white hover:bg-ledger-green/90">
+          <button type="submit" className="btn btn-primary">
             Agregar
           </button>
         </form>

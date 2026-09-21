@@ -1,6 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-9 items-center justify-center rounded-sm px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-sm {
+    @apply min-h-8 px-3 py-1.5 text-xs;
+  }
+
+  .btn-full {
+    @apply w-full;
+  }
+
+  .btn-primary {
+    @apply bg-ledger-green text-white shadow-sm hover:bg-ledger-green/90 focus:ring-ledger-green/30;
+  }
+
+  .btn-secondary {
+    @apply border border-black/10 bg-white text-ledger-text shadow-sm hover:border-ledger-green/40 hover:bg-ledger-green/5 hover:text-ledger-green focus:ring-ledger-green/30;
+  }
+
+  .btn-danger {
+    @apply border border-red-300 bg-white text-red-700 hover:bg-red-50 focus:ring-red-200;
+  }
+
+  .btn-link {
+    @apply inline-flex min-h-8 items-center rounded-sm px-2 text-sm text-ledger-muted transition hover:bg-black/5 hover:text-ledger-text focus:outline-none focus:ring-2 focus:ring-ledger-green/30;
+  }
+
+  .btn-link-danger {
+    @apply inline-flex min-h-8 items-center rounded-sm px-2 text-sm text-red-700 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200;
+  }
+}
+
 :root { --paper: #f7f5ef; --ink: #17231f; --moss: #496b55; --line: #d9ddd4; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: Georgia, 'Times New Roman', serif; }

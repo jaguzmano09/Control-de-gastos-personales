@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import Link from 'next/link'
 import { createTransactionFromReceipt } from '@/lib/actions/ocr'
 
 type Account = { id: string; name: string; has_wallets: boolean }
@@ -13,7 +14,7 @@ const inputClass =
 function SubmitButton() {
   const { pending } = useFormStatus()
   return (
-    <button type="submit" disabled={pending} className="w-full rounded-sm bg-ledger-green py-2.5 text-sm font-medium text-white hover:bg-ledger-green/90 disabled:opacity-60">
+    <button type="submit" disabled={pending} className="btn btn-primary btn-full">
       {pending ? 'Leyendo factura…' : 'Subir y extraer datos'}
     </button>
   )
@@ -50,6 +51,12 @@ export function OcrUploadForm({ accounts, wallets, error }: { accounts: Account[
       {error && <p role="alert" className="text-sm text-red-700">{decodeURIComponent(error)}</p>}
 
       <SubmitButton />
+      <p className="text-center text-sm text-ledger-muted">
+        ¿Prefieres no usar OCR?{' '}
+        <Link href="/transacciones/nueva" className="text-ledger-green hover:underline">
+          Registrar manualmente
+        </Link>
+      </p>
     </form>
   )
 }

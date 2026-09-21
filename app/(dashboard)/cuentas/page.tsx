@@ -32,7 +32,7 @@ export default async function CuentasPage() {
               <form action={toggleAccountActive}>
                 <input type="hidden" name="id" value={account.id} />
                 <input type="hidden" name="is_active" value={(!account.is_active).toString()} />
-                <button type="submit" className="text-xs text-ledger-muted hover:text-ledger-text hover:underline">
+                <button type="submit" className="btn-link btn-sm">
                   {account.is_active ? 'Desactivar' : 'Reactivar'}
                 </button>
               </form>
@@ -50,7 +50,7 @@ export default async function CuentasPage() {
                       <form action={toggleWalletActive}>
                         <input type="hidden" name="id" value={wallet.id} />
                         <input type="hidden" name="is_active" value={(!wallet.is_active).toString()} />
-                        <button type="submit" className="text-xs text-ledger-muted hover:text-ledger-text hover:underline">
+                        <button type="submit" className="btn-link btn-sm">
                           {wallet.is_active ? 'Desactivar' : 'Reactivar'}
                         </button>
                       </form>
@@ -61,7 +61,7 @@ export default async function CuentasPage() {
                 <form action={createWallet} className="mt-3 flex gap-2">
                   <input type="hidden" name="account_id" value={account.id} />
                   <input name="name" placeholder="Nuevo bolsillo" required className={`${inputClass} mt-0`} />
-                  <button type="submit" className="shrink-0 rounded-sm bg-ledger-green px-3 py-1.5 text-xs font-medium text-white hover:bg-ledger-green/90">
+                  <button type="submit" className="btn btn-primary btn-sm shrink-0">
                     Agregar
                   </button>
                 </form>
@@ -82,7 +82,7 @@ export default async function CuentasPage() {
             <input type="checkbox" name="has_wallets" value="true" />
             Tiene bolsillos
           </label>
-          <button type="submit" className="rounded-sm bg-ledger-green px-4 py-2 text-sm font-medium text-white hover:bg-ledger-green/90">
+          <button type="submit" className="btn btn-primary">
             Crear
           </button>
         </form>
