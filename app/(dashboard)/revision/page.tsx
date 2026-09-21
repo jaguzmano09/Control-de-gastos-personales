@@ -2,35 +2,80 @@ import { createClient } from '@/lib/supabase/server'
 import { ReviewCard } from './ReviewCard'
 import { resolveDuplicate } from '@/lib/actions/review'
 
+interface Transaction {
+  id: string
+  occurred_at: string
+  description?: string | null
+  amount: number | string
+  type?: string
+  category_id?: string | null
+  account_id?: string | null
+  wallet_id?: string | null
+  ai_confidence?: number | null
+  source?: string | null
+  external_reference?: string | null
+}
+
+interface Category {
+  id: string
+  name: string
+}
+
+interface Account {
+  id: string
+  name: string
+  has_wallets?: boolean
+}
+
+interface Wallet {
+  id: string
+  name: string
+  account_id?: string
+}
+
 export default async function RevisionPage() {
   const supabase = await createClient()
 
-  const [{ data: pendientes }, { data: duplicados }, { data: categories }, { data: accounts }, { data: wallets }] =
-    await Promise.all([
-      supabase
-        .from('transactions')
-        .select('id, occurred_at, description, amount, type, category_id, account_id, wallet_id, ai_confidence, source')
-        .eq('status', 'pendiente_revision')
-        .order('ai_confidence', { ascending: true, nullsFirst: false }),
-      supabase
-        .from('transactions')
-        .select('id, occurred_at, description, amount, external_reference')
-        .eq('status', 'duplicado'),
-      supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
-      supabase.from('accounts').select('id, name, has_wallets').eq('is_active', true).order('name'),
-      supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
-    ])
+  const [
+    { data: rawPendientes },
+    { data: rawDuplicados },
+    { data: rawCategories },
+    { data: rawAccounts },
+    { data: rawWallets },
+  ] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('id, occurred_at, description, amount, type, category_id, account_id, wallet_id, ai_confidence, source')
+      .eq('status', 'pendiente_revision')
+      .order('ai_confidence', { ascending: true, nullsFirst: false }),
+    supabase
+      .from('transactions')
+      .select('id, occurred_at, description, amount, external_reference')
+      .eq('status', 'duplicado'),
+    supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
+    supabase.from('accounts').select('id, name, has_wallets').eq('is_active', true).order('name'),
+    supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
+  ])
+
+  // Desvinculamos la inferencia 'never' de Supabase mediante 'as unknown'
+  const pendientes = (rawPendientes ?? []) as unknown as Transaction[]
+  const duplicados = (rawDuplicados ?? []) as unknown as Transaction[]
+  const categories = (rawCategories ?? []) as unknown as Category[]
+  const accounts = (rawAccounts ?? []) as unknown as Account[]
+  const wallets = (rawWallets ?? []) as unknown as Wallet[]
 
   const duplicadosConMatch = await Promise.all(
-    (duplicados ?? []).map(async (dup) => {
+    duplicados.map(async (dup) => {
       if (!dup.external_reference) return { ...dup, match: null }
-      const { data: match } = await supabase
+      const { data: rawMatch } = await supabase
         .from('transactions')
         .select('id, occurred_at, description, amount')
         .eq('external_reference', dup.external_reference)
         .neq('id', dup.id)
         .eq('status', 'confirmada')
         .maybeSingle()
+
+      const match = rawMatch as unknown as Transaction | null
       return { ...dup, match }
     })
   )
@@ -43,12 +88,12 @@ export default async function RevisionPage() {
       </header>
 
       <section>
-        <h2 className="font-serif text-lg text-ledger-text">Pendientes ({(pendientes ?? []).length})</h2>
+        <h2 className="font-serif text-lg text-ledger-text">Pendientes ({pendientes.length})</h2>
         <div className="mt-4 space-y-4">
-          {(pendientes ?? []).map((t) => (
-            <ReviewCard key={t.id} transaction={t} categories={categories ?? []} accounts={accounts ?? []} wallets={wallets ?? []} />
+          {pendientes.map((t) => (
+            <ReviewCard key={t.id} transaction={t} categories={categories} accounts={accounts} wallets={wallets} />
           ))}
-          {(pendientes ?? []).length === 0 && <p className="text-sm text-ledger-muted">No hay transacciones pendientes de revisión.</p>}
+          {pendientes.length === 0 && <p className="text-sm text-ledger-muted">No hay transacciones pendientes de revisión.</p>}
         </div>
       </section>
 
