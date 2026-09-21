@@ -69,7 +69,7 @@ async function syncUserGmail(
     const message = await getMessage(access_token, messageId)
     const { from, text } = extractSenderAndText(message)
 
-    const matchedAddress = [...accountByAddress.keys()].find((addr) => from.toLowerCase().includes(addr))
+    const matchedAddress = Array.from(accountByAddress.keys()).find((addr) => from.toLowerCase().includes(addr))
     if (!matchedAddress || !text) continue
 
     const { data: existing } = await supabase
