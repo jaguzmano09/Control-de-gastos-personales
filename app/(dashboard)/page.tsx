@@ -17,6 +17,12 @@ function formatCOP(amount: number) {
 const inputClass =
   'rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
 
+type DashboardCategory = { id: string; name: string }
+type DashboardWallet = { id: string; name: string }
+type DashboardAccount = { id: string; name: string; is_active: boolean }
+type CategoryBudget = { category_id: string; amount: number; alert_threshold_percent: number | null }
+type WalletBudget = { wallet_id: string; assigned_amount: number; rollover_amount: number; total_budget: number; alert_threshold_percent: number | null }
+
 export default async function DashboardHomePage({
   searchParams,
 }: {
@@ -28,11 +34,11 @@ export default async function DashboardHomePage({
   const selectedPeriod = monthStart.slice(0, 7)
 
   const [
-    { data: categories },
-    { data: wallets },
-    { data: accounts },
-    { data: categoryBudgets },
-    { data: walletBudgets },
+    { data: categoriesData },
+    { data: walletsData },
+    { data: accountsData },
+    { data: categoryBudgetsData },
+    { data: walletBudgetsData },
     summary,
     pendingCount,
   ] = await Promise.all([
@@ -44,6 +50,12 @@ export default async function DashboardHomePage({
     getMonthSummary(supabase, monthStart),
     getPendingReviewCount(supabase),
   ])
+
+  const categories = categoriesData as DashboardCategory[] | null
+  const wallets = walletsData as DashboardWallet[] | null
+  const accounts = accountsData as DashboardAccount[] | null
+  const categoryBudgets = categoryBudgetsData as CategoryBudget[] | null
+  const walletBudgets = walletBudgetsData as WalletBudget[] | null
 
   const categoryNameById = new Map((categories ?? []).map((c) => [c.id, c.name]))
   const walletNameById = new Map((wallets ?? []).map((w) => [w.id, w.name]))
