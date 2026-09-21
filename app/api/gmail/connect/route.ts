@@ -1,2 +1,12 @@
-import { NextResponse } from "next/server";
-export async function GET() { return NextResponse.json({ error: "OAuth de Gmail aún no está configurado" }, { status: 501 }); }
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { buildGoogleAuthUrl } from '@/lib/gmail/client'
+
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_SITE_URL))
+
+  const url = buildGoogleAuthUrl(user.id) // state = tu user_id
+  return NextResponse.redirect(url)
+}
