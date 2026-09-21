@@ -167,7 +167,7 @@ export type Database = {
           user_id?: string
           name?: string
           is_active?: boolean
-          created_at?: boolean
+          created_at?: string
           updated_at?: string
         }
         Relationships: []
