@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary } from '@/lib/data/dashboard'
 import { updateWalletBudgetThreshold } from '@/lib/actions/budgets'
 
+interface Wallet {
+  id: string
+  name: string
+}
+
 interface WalletBudget {
   wallet_id: string
   assigned_amount?: number | string
@@ -25,7 +30,7 @@ export default async function PresupuestoBolsillosPage() {
   const supabase = await createClient()
   const periodMonth = firstDayOfMonth()
 
-  const [{ data: wallets }, { data: rawBudgets }, summary] = await Promise.all([
+  const [{ data: rawWallets }, { data: rawBudgets }, summary] = await Promise.all([
     supabase.from('wallets').select('id, name').eq('is_active', true).order('name'),
     supabase
       .from('wallet_budgets')
@@ -34,8 +39,10 @@ export default async function PresupuestoBolsillosPage() {
     getMonthSummary(supabase, periodMonth),
   ])
 
-  // Desvincula la inferencia de tipo 'never' de Supabase mediante 'as unknown'
+  // Desvinculamos la inferencia 'never' para ambas tablas
+  const wallets = (rawWallets ?? []) as unknown as Wallet[]
   const budgets = (rawBudgets ?? []) as unknown as WalletBudget[]
+
   const budgetByWallet = new Map(budgets.map((b) => [b.wallet_id, b]))
 
   return (
@@ -47,7 +54,7 @@ export default async function PresupuestoBolsillosPage() {
       <div className="mt-2 h-px w-10 bg-ledger-green" />
 
       <div className="mt-8 space-y-4">
-        {(wallets ?? []).map((wallet) => {
+        {wallets.map((wallet) => {
           const budget = budgetByWallet.get(wallet.id)
           const total = Number(budget?.total_budget ?? 0)
           const spent = summary.gastoByWallet.get(wallet.id) ?? 0
