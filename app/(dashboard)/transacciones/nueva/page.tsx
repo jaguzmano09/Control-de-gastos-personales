@@ -12,7 +12,7 @@ export default async function NuevaTransaccionPage({
   const [{ data: categories }, { data: accounts }, { data: wallets }] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
     supabase.from('accounts').select('id, name, has_wallets').eq('is_active', true).order('name'),
-    supabase.from('wallets').select('id, name').eq('is_active', true).order('name'),
+    supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
   ])
 
   return (

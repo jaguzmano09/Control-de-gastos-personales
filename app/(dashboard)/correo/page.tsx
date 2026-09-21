@@ -35,7 +35,7 @@ export default async function CorreoPage({
         ) : (
           <p className="mt-1 text-xs text-ledger-muted">Aún no has conectado tu Gmail.</p>
         )}
-        
+        <a
           href="/api/gmail/connect"
           className="mt-3 inline-block rounded-sm bg-ledger-green px-4 py-2 text-sm font-medium text-white hover:bg-ledger-green/90"
         >
