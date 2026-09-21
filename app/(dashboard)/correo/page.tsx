@@ -12,11 +12,20 @@ export default async function CorreoPage({
   const { connected, error } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: connection }, { data: sources }, { data: accounts }] = await Promise.all([
+  const [{ data: connectionData }, { data: sourcesData }, { data: accountsData }] = await Promise.all([
     supabase.from('gmail_connections').select('is_active, token_expires_at, gmail_history_id').maybeSingle(),
     supabase.from('email_sources').select('id, email_address, account_id, is_active, accounts(name)'),
     supabase.from('accounts').select('id, name').eq('is_active', true).order('name'),
   ])
+  const connection = connectionData as { is_active: boolean; token_expires_at: string | null; gmail_history_id: string | null } | null
+  const sources = sourcesData as Array<{
+    id: string
+    email_address: string
+    account_id: string
+    is_active: boolean
+    accounts: { name: string } | null
+  }> | null
+  const accounts = accountsData as Array<{ id: string; name: string }> | null
 
   return (
     <div className="max-w-2xl">

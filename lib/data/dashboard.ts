@@ -1,5 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/database.types'
+import { createClient } from '@/lib/supabase/server'
+
+type DashboardClient = Awaited<ReturnType<typeof createClient>>
 
 type Totals = {
   ingreso: number
@@ -33,7 +34,7 @@ function emptyAccountSummary(): AccountSummary {
   return { ...emptyTotals(), outflow: 0, balance: 0 }
 }
 
-export async function getMonthSummary(supabase: SupabaseClient<Database>, monthStart: string) {
+export async function getMonthSummary(supabase: DashboardClient, monthStart: string) {
   const { start, end } = getMonthRange(monthStart)
   const { data: transactions, error } = await supabase
     .from('transactions')
@@ -84,7 +85,7 @@ export async function getMonthSummary(supabase: SupabaseClient<Database>, monthS
   return { totals, balance, gastoByCategory, gastoByWallet, accountById }
 }
 
-export async function getPendingReviewCount(supabase: SupabaseClient<Database>) {
+export async function getPendingReviewCount(supabase: DashboardClient) {
   const { count, error } = await supabase
     .from('transactions')
     .select('id', { count: 'exact', head: true })

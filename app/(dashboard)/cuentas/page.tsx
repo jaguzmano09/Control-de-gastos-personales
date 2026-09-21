@@ -4,13 +4,18 @@ import { createAccount, toggleAccountActive, createWallet, toggleWalletActive } 
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
 
+type Account = { id: string; name: string; has_wallets: boolean; is_active: boolean }
+type Wallet = { id: string; name: string; account_id: string; is_active: boolean }
+
 export default async function CuentasPage() {
   const supabase = await createClient()
 
-  const [{ data: accounts }, { data: wallets }] = await Promise.all([
+  const [{ data: accountsData }, { data: walletsData }] = await Promise.all([
     supabase.from('accounts').select('id, name, has_wallets, is_active').order('name'),
     supabase.from('wallets').select('id, name, account_id, is_active').order('name'),
   ])
+  const accounts = accountsData as Account[] | null
+  const wallets = walletsData as Wallet[] | null
 
   const walletsByAccount = new Map<string, typeof wallets>()
   for (const w of wallets ?? []) {
