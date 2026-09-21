@@ -2,12 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import { ReviewCard } from './ReviewCard'
 import { resolveDuplicate } from '@/lib/actions/review'
 
+// Definimos los tipos explícitos garantizando compatibilidad exacta con ReviewCard
 interface Transaction {
   id: string
   occurred_at: string
-  description?: string | null
+  description: string | null
   amount: number | string
-  type?: string
+  type?: string | null
   category_id?: string | null
   account_id?: string | null
   wallet_id?: string | null
@@ -57,7 +58,7 @@ export default async function RevisionPage() {
     supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
   ])
 
-  // Desvinculamos la inferencia 'never' de Supabase mediante 'as unknown'
+  // Desvinculamos la inferencia 'never' usando 'as unknown'
   const pendientes = (rawPendientes ?? []) as unknown as Transaction[]
   const duplicados = (rawDuplicados ?? []) as unknown as Transaction[]
   const categories = (rawCategories ?? []) as unknown as Category[]
