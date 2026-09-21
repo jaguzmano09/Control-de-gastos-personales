@@ -2,19 +2,33 @@ import { createClient } from '@/lib/supabase/server'
 import { ReviewCard } from './ReviewCard'
 import { resolveDuplicate } from '@/lib/actions/review'
 
-// Definimos los tipos explícitos garantizando compatibilidad exacta con ReviewCard
-interface Transaction {
+// Debe coincidir exactamente con el tipo Transaction que espera ReviewCard
+interface PendingTransaction {
   id: string
   occurred_at: string
   description: string | null
-  amount: number | string
-  type?: string | null
-  category_id?: string | null
-  account_id?: string | null
-  wallet_id?: string | null
-  ai_confidence?: number | null
-  source?: string | null
-  external_reference?: string | null
+  amount: number
+  type: string
+  category_id: string | null
+  account_id: string | null
+  wallet_id: string | null
+  ai_confidence: number | null
+  source: string
+}
+
+interface DuplicateTransaction {
+  id: string
+  occurred_at: string
+  description: string | null
+  amount: number
+  external_reference: string | null
+}
+
+interface DuplicateMatch {
+  id: string
+  occurred_at: string
+  description: string | null
+  amount: number
 }
 
 interface Category {
@@ -25,13 +39,13 @@ interface Category {
 interface Account {
   id: string
   name: string
-  has_wallets?: boolean
+  has_wallets: boolean
 }
 
 interface Wallet {
   id: string
   name: string
-  account_id?: string
+  account_id: string
 }
 
 export default async function RevisionPage() {
@@ -46,28 +60,52 @@ export default async function RevisionPage() {
   ] = await Promise.all([
     supabase
       .from('transactions')
-      .select('id, occurred_at, description, amount, type, category_id, account_id, wallet_id, ai_confidence, source')
+      .select(
+        'id, occurred_at, description, amount, type, category_id, account_id, wallet_id, ai_confidence, source'
+      )
       .eq('status', 'pendiente_revision')
       .order('ai_confidence', { ascending: true, nullsFirst: false }),
+
     supabase
       .from('transactions')
       .select('id, occurred_at, description, amount, external_reference')
       .eq('status', 'duplicado'),
-    supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
-    supabase.from('accounts').select('id, name, has_wallets').eq('is_active', true).order('name'),
-    supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
+
+    supabase
+      .from('categories')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name'),
+
+    supabase
+      .from('accounts')
+      .select('id, name, has_wallets')
+      .eq('is_active', true)
+      .order('name'),
+
+    supabase
+      .from('wallets')
+      .select('id, name, account_id')
+      .eq('is_active', true)
+      .order('name'),
   ])
 
-  // Desvinculamos la inferencia 'never' usando 'as unknown'
-  const pendientes = (rawPendientes ?? []) as unknown as Transaction[]
-  const duplicados = (rawDuplicados ?? []) as unknown as Transaction[]
+  // Convertimos los resultados de Supabase a los tipos que utilizan los componentes.
+  const pendientes = (rawPendientes ?? []) as unknown as PendingTransaction[]
+  const duplicados = (rawDuplicados ?? []) as unknown as DuplicateTransaction[]
   const categories = (rawCategories ?? []) as unknown as Category[]
   const accounts = (rawAccounts ?? []) as unknown as Account[]
   const wallets = (rawWallets ?? []) as unknown as Wallet[]
 
   const duplicadosConMatch = await Promise.all(
     duplicados.map(async (dup) => {
-      if (!dup.external_reference) return { ...dup, match: null }
+      if (!dup.external_reference) {
+        return {
+          ...dup,
+          match: null as DuplicateMatch | null,
+        }
+      }
+
       const { data: rawMatch } = await supabase
         .from('transactions')
         .select('id, occurred_at, description, amount')
@@ -76,64 +114,137 @@ export default async function RevisionPage() {
         .eq('status', 'confirmada')
         .maybeSingle()
 
-      const match = rawMatch as unknown as Transaction | null
-      return { ...dup, match }
+      const match = rawMatch as unknown as DuplicateMatch | null
+
+      return {
+        ...dup,
+        match,
+      }
     })
   )
 
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="font-serif text-2xl text-ledger-text">Bandeja de revisión</h1>
+        <h1 className="font-serif text-2xl text-ledger-text">
+          Bandeja de revisión
+        </h1>
+
         <div className="mt-2 h-px w-10 bg-ledger-green" />
       </header>
 
       <section>
-        <h2 className="font-serif text-lg text-ledger-text">Pendientes ({pendientes.length})</h2>
+        <h2 className="font-serif text-lg text-ledger-text">
+          Pendientes ({pendientes.length})
+        </h2>
+
         <div className="mt-4 space-y-4">
           {pendientes.map((t) => (
-            <ReviewCard key={t.id} transaction={t} categories={categories} accounts={accounts} wallets={wallets} />
+            <ReviewCard
+              key={t.id}
+              transaction={t}
+              categories={categories}
+              accounts={accounts}
+              wallets={wallets}
+            />
           ))}
-          {pendientes.length === 0 && <p className="text-sm text-ledger-muted">No hay transacciones pendientes de revisión.</p>}
+
+          {pendientes.length === 0 && (
+            <p className="text-sm text-ledger-muted">
+              No hay transacciones pendientes de revisión.
+            </p>
+          )}
         </div>
       </section>
 
       <section>
-        <h2 className="font-serif text-lg text-ledger-text">Posibles duplicados ({duplicadosConMatch.length})</h2>
+        <h2 className="font-serif text-lg text-ledger-text">
+          Posibles duplicados ({duplicadosConMatch.length})
+        </h2>
+
         <div className="mt-4 space-y-4">
           {duplicadosConMatch.map((t) => (
-            <div key={t.id} className="rounded-sm border border-amber-300 bg-amber-50 p-4">
+            <div
+              key={t.id}
+              className="rounded-sm border border-amber-300 bg-amber-50 p-4"
+            >
               <p className="text-sm text-ledger-text">
-                {new Date(t.occurred_at + 'T00:00:00').toLocaleDateString('es-CO')} · {t.description ?? '—'} · {Number(t.amount).toLocaleString('es-CO')}
+                {new Date(
+                  t.occurred_at + 'T00:00:00'
+                ).toLocaleDateString('es-CO')}{' '}
+                · {t.description ?? '—'} ·{' '}
+                {Number(t.amount).toLocaleString('es-CO')}
               </p>
+
               {t.match && (
                 <p className="mt-1 text-xs text-ledger-muted">
-                  Coincide con: {new Date(t.match.occurred_at + 'T00:00:00').toLocaleDateString('es-CO')} · {t.match.description ?? '—'} · {Number(t.match.amount).toLocaleString('es-CO')}
+                  Coincide con:{' '}
+                  {new Date(
+                    t.match.occurred_at + 'T00:00:00'
+                  ).toLocaleDateString('es-CO')}{' '}
+                  · {t.match.description ?? '—'} ·{' '}
+                  {Number(t.match.amount).toLocaleString('es-CO')}
                 </p>
               )}
+
               <div className="mt-3 flex gap-2">
                 <form action={resolveDuplicate}>
                   <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="matched_transaction_id" value={t.match?.id ?? ''} />
-                  <input type="hidden" name="was_duplicate" value="true" />
-                  <button type="submit" className="btn btn-danger btn-sm">
+
+                  <input
+                    type="hidden"
+                    name="matched_transaction_id"
+                    value={t.match?.id ?? ''}
+                  />
+
+                  <input
+                    type="hidden"
+                    name="was_duplicate"
+                    value="true"
+                  />
+
+                  <button
+                    type="submit"
+                    className="btn btn-danger btn-sm"
+                  >
                     Sí, es duplicado
                   </button>
                 </form>
+
                 <form action={resolveDuplicate}>
                   <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="matched_transaction_id" value={t.match?.id ?? ''} />
-                  <input type="hidden" name="was_duplicate" value="false" />
-                  <button type="submit" className="btn btn-primary btn-sm">
+
+                  <input
+                    type="hidden"
+                    name="matched_transaction_id"
+                    value={t.match?.id ?? ''}
+                  />
+
+                  <input
+                    type="hidden"
+                    name="was_duplicate"
+                    value="false"
+                  />
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                  >
                     No, es válida
                   </button>
                 </form>
               </div>
             </div>
           ))}
-          {duplicadosConMatch.length === 0 && <p className="text-sm text-ledger-muted">No hay duplicados por revisar.</p>}
+
+          {duplicadosConMatch.length === 0 && (
+            <p className="text-sm text-ledger-muted">
+              No hay duplicados por revisar.
+            </p>
+          )}
         </div>
       </section>
     </div>
   )
 }
+
