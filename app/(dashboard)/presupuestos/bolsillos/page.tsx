@@ -2,6 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary } from '@/lib/data/dashboard'
 import { updateWalletBudgetThreshold } from '@/lib/actions/budgets'
 
+interface WalletBudget {
+  wallet_id: string
+  assigned_amount?: number | string
+  rollover_amount?: number | string
+  total_budget?: number | string
+  alert_threshold_percent?: number
+}
+
 function firstDayOfMonth(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
 }
@@ -26,7 +34,9 @@ export default async function PresupuestoBolsillosPage() {
     getMonthSummary(supabase, periodMonth),
   ])
 
-  const budgetByWallet = new Map((budgets ?? []).map((b) => [b.wallet_id, b]))
+  const budgetByWallet = new Map(
+    ((budgets as WalletBudget[] | null) ?? []).map((b) => [b.wallet_id, b])
+  )
 
   return (
     <div className="max-w-2xl">
