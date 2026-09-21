@@ -1,19 +1,40 @@
 import { createClient } from '@/lib/supabase/server'
 import { createRule, toggleRuleActive, deleteRule } from '@/lib/actions/rules'
 
+interface Rule {
+  id: string
+  pattern: string
+  match_type: string
+  category_id: string
+  source: string
+  times_used: number
+  last_used_at?: string
+  is_active: boolean
+  categories?: { name: string } | null
+}
+
+interface Category {
+  id: string
+  name: string
+}
+
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
 
 export default async function ReglasPage() {
   const supabase = await createClient()
 
-  const [{ data: rules }, { data: categories }] = await Promise.all([
+  const [{ data: rawRules }, { data: rawCategories }] = await Promise.all([
     supabase
       .from('categorization_rules')
       .select('id, pattern, match_type, category_id, source, times_used, last_used_at, is_active, categories(name)')
       .order('times_used', { ascending: false }),
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
   ])
+
+  // Desvinculamos la inferencia 'never' de Supabase
+  const rules = (rawRules ?? []) as unknown as Rule[]
+  const categories = (rawCategories ?? []) as unknown as Category[]
 
   return (
     <div className="max-w-2xl">
@@ -22,7 +43,7 @@ export default async function ReglasPage() {
       <div className="mt-2 h-px w-10 bg-ledger-green" />
 
       <div className="mt-8 space-y-3">
-        {(rules ?? []).map((rule) => (
+        {rules.map((rule) => (
           <div key={rule.id} className={`rounded-sm border border-black/10 bg-white p-4 ${!rule.is_active ? 'opacity-50' : ''}`}>
             <div className="flex items-start justify-between">
               <div>
@@ -52,7 +73,7 @@ export default async function ReglasPage() {
             </div>
           </div>
         ))}
-        {(rules ?? []).length === 0 && <p className="text-sm text-ledger-muted">Aún no hay reglas — se crean solas cuando corriges una categoría en la bandeja de revisión.</p>}
+        {rules.length === 0 && <p className="text-sm text-ledger-muted">Aún no hay reglas — se crean solas cuando corriges una categoría en la bandeja de revisión.</p>}
       </div>
 
       <div className="mt-8 rounded-sm border border-dashed border-black/20 p-4">
@@ -73,7 +94,7 @@ export default async function ReglasPage() {
           <div>
             <label className="text-xs text-ledger-muted">Categoría</label>
             <select name="category_id" required className={inputClass}>
-              {(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div className="col-span-2">
