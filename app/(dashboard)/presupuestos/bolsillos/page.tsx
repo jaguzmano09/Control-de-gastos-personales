@@ -11,6 +11,15 @@ function formatCOP(amount: number) {
 const inputClass =
   'mt-1 w-20 rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
 
+type BudgetTarget = {
+  key: string
+  label: string
+  sublabel?: string
+  wallet_id: string | null
+  account_id: string | null
+  spent: number
+}
+
 export default async function PresupuestoBolsillosPage({
   searchParams,
 }: {
@@ -22,34 +31,58 @@ export default async function PresupuestoBolsillosPage({
 
   const supabase = await createClient()
 
-  const [{ data: wallets }, { data: budgets }, summary] = await Promise.all([
-    supabase.from('wallets').select('id, name').eq('is_active', true).order('name'),
-    supabase.from('wallet_budgets').select('wallet_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', periodMonth),
+  const [{ data: wallets }, { data: flatAccounts }, { data: budgets }, summary] = await Promise.all([
+    supabase.from('wallets').select('id, name, accounts(name)').eq('is_active', true).order('name'),
+    supabase.from('accounts').select('id, name').eq('is_active', true).eq('has_wallets', false).order('name'),
+    supabase.from('wallet_budgets').select('wallet_id, account_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', periodMonth),
     getMonthSummary(supabase, periodMonth),
   ])
 
-  const budgetByWallet = new Map((budgets ?? []).map((b) => [b.wallet_id, b]))
+  const budgetByWallet = new Map((budgets ?? []).filter((b) => b.wallet_id).map((b) => [b.wallet_id as string, b]))
+  const budgetByAccount = new Map((budgets ?? []).filter((b) => b.account_id).map((b) => [b.account_id as string, b]))
+
+  const targets: BudgetTarget[] = [
+    ...(wallets ?? []).map((w) => ({
+      key: `wallet-${w.id}`,
+      label: w.name,
+      sublabel: (w as unknown as { accounts: { name: string } | null }).accounts?.name,
+      wallet_id: w.id,
+      account_id: null,
+      spent: summary.gastoByWallet.get(w.id) ?? 0,
+    })),
+    ...(flatAccounts ?? []).map((a) => ({
+      key: `account-${a.id}`,
+      label: a.name,
+      sublabel: undefined,
+      wallet_id: null,
+      account_id: a.id,
+      spent: summary.accountById.get(a.id)?.gasto ?? 0,
+    })),
+  ]
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-serif text-2xl text-ledger-text">Presupuesto por bolsillo</h1>
-      <p className="mt-1 text-sm text-ledger-muted">Se asigna registrando un Ingreso en Transacciones con ese bolsillo.</p>
+      <h1 className="font-serif text-2xl text-ledger-text">Presupuesto por bolsillo y cuenta</h1>
+      <p className="mt-1 text-sm text-ledger-muted">Se asigna registrando un Ingreso en Transacciones con ese bolsillo o esa cuenta.</p>
       <div className="mt-3"><MonthSelector yearMonth={yearMonth} basePath="/presupuestos/bolsillos" /></div>
 
       <div className="mt-8 space-y-4">
-        {(wallets ?? []).map((wallet) => {
-          const budget = budgetByWallet.get(wallet.id)
+        {targets.map((target) => {
+          const budget = target.wallet_id ? budgetByWallet.get(target.wallet_id) : budgetByAccount.get(target.account_id!)
           const total = Number(budget?.total_budget ?? 0)
-          const spent = summary.gastoByWallet.get(wallet.id) ?? 0
+          const spent = target.spent
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
           const isOverBudget = total > 0 && spent >= total
           const isOverThreshold = !isOverBudget && threshold !== undefined && total > 0 && (spent / total) * 100 >= threshold
 
           return (
-            <div key={wallet.id} className="rounded-sm border border-black/10 bg-white p-4">
+            <div key={target.key} className="rounded-sm border border-black/10 bg-white p-4">
               <div className="flex items-baseline justify-between">
-                <p className="text-sm text-ledger-text">{wallet.name}</p>
+                <p className="text-sm text-ledger-text">
+                  {target.label}
+                  {target.sublabel && <span className="ml-1 text-xs text-ledger-muted">· {target.sublabel}</span>}
+                </p>
                 <p className={isOverBudget ? 'text-sm text-red-700' : isOverThreshold ? 'text-sm text-amber-700' : 'text-sm text-ledger-muted'}>
                   {formatCOP(spent)} / {formatCOP(total)}
                 </p>
@@ -65,10 +98,11 @@ export default async function PresupuestoBolsillosPage({
               </p>
               {isOverBudget && <p className="mt-2 text-xs text-red-700">Gastaste el presupuesto de este bolsillo.</p>}
               {isOverThreshold && <p className="mt-2 text-xs text-amber-700">Cruzaste el umbral de alerta ({threshold}%). ¡Ten cuidado!</p>}
-              {total === 0 && <p className="mt-1 text-xs text-ledger-muted">Sin Ingreso registrado para este bolsillo este mes.</p>}
+              {total === 0 && <p className="mt-1 text-xs text-ledger-muted">Sin Ingreso registrado aquí este mes.</p>}
 
               <form action={updateWalletBudgetThreshold} className="mt-3 flex items-end gap-3">
-                <input type="hidden" name="wallet_id" value={wallet.id} />
+                {target.wallet_id && <input type="hidden" name="wallet_id" value={target.wallet_id} />}
+                {target.account_id && <input type="hidden" name="account_id" value={target.account_id} />}
                 <input type="hidden" name="period_month" value={periodMonth} />
                 <div>
                   <label className="text-xs text-ledger-muted">Alerta al gastar (%)</label>

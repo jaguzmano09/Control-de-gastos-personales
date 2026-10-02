@@ -25,38 +25,44 @@ export async function GET(request: NextRequest) {
 
   const { data: previousBudgets, error: budgetsError } = await supabase
     .from('wallet_budgets')
-    .select('user_id, wallet_id, total_budget')
+    .select('user_id, wallet_id, account_id, total_budget')
     .eq('period_month', previousMonth)
 
   if (budgetsError) {
     return NextResponse.json({ error: budgetsError.message }, { status: 500 })
   }
 
-  const results: Array<{ wallet_id: string; rollover_amount: number }> = []
+  const results: Array<{ wallet_id: string | null; account_id: string | null; rollover_amount: number }> = []
 
   for (const budget of previousBudgets ?? []) {
-    const { data: spentRows, error: spentError } = await supabase
+    let spentQuery = supabase
       .from('transactions')
       .select('amount')
-      .eq('wallet_id', budget.wallet_id)
       .eq('month', previousMonth)
       .eq('type', 'Gasto')
       .eq('status', 'confirmada')
 
-    if (spentError) {
-      return NextResponse.json({ error: spentError.message }, { status: 500 })
-    }
+    spentQuery = budget.wallet_id
+      ? spentQuery.eq('wallet_id', budget.wallet_id)
+      : spentQuery.eq('account_id', budget.account_id!).is('wallet_id', null)
+
+    const { data: spentRows, error: spentError } = await spentQuery
+    if (spentError) return NextResponse.json({ error: spentError.message }, { status: 500 })
 
     const spent = (spentRows ?? []).reduce((sum, r) => sum + Number(r.amount), 0)
     const leftover = Math.max(Number(budget.total_budget) - spent, 0)
 
-    const { data: existingCurrent } = await supabase
+    let currentQuery = supabase
       .from('wallet_budgets')
       .select('assigned_amount')
       .eq('user_id', budget.user_id)
-      .eq('wallet_id', budget.wallet_id)
       .eq('period_month', currentMonth)
-      .maybeSingle()
+
+    currentQuery = budget.wallet_id
+      ? currentQuery.eq('wallet_id', budget.wallet_id)
+      : currentQuery.eq('account_id', budget.account_id!)
+
+    const { data: existingCurrent } = await currentQuery.maybeSingle()
 
     const { error: upsertError } = await supabase
       .from('wallet_budgets')
@@ -64,18 +70,19 @@ export async function GET(request: NextRequest) {
         {
           user_id: budget.user_id,
           wallet_id: budget.wallet_id,
+          account_id: budget.account_id,
           period_month: currentMonth,
           assigned_amount: existingCurrent?.assigned_amount ?? 0,
           rollover_amount: leftover,
         },
-        { onConflict: 'user_id,wallet_id,period_month' }
+        budget.wallet_id
+          ? { onConflict: 'user_id,wallet_id,period_month' }
+          : { onConflict: 'user_id,account_id,period_month' }
       )
 
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
-    }
+    if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 })
 
-    results.push({ wallet_id: budget.wallet_id, rollover_amount: leftover })
+    results.push({ wallet_id: budget.wallet_id, account_id: budget.account_id, rollover_amount: leftover })
   }
 
   return NextResponse.json({ ok: true, month: currentMonth, processed: results.length, results })

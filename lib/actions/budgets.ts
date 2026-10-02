@@ -37,24 +37,28 @@ export async function updateWalletBudgetThreshold(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
 
-  const wallet_id = formData.get('wallet_id') as string
+  const wallet_id = (formData.get('wallet_id') as string) || null
+  const account_id = (formData.get('account_id') as string) || null
   const period_month = formData.get('period_month') as string
   const alert_threshold_percent = Number(formData.get('alert_threshold_percent'))
 
-  const { data: updated, error: updateError } = await supabase
+  if (!wallet_id && !account_id) throw new Error('Falta bolsillo o cuenta')
+
+  let query = supabase
     .from('wallet_budgets')
     .update({ alert_threshold_percent })
     .eq('user_id', user.id)
-    .eq('wallet_id', wallet_id)
     .eq('period_month', period_month)
-    .select('wallet_id')
 
+  query = wallet_id ? query.eq('wallet_id', wallet_id) : query.eq('account_id', account_id as string)
+
+  const { data: updated, error: updateError } = await query.select('id')
   if (updateError) throw updateError
 
   if (!updated || updated.length === 0) {
     const { error: insertError } = await supabase
       .from('wallet_budgets')
-      .insert({ user_id: user.id, wallet_id, period_month, assigned_amount: 0, rollover_amount: 0, alert_threshold_percent })
+      .insert({ user_id: user.id, wallet_id, account_id, period_month, assigned_amount: 0, rollover_amount: 0, alert_threshold_percent })
     if (insertError) throw insertError
   }
 
