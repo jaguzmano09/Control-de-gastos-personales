@@ -59,6 +59,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
   if (walletBudgetsError) throw walletBudgetsError
 
   const totals = emptyTotals()
+  let rolloverTotal = 0
   const gastoByCategory = new Map<string, number>()
   const gastoByWallet = new Map<string, number>()
   const accountById = new Map<string, AccountSummary>()
@@ -70,6 +71,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
 
     const accountSummary = accountById.get(accountId) ?? emptyAccountSummary()
     accountSummary.rollover += Number(budget.rollover_amount)
+    rolloverTotal += Number(budget.rollover_amount)
     accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
     accountById.set(accountId, accountSummary)
   }
@@ -105,8 +107,8 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     }
   }
 
-  const balance = totals.ingreso - totals.gasto - totals.ahorro - totals.inversion
-  return { totals, balance, gastoByCategory, gastoByWallet, accountById }
+  const balance = totals.ingreso + rolloverTotal - totals.gasto - totals.ahorro - totals.inversion
+  return { totals, rolloverTotal, balance, gastoByCategory, gastoByWallet, accountById }
 }
 
 export async function getPendingReviewCount(supabase: DashboardClient) {

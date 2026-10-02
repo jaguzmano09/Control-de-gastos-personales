@@ -147,8 +147,9 @@ export default async function DashboardHomePage({
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <SummaryStat label="Ingresos" value={summary.totals.ingreso} />
+        <SummaryStat label="Sobrantes del mes anterior" value={summary.rolloverTotal} />
         <SummaryStat label="Gastos" value={summary.totals.gasto} />
         <SummaryStat label="Ahorro" value={summary.totals.ahorro} />
         <SummaryStat label="Balance" value={summary.balance} emphasize />
