@@ -14,8 +14,13 @@ function previousMonthOf(dateStr: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET no configurado' }, { status: 500 })
+  }
+
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   const { data: previousBudgets, error: budgetsError } = await supabase
     .from('wallet_budgets')
-    .select('user_id, wallet_id, account_id, total_budget')
+    .select('id, user_id, wallet_id, account_id, total_budget')
     .eq('period_month', previousMonth)
 
   if (budgetsError) {
@@ -47,14 +52,16 @@ export async function GET(request: NextRequest) {
       : spentQuery.eq('account_id', budget.account_id!).is('wallet_id', null)
 
     const { data: spentRows, error: spentError } = await spentQuery
-    if (spentError) return NextResponse.json({ error: spentError.message }, { status: 500 })
+    if (spentError) {
+      return NextResponse.json({ error: spentError.message }, { status: 500 })
+    }
 
-    const spent = (spentRows ?? []).reduce((sum, r) => sum + Number(r.amount), 0)
+    const spent = (spentRows ?? []).reduce((sum, row) => sum + Number(row.amount), 0)
     const leftover = Math.max(Number(budget.total_budget) - spent, 0)
 
     let currentQuery = supabase
       .from('wallet_budgets')
-      .select('assigned_amount')
+      .select('id')
       .eq('user_id', budget.user_id)
       .eq('period_month', currentMonth)
 
@@ -62,25 +69,26 @@ export async function GET(request: NextRequest) {
       ? currentQuery.eq('wallet_id', budget.wallet_id)
       : currentQuery.eq('account_id', budget.account_id!)
 
-    const { data: existingCurrent } = await currentQuery.maybeSingle()
+    const { data: existingCurrent, error: currentError } = await currentQuery.maybeSingle()
+    if (currentError) {
+      return NextResponse.json({ error: currentError.message }, { status: 500 })
+    }
 
-    const { error: upsertError } = await supabase
-      .from('wallet_budgets')
-      .upsert(
-        {
+    const budgetQuery = existingCurrent
+      ? supabase.from('wallet_budgets').update({ rollover_amount: leftover }).eq('id', existingCurrent.id)
+      : supabase.from('wallet_budgets').insert({
           user_id: budget.user_id,
           wallet_id: budget.wallet_id,
           account_id: budget.account_id,
           period_month: currentMonth,
-          assigned_amount: existingCurrent?.assigned_amount ?? 0,
+          assigned_amount: 0,
           rollover_amount: leftover,
-        },
-        budget.wallet_id
-          ? { onConflict: 'user_id,wallet_id,period_month' }
-          : { onConflict: 'user_id,account_id,period_month' }
-      )
+        })
 
-    if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 })
+    const { error: budgetError } = await budgetQuery
+    if (budgetError) {
+      return NextResponse.json({ error: budgetError.message }, { status: 500 })
+    }
 
     results.push({ wallet_id: budget.wallet_id, account_id: budget.account_id, rollover_amount: leftover })
   }

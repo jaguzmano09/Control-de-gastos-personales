@@ -533,6 +533,20 @@ Environment variables
 
 When deploying, configure the required environment variables in the Vercel project settings.
 
+For the monthly budget rollover, also configure `CRON_SECRET` in Vercel (Production and
+Preview if you test there). Vercel sends it as `Authorization: Bearer <CRON_SECRET>`
+when it invokes `/api/cron/rollover`. The endpoint can be tested manually with:
+
+```bash
+curl -i -H "Authorization: Bearer <CRON_SECRET>" \
+  https://control-de-gastos-personales-nine.vercel.app/api/cron/rollover
+```
+
+The endpoint processes the previous calendar month and writes only `rollover_amount`
+for the current month. An existing `assigned_amount` is preserved. If the request
+returns `500` with `CRON_SECRET no configurado`, add that environment variable and
+redeploy before testing again.
+
 The current production deployment is:
 
 https://control-de-gastos-personales-nine.vercel.app/

@@ -75,7 +75,8 @@ export type Database = {
         Row: {
           id: string
           user_id: string
-          wallet_id: string
+          wallet_id: string | null
+          account_id: string | null
           period_month: string
           assigned_amount: number
           rollover_amount: number
@@ -87,7 +88,8 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
-          wallet_id: string
+          wallet_id?: string | null
+          account_id?: string | null
           period_month: string
           assigned_amount?: number
           rollover_amount?: number
@@ -99,7 +101,8 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
-          wallet_id?: string
+          wallet_id?: string | null
+          account_id?: string | null
           period_month?: string
           assigned_amount?: number
           rollover_amount?: number
