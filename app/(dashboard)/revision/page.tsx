@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ReviewCard } from './ReviewCard'
 import { resolveDuplicate } from '@/lib/actions/review'
 import { RolloverReviewCard } from './RolloverReviewCard'
+import { currentYearMonth, yearMonthToDate } from '@/lib/date-utils'
 
 // Debe coincidir exactamente con el tipo Transaction que espera ReviewCard
 interface PendingTransaction {
@@ -51,6 +52,7 @@ interface Wallet {
 
 export default async function RevisionPage() {
   const supabase = await createClient()
+  const currentMonth = yearMonthToDate(currentYearMonth())
 
   const [
     { data: rawPendientes },
@@ -94,6 +96,7 @@ export default async function RevisionPage() {
     supabase
       .from('budget_rollover_reviews')
       .select('id, amount, target_period_month, category_id, status, account_id, wallet_id')
+      .eq('target_period_month', currentMonth)
       .order('target_period_month', { ascending: false }),
   ])
 
@@ -114,6 +117,8 @@ export default async function RevisionPage() {
   }>
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]))
   const walletNames = new Map(wallets.map((wallet) => [wallet.id, wallet.name]))
+  const pendingRollovers = rollovers.filter((rollover) => rollover.status === 'pending')
+  const assignedRollovers = rollovers.filter((rollover) => rollover.status === 'assigned')
 
   const duplicadosConMatch = await Promise.all(
     duplicados.map(async (dup) => {
@@ -177,13 +182,13 @@ export default async function RevisionPage() {
 
       <section>
         <h2 className="font-serif text-lg text-ledger-text">
-          Sobrantes del cierre ({rollovers.length})
+          Sobrantes pendientes del mes ({pendingRollovers.length})
         </h2>
         <p className="mt-1 text-sm text-ledger-muted">
-          Verifica la categoría asignada a cada sobrante del cierre mensual.
+          Asigna una categoría a cada sobrante del mes actual.
         </p>
         <div className="mt-4 space-y-4">
-          {rollovers.map((rollover) => (
+          {pendingRollovers.map((rollover) => (
             <RolloverReviewCard
               key={rollover.id}
               review={{
@@ -194,8 +199,33 @@ export default async function RevisionPage() {
               categories={categories}
             />
           ))}
-          {rollovers.length === 0 && (
+          {pendingRollovers.length === 0 && (
             <p className="text-sm text-ledger-muted">No hay sobrantes pendientes de asignación.</p>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-serif text-lg text-ledger-text">
+          Sobrantes asignados del mes ({assignedRollovers.length})
+        </h2>
+        <p className="mt-1 text-sm text-ledger-muted">
+          Estas asignaciones ya están aplicadas. Puedes actualizarlas cuando lo necesites.
+        </p>
+        <div className="mt-4 space-y-4">
+          {assignedRollovers.map((rollover) => (
+            <RolloverReviewCard
+              key={rollover.id}
+              review={{
+                ...rollover,
+                account_name: accountNames.get(rollover.account_id ?? '') ?? 'Cuenta',
+                wallet_name: rollover.wallet_id ? walletNames.get(rollover.wallet_id) ?? null : null,
+              }}
+              categories={categories}
+            />
+          ))}
+          {assignedRollovers.length === 0 && (
+            <p className="text-sm text-ledger-muted">No hay sobrantes asignados en el mes actual.</p>
           )}
         </div>
       </section>

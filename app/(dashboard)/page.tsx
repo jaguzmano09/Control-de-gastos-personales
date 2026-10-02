@@ -164,6 +164,7 @@ export default async function DashboardHomePage({
               spent={summary.gastoByCategory.get(budget.category_id) ?? 0}
               total={Number(budget.amount) + Number(budget.rollover_amount)}
               alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
+              detail={`Presupuesto ${formatCOP(Number(budget.amount))} + Sobrante ${formatCOP(Number(budget.rollover_amount))}`}
             />
           ))}
           {(categoryBudgets ?? []).length === 0 && (

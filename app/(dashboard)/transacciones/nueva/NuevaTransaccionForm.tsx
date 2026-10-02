@@ -25,7 +25,13 @@ export function NuevaTransaccionForm({
 }) {
   const [step, setStep] = useState<'form' | 'confirm'>('form')
 
-  const [occurredAt, setOccurredAt] = useState(new Date().toISOString().slice(0, 10))
+  const [occurredAt, setOccurredAt] = useState(() => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
   const [type, setType] = useState<typeof TYPES[number]>('Gasto')
   const [categoryId, setCategoryId] = useState('')
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')

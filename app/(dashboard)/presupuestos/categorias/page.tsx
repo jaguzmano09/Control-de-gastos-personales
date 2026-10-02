@@ -40,20 +40,25 @@ export default async function PresupuestoCategoriasPage({
         {(categories ?? []).map((category) => {
           const budget = budgetByCategory.get(category.id)
           const assigned = Number(budget?.amount ?? 0)
+          const rollover = Number(budget?.rollover_amount ?? 0)
+          const totalBudget = assigned + rollover
           const spent = summary.gastoByCategory.get(category.id) ?? 0
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
-          const percent = assigned > 0 ? Math.min((spent / assigned) * 100, 100) : 0
-          const isOverBudget = assigned > 0 && spent >= assigned
-          const isOverThreshold = !isOverBudget && threshold !== undefined && assigned > 0 && (spent / assigned) * 100 >= threshold
+          const percent = totalBudget > 0 ? Math.min((spent / totalBudget) * 100, 100) : 0
+          const isOverBudget = totalBudget > 0 && spent >= totalBudget
+          const isOverThreshold = !isOverBudget && threshold !== undefined && totalBudget > 0 && (spent / totalBudget) * 100 >= threshold
 
           return (
             <div key={category.id} className="rounded-sm border border-black/10 bg-white p-4">
               <div className="flex items-baseline justify-between">
                 <p className="text-sm text-ledger-text">{category.name}</p>
                 <p className={isOverBudget ? 'text-sm text-red-700' : isOverThreshold ? 'text-sm text-amber-700' : 'text-sm text-ledger-muted'}>
-                  {formatCOP(spent)} / {formatCOP(assigned)}
+                  {formatCOP(spent)} / {formatCOP(totalBudget)}
                 </p>
               </div>
+              <p className="mt-2 text-xs text-ledger-muted">
+                Presupuesto: {formatCOP(assigned)} · Sobrante: {formatCOP(rollover)} · Total: {formatCOP(totalBudget)}
+              </p>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
                 <div
                   className={`h-full rounded-full ${isOverBudget ? 'bg-red-700' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`}
@@ -62,7 +67,7 @@ export default async function PresupuestoCategoriasPage({
               </div>
               {isOverBudget && <p className="mt-2 text-xs text-red-700">Gastaste el presupuesto de esta categoría.</p>}
               {isOverThreshold && <p className="mt-2 text-xs text-amber-700">Cruzaste el umbral de alerta ({threshold}%) !Ten Cuidado¡.</p>}
-              {assigned === 0 && <p className="mt-2 text-xs text-ledger-muted">Sin Ingreso registrado para esta categoría este mes.</p>}
+              {totalBudget === 0 && <p className="mt-2 text-xs text-ledger-muted">Sin presupuesto ni sobrante para esta categoría este mes.</p>}
 
               <form action={updateCategoryBudgetThreshold} className="mt-3 flex items-end gap-3">
                 <input type="hidden" name="category_id" value={category.id} />
