@@ -37,12 +37,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: budgetsError.message }, { status: 500 })
   }
 
-  const results: Array<{ wallet_id: string | null; account_id: string | null; rollover_amount: number }> = []
+  const results: Array<{
+    wallet_id: string | null
+    account_id: string | null
+    rollover_amount: number
+    category_id: string | null
+    category_name: string | null
+    category_status: 'assigned' | 'manual_selection_required'
+  }> = []
+  const categoryRollovers = new Map<string, number>()
 
   for (const budget of previousBudgets ?? []) {
     let spentQuery = supabase
       .from('transactions')
-      .select('amount')
+      .select('amount, category_id')
+      .eq('user_id', budget.user_id)
       .eq('month', previousMonth)
       .eq('type', 'Gasto')
       .eq('status', 'confirmada')
@@ -58,6 +67,23 @@ export async function GET(request: NextRequest) {
 
     const spent = (spentRows ?? []).reduce((sum, row) => sum + Number(row.amount), 0)
     const leftover = Math.max(Number(budget.total_budget) - spent, 0)
+    const categoryIdsInSpent = Array.from(new Set(
+      (spentRows ?? []).filter((row) => row.category_id).map((row) => row.category_id as string)
+    ))
+
+    const { data: previousCategoryBudgets, error: categoryBudgetsError } = await supabase
+      .from('category_budgets')
+      .select('category_id')
+      .eq('user_id', budget.user_id)
+      .eq('period_month', previousMonth)
+      .in('category_id', categoryIdsInSpent.length > 0 ? categoryIdsInSpent : ['00000000-0000-0000-0000-000000000000'])
+
+    if (categoryBudgetsError) {
+      return NextResponse.json({ error: categoryBudgetsError.message }, { status: 500 })
+    }
+
+    const matchingCategoryIds = Array.from(new Set((previousCategoryBudgets ?? []).map((row) => row.category_id)))
+    const categoryId = matchingCategoryIds.length === 1 ? matchingCategoryIds[0] : null
 
     let currentQuery = supabase
       .from('wallet_budgets')
@@ -90,7 +116,70 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: budgetError.message }, { status: 500 })
     }
 
-    results.push({ wallet_id: budget.wallet_id, account_id: budget.account_id, rollover_amount: leftover })
+    if (categoryId) {
+      const key = `${budget.user_id}:${categoryId}`
+      categoryRollovers.set(key, (categoryRollovers.get(key) ?? 0) + leftover)
+    }
+
+    results.push({
+      wallet_id: budget.wallet_id,
+      account_id: budget.account_id,
+      rollover_amount: leftover,
+      category_id: categoryId,
+      category_name: null,
+      category_status: categoryId ? 'assigned' : 'manual_selection_required',
+    })
+  }
+
+  for (const [key, rolloverAmount] of Array.from(categoryRollovers.entries())) {
+    const [userId, categoryId] = key.split(':')
+    const { data: currentCategoryBudget, error: currentCategoryError } = await supabase
+      .from('category_budgets')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('category_id', categoryId)
+      .eq('period_month', currentMonth)
+      .maybeSingle()
+
+    if (currentCategoryError) {
+      return NextResponse.json({ error: currentCategoryError.message }, { status: 500 })
+    }
+
+    const categoryBudgetQuery = currentCategoryBudget
+      ? supabase
+          .from('category_budgets')
+          .update({ rollover_amount: rolloverAmount })
+          .eq('id', currentCategoryBudget.id)
+      : supabase.from('category_budgets').insert({
+          user_id: userId,
+          category_id: categoryId,
+          period_month: currentMonth,
+          amount: 0,
+          rollover_amount: rolloverAmount,
+          alert_threshold_percent: null,
+        })
+
+    const { error: categoryBudgetError } = await categoryBudgetQuery
+    if (categoryBudgetError) {
+      return NextResponse.json({ error: categoryBudgetError.message }, { status: 500 })
+    }
+  }
+
+  const categoryIds = Array.from(new Set(results.flatMap((result) => result.category_id ? [result.category_id] : [])))
+  if (categoryIds.length > 0) {
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('id, name')
+      .in('id', categoryIds)
+
+    if (categoriesError) {
+      return NextResponse.json({ error: categoriesError.message }, { status: 500 })
+    }
+
+    const categoryNames = new Map((categories ?? []).map((category) => [category.id, category.name]))
+    for (const result of results) {
+      result.category_name = result.category_id ? categoryNames.get(result.category_id) ?? null : null
+    }
   }
 
   return NextResponse.json({ ok: true, month: currentMonth, processed: results.length, results })

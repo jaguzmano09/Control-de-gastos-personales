@@ -121,6 +121,7 @@ export type Database = {
           category_id: string
           period_month: string
           amount: number
+          rollover_amount: number
           alert_threshold_percent: number | null
           created_at: string
           updated_at: string
@@ -131,6 +132,7 @@ export type Database = {
           category_id: string
           period_month: string
           amount: number
+          rollover_amount?: number
           alert_threshold_percent?: number | null
           created_at?: string
           updated_at?: string
@@ -141,6 +143,7 @@ export type Database = {
           category_id?: string
           period_month?: string
           amount?: number
+          rollover_amount?: number
           alert_threshold_percent?: number | null
           created_at?: string
           updated_at?: string

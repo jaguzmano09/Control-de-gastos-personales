@@ -543,7 +543,9 @@ curl -i -H "Authorization: Bearer <CRON_SECRET>" \
 ```
 
 The endpoint processes the previous calendar month and writes only `rollover_amount`
-for the current month. An existing `assigned_amount` is preserved. If the request
+for the current month. An existing `assigned_amount` and category `amount` are preserved.
+The category rollover is stored separately, so running the endpoint twice does not
+duplicate it. If the request
 returns `500` with `CRON_SECRET no configurado`, add that environment variable and
 redeploy before testing again.
 

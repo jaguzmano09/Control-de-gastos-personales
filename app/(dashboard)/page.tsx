@@ -20,7 +20,7 @@ const inputClass =
 type DashboardCategory = { id: string; name: string }
 type DashboardWallet = { id: string; name: string }
 type DashboardAccount = { id: string; name: string; is_active: boolean }
-type CategoryBudget = { category_id: string; amount: number; alert_threshold_percent: number | null }
+type CategoryBudget = { category_id: string; amount: number; rollover_amount: number; alert_threshold_percent: number | null }
 type WalletBudget = { wallet_id: string; assigned_amount: number; rollover_amount: number; total_budget: number; alert_threshold_percent: number | null }
 
 export default async function DashboardHomePage({
@@ -45,8 +45,8 @@ export default async function DashboardHomePage({
     supabase.from('categories').select('id, name').eq('is_active', true),
     supabase.from('wallets').select('id, name').eq('is_active', true),
     supabase.from('accounts').select('id, name, is_active').eq('is_active', true).order('name'),
-    supabase.from('category_budgets').select('category_id, amount, alert_threshold_percent').eq('period_month', monthStart),
-    supabase.from('wallet_budgets').select('wallet_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', monthStart),
+    supabase.from('category_budgets').select('category_id, amount, rollover_amount, alert_threshold_percent').eq('period_month', monthStart),
+    supabase.from('wallet_budgets').select('wallet_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', monthStart).not('wallet_id', 'is', null),
     getMonthSummary(supabase, monthStart),
     getPendingReviewCount(supabase),
   ])
@@ -162,7 +162,7 @@ export default async function DashboardHomePage({
               key={budget.category_id}
               label={categoryNameById.get(budget.category_id) ?? 'Categoría'}
               spent={summary.gastoByCategory.get(budget.category_id) ?? 0}
-              total={Number(budget.amount)}
+              total={Number(budget.amount) + Number(budget.rollover_amount)}
               alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
             />
           ))}
@@ -197,8 +197,9 @@ export default async function DashboardHomePage({
           {(accounts ?? []).map((account) => {
             const accountSummary = summary.accountById.get(account.id)
             const income = accountSummary?.ingreso ?? 0
+            const rollover = accountSummary?.rollover ?? 0
             const outflow = accountSummary?.outflow ?? 0
-            const balance = accountSummary?.balance ?? 0
+            const balance = (accountSummary?.ingreso ?? 0) + rollover - outflow
 
             return (
               <div key={account.id} className="rounded-sm border border-black/10 bg-white p-4">
@@ -209,9 +210,25 @@ export default async function DashboardHomePage({
                   </p>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <p className="text-ledger-muted">Ingresos</p>
-                    <p className="mt-0.5 text-ledger-text">{formatCOP(income)}</p>
+                  <div className="space-y-2">
+                    {income > 0 && (
+                      <div>
+                        <p className="text-ledger-muted">Ingresos</p>
+                        <p className="mt-0.5 text-ledger-text">{formatCOP(income)}</p>
+                      </div>
+                    )}
+                    {rollover > 0 && (
+                      <div>
+                        <p className="text-ledger-muted">Sobrantes</p>
+                        <p className="mt-0.5 text-ledger-text">{formatCOP(rollover)}</p>
+                      </div>
+                    )}
+                    {income === 0 && rollover === 0 && (
+                      <div>
+                        <p className="text-ledger-muted">Ingresos y sobrantes</p>
+                        <p className="mt-0.5 text-ledger-text">{formatCOP(0)}</p>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="text-ledger-muted">Salidas</p>

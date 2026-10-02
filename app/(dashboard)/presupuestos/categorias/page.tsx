@@ -24,7 +24,7 @@ export default async function PresupuestoCategoriasPage({
 
   const [{ data: categories }, { data: budgets }, summary] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
-    supabase.from('category_budgets').select('category_id, amount, alert_threshold_percent').eq('period_month', periodMonth),
+    supabase.from('category_budgets').select('category_id, amount, rollover_amount, alert_threshold_percent').eq('period_month', periodMonth),
     getMonthSummary(supabase, periodMonth),
   ])
 

@@ -12,6 +12,7 @@ type Totals = {
 
 type AccountSummary = Totals & {
   outflow: number
+  rollover: number
   balance: number
 }
 
@@ -31,7 +32,7 @@ function emptyTotals(): Totals {
 }
 
 function emptyAccountSummary(): AccountSummary {
-  return { ...emptyTotals(), outflow: 0, balance: 0 }
+  return { ...emptyTotals(), outflow: 0, rollover: 0, balance: 0 }
 }
 
 export async function getMonthSummary(supabase: DashboardClient, monthStart: string) {
@@ -45,10 +46,33 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
 
   if (error) throw error
 
+  const [{ data: accountBudgets, error: accountBudgetsError }, { data: walletBudgets, error: walletBudgetsError }] =
+    await Promise.all([
+      supabase
+        .from('wallet_budgets')
+        .select('account_id, wallet_id, rollover_amount')
+        .eq('period_month', monthStart),
+      supabase.from('wallets').select('id, account_id').eq('is_active', true),
+    ])
+
+  if (accountBudgetsError) throw accountBudgetsError
+  if (walletBudgetsError) throw walletBudgetsError
+
   const totals = emptyTotals()
   const gastoByCategory = new Map<string, number>()
   const gastoByWallet = new Map<string, number>()
   const accountById = new Map<string, AccountSummary>()
+  const accountIdByWalletId = new Map((walletBudgets ?? []).map((wallet) => [wallet.id, wallet.account_id]))
+
+  for (const budget of accountBudgets ?? []) {
+    const accountId = budget.account_id ?? accountIdByWalletId.get(budget.wallet_id ?? '')
+    if (!accountId) continue
+
+    const accountSummary = accountById.get(accountId) ?? emptyAccountSummary()
+    accountSummary.rollover += Number(budget.rollover_amount)
+    accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
+    accountById.set(accountId, accountSummary)
+  }
 
   for (const t of transactions ?? []) {
     const amount = Number(t.amount)
@@ -70,7 +94,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
       case 'Transferencia': accountSummary.transferencia += amount; break
     }
 
-    accountSummary.balance = accountSummary.ingreso - accountSummary.outflow
+    accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
     accountById.set(t.account_id, accountSummary)
 
     if (t.type === 'Gasto' && t.category_id) {
