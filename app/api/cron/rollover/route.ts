@@ -116,6 +116,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: budgetError.message }, { status: 500 })
     }
 
+    const { error: reviewError } = await supabase
+      .from('budget_rollover_reviews')
+      .upsert({
+        user_id: budget.user_id,
+        source_budget_id: budget.id,
+        source_period_month: previousMonth,
+        target_period_month: currentMonth,
+        wallet_id: budget.wallet_id,
+        account_id: budget.account_id,
+        amount: leftover,
+        category_id: categoryId,
+        status: categoryId ? 'assigned' : 'pending',
+      }, { onConflict: 'source_budget_id,target_period_month' })
+
+    if (reviewError) {
+      return NextResponse.json({ error: reviewError.message }, { status: 500 })
+    }
+
     if (categoryId) {
       const key = `${budget.user_id}:${categoryId}`
       categoryRollovers.set(key, (categoryRollovers.get(key) ?? 0) + leftover)

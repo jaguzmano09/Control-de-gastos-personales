@@ -151,6 +151,52 @@ export type Database = {
         Relationships: []
       }
 
+      budget_rollover_reviews: {
+        Row: {
+          id: string
+          user_id: string
+          source_budget_id: string
+          source_period_month: string
+          target_period_month: string
+          wallet_id: string | null
+          account_id: string | null
+          amount: number
+          category_id: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          source_budget_id: string
+          source_period_month: string
+          target_period_month: string
+          wallet_id?: string | null
+          account_id?: string | null
+          amount?: number
+          category_id?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          source_budget_id?: string
+          source_period_month?: string
+          target_period_month?: string
+          wallet_id?: string | null
+          account_id?: string | null
+          amount?: number
+          category_id?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+
       categories: {
         Row: {
           id: string

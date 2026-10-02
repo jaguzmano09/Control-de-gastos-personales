@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { ReviewCard } from './ReviewCard'
 import { resolveDuplicate } from '@/lib/actions/review'
+import { RolloverReviewCard } from './RolloverReviewCard'
 
 // Debe coincidir exactamente con el tipo Transaction que espera ReviewCard
 interface PendingTransaction {
@@ -57,6 +58,7 @@ export default async function RevisionPage() {
     { data: rawCategories },
     { data: rawAccounts },
     { data: rawWallets },
+    { data: rawRollovers },
   ] = await Promise.all([
     supabase
       .from('transactions')
@@ -88,6 +90,11 @@ export default async function RevisionPage() {
       .select('id, name, account_id')
       .eq('is_active', true)
       .order('name'),
+
+    supabase
+      .from('budget_rollover_reviews')
+      .select('id, amount, target_period_month, category_id, status, account_id, wallet_id')
+      .order('target_period_month', { ascending: false }),
   ])
 
   // Convertimos los resultados de Supabase a los tipos que utilizan los componentes.
@@ -96,6 +103,17 @@ export default async function RevisionPage() {
   const categories = (rawCategories ?? []) as unknown as Category[]
   const accounts = (rawAccounts ?? []) as unknown as Account[]
   const wallets = (rawWallets ?? []) as unknown as Wallet[]
+  const rollovers = (rawRollovers ?? []) as Array<{
+    id: string
+    amount: number
+    target_period_month: string
+    category_id: string | null
+    status: string
+    account_id: string | null
+    wallet_id: string | null
+  }>
+  const accountNames = new Map(accounts.map((account) => [account.id, account.name]))
+  const walletNames = new Map(wallets.map((wallet) => [wallet.id, wallet.name]))
 
   const duplicadosConMatch = await Promise.all(
     duplicados.map(async (dup) => {
@@ -153,6 +171,31 @@ export default async function RevisionPage() {
             <p className="text-sm text-ledger-muted">
               No hay transacciones pendientes de revisión.
             </p>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-serif text-lg text-ledger-text">
+          Sobrantes del cierre ({rollovers.length})
+        </h2>
+        <p className="mt-1 text-sm text-ledger-muted">
+          Verifica la categoría asignada a cada sobrante del cierre mensual.
+        </p>
+        <div className="mt-4 space-y-4">
+          {rollovers.map((rollover) => (
+            <RolloverReviewCard
+              key={rollover.id}
+              review={{
+                ...rollover,
+                account_name: accountNames.get(rollover.account_id ?? '') ?? 'Cuenta',
+                wallet_name: rollover.wallet_id ? walletNames.get(rollover.wallet_id) ?? null : null,
+              }}
+              categories={categories}
+            />
+          ))}
+          {rollovers.length === 0 && (
+            <p className="text-sm text-ledger-muted">No hay sobrantes pendientes de asignación.</p>
           )}
         </div>
       </section>
@@ -247,4 +290,3 @@ export default async function RevisionPage() {
     </div>
   )
 }
-
