@@ -1,5 +1,5 @@
 'use client'
-
+import { Logo } from '@/components/Logo'
 import { useState } from 'react'
 import { signOut } from '@/lib/actions/auth'
 
@@ -18,26 +18,30 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="relative w-full border-b border-black/10 bg-ledger-paper">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <span className="font-serif text-lg text-ledger-text">Control de gastos</span>
-
+    <header className="relative w-full border-b border-black/10 bg-ledger-paper/95 shadow-sm backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center px-4 py-3 sm:px-6">
         <button
           onClick={() => setOpen(true)}
           aria-label="Abrir menú"
           aria-expanded={open}
-          className="rounded-sm border border-black/10 p-2 text-ledger-text"
+          className="rounded-xl border border-black/10 bg-white/70 p-2.5 text-ledger-text shadow-sm transition hover:border-ledger-green/40 hover:bg-white focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M3 5h12M3 9h12M3 13h12" strokeLinecap="round" />
           </svg>
         </button>
+        <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2.5">
+          <Logo className="h-8 w-8 shrink-0" />
+          <span className="whitespace-nowrap font-serif text-lg font-semibold text-ledger-text sm:text-xl">
+            Control de gastos
+          </span>
+        </span>
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-40 bg-ledger-ink/30" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[60] bg-black/35" onClick={() => setOpen(false)}>
           <nav
-            className="absolute left-0 top-0 z-50 flex h-full w-72 max-w-[85vw] flex-col bg-ledger-paper p-6 shadow-lg"
+            className="fixed inset-y-0 left-0 z-[61] flex h-screen min-h-full w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-black/10 bg-ledger-paper p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -54,7 +58,7 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-sm px-2 py-2 text-sm text-ledger-text hover:bg-black/5"
+                  className="rounded-xl px-3 py-2.5 text-sm text-ledger-text transition hover:bg-ledger-green/10 hover:text-ledger-green"
                 >
                   {item.label}
                 </a>

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Control personal de gastos, presupuestos y bolsillos',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Gastos' },
-  icons: { apple: '/icons/apple-touch-icon.png', icon: '/favicon-32.png' },
+  icons: { apple: '/icons/apple-touch-icon.png', icon: '/favicon.svg' },
 }
 
 export const viewport: Viewport = {
