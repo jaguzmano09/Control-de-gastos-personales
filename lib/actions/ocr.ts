@@ -3,13 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import {
-  extractTransactionFromImage,
-  extractTransactionFromImageWithOcr,
-  extractTransactionFromOcrText,
-} from '@/lib/gemini/client'
 import { matchCategorizationRule } from '@/lib/categorization/match'
 import { discardTesseractWorker, extractTextWithTesseract } from '@/lib/ocr/tesseract'
+import { parseOcrText } from '@/lib/ocr/parse'
 
 export async function createTransactionFromReceipt(formData: FormData) {
   const supabase = await createClient()
@@ -35,7 +31,6 @@ export async function createTransactionFromReceipt(formData: FormData) {
   }
 
   const { data: categories } = await supabase.from('categories').select('id, name').eq('is_active', true)
-  const categoryNames = (categories ?? []).map((c) => c.name)
 
   const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
 
@@ -43,26 +38,20 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
   try {
     ocrResult = await extractTextWithTesseract(Buffer.from(base64, 'base64'))
-    const hasReliableText = ocrResult.text.length >= 20 && ocrResult.confidence >= 45
-
-    extracted = hasReliableText
-      ? await extractTransactionFromOcrText(ocrResult.text, categoryNames)
-      : await extractTransactionFromImageWithOcr(base64, file.type, ocrResult.text, categoryNames)
+    extracted = parseOcrText(ocrResult.text)
   } catch (err) {
     const message = (err as Error).message
     if (/Tesseract timeout/i.test(message)) await discardTesseractWorker()
+    const userMessage = /Tesseract|worker|traineddata|language|timeout/i.test(message)
+      ? 'No se pudo leer el comprobante a tiempo. Intenta con una imagen más nítida o registra la transacción manualmente.'
+      : message
+    redirect('/transacciones/ocr?error=' + encodeURIComponent(userMessage))
+  }
 
-    try {
-      extracted = await extractTransactionFromImage(base64, file.type, categoryNames)
-    } catch (fallbackError) {
-      const fallbackMessage = (fallbackError as Error).message
-      const userMessage = /Gemini error: (429|503)\b|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(fallbackMessage)
-        ? 'El lector automático está temporalmente ocupado. Intenta de nuevo más tarde o registra la transacción manualmente.'
-        : /Tesseract|worker|traineddata|language|timeout/i.test(message)
-          ? 'No se pudo leer el comprobante a tiempo. Intenta con una imagen más nítida o registra la transacción manualmente.'
-          : fallbackMessage
-      redirect('/transacciones/ocr?error=' + encodeURIComponent(userMessage))
-    }
+  if (extracted.amount <= 0 || !extracted.occurred_at || !extracted.description) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent(
+      'No se pudieron identificar con suficiente claridad la fecha, el total o la descripción. Intenta con una imagen más nítida.',
+    ))
   }
 
   // Rules-first: una regla aprendida/manual tiene prioridad sobre la sugerencia de Gemini.
@@ -80,8 +69,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
     amount: extracted!.amount,
     source: 'ocr',
     status: 'pendiente_revision',
-    ai_confidence: rule ? 1 : extracted!.confidence,
+    ai_confidence: rule ? 1 : Math.min(extracted!.confidence, ocrResult.confidence / 100),
     raw_data: {
+      engine: 'tesseract-local',
       extracted,
       ocr: ocrResult,
     },

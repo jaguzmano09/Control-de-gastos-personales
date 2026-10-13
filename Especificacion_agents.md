@@ -61,7 +61,7 @@ Campos clave de `transactions`:
 - `source`: manual / ocr / email_webhook / migration
 - `status`: pendiente_revision / confirmada / duplicado
 - `external_reference`: identificador único que envía el banco (usado para deduplicar)
-- `raw_data` (jsonb): el texto/campos crudos que devolvió Gemini al procesar el OCR o el correo — **no se guarda la imagen de la factura**, solo el dato extraído.
+- `raw_data` (jsonb): el texto/campos crudos devueltos por el motor de extracción (actualmente Tesseract para OCR y Gemini para correo), junto con los datos estructurados — **no se guarda la imagen de la factura**, solo el dato extraído.
 - `is_necessary`: booleano opcional (equivalente al "Necesario" sí/no del Sheet).
 
 ---
