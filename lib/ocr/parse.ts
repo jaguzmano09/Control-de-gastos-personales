@@ -29,13 +29,29 @@ function parseMoney(value: string) {
 }
 
 function findAmount(lines: string[]) {
-  const totalLine = lines.find((line) => /\b(?:total|fotal)\b/i.test(line) && !/impuesto/i.test(line))
-  const totalMatch = totalLine?.match(/(?:[$]\s*)?(\d[\d.,]*)\s*$/)
-  if (totalMatch) return parseMoney(totalMatch[1])
+  const amountPattern = /[$]?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+)/
+  const totalLineIndex = lines.findIndex((line) => /\b(?:total|fotal)\b/i.test(line) && !/impuesto/i.test(line))
+  if (totalLineIndex >= 0) {
+    const sameLineMatches = lines[totalLineIndex].match(/[$]?\s*(\d[\d.,]*)/g) ?? []
+    const nextLineMatches = lines[totalLineIndex + 1]?.match(/[$]?\s*(\d[\d.,]*)/g) ?? []
+    const totalMatches = sameLineMatches.length > 0 ? sameLineMatches : nextLineMatches
+    const totalMatch = totalMatches[totalMatches.length - 1]
+    if (totalMatch) return parseMoney(totalMatch)
+  }
 
-  const amountLine = lines.find((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago)/i.test(line))
-  const amountMatch = amountLine?.match(/[$]?\s*(\d[\d.,]*)/)
-  return amountMatch ? parseMoney(amountMatch[1]) : 0
+  const amountLabelIndex = lines.findIndex((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago)/i.test(line))
+  if (amountLabelIndex >= 0) {
+    const amountText = lines.slice(amountLabelIndex, amountLabelIndex + 3).join(' ')
+    const amountMatch = amountText.match(amountPattern)
+    if (amountMatch) return parseMoney(amountMatch[1])
+  }
+
+  for (const line of lines) {
+    const currencyMatch = line.match(/[$]\s*(\d[\d.,]*)/)
+    if (currencyMatch) return parseMoney(currencyMatch[1])
+  }
+
+  return 0
 }
 
 function findDate(text: string) {
