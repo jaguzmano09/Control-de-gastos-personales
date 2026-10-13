@@ -28,8 +28,11 @@ export function OcrUploadForm({ accounts, wallets, error }: { accounts: Account[
   return (
     <form action={createTransactionFromReceipt} className="mt-8 space-y-5">
       <div>
-        <label className="block text-sm text-ledger-text">Foto de la factura</label>
-        <input type="file" name="receipt" accept="image/*" capture="environment" required className={inputClass} />
+        <label className="block text-sm text-ledger-text">Foto o imagen del comprobante</label>
+        <input type="file" name="receipt" accept="image/*" required className={inputClass} />
+        <p className="mt-1 text-xs text-ledger-muted">
+          Puedes tomar una foto con la cámara o seleccionar una imagen guardada en tu dispositivo.
+        </p>
       </div>
 
       <div>

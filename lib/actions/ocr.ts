@@ -3,8 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { extractTransactionFromImage } from '@/lib/gemini/client'
+import { extractTransactionFromImageWithOcr, extractTransactionFromOcrText } from '@/lib/gemini/client'
 import { matchCategorizationRule } from '@/lib/categorization/match'
+import { extractTextWithTesseract } from '@/lib/ocr/tesseract'
 
 export async function createTransactionFromReceipt(formData: FormData) {
   const supabase = await createClient()
@@ -25,13 +26,21 @@ export async function createTransactionFromReceipt(formData: FormData) {
   const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
 
   let extracted
+  let ocrResult
   try {
-    extracted = await extractTransactionFromImage(base64, file.type, categoryNames)
+    ocrResult = await extractTextWithTesseract(Buffer.from(base64, 'base64'))
+    const hasReliableText = ocrResult.text.length >= 20 && ocrResult.confidence >= 45
+
+    extracted = hasReliableText
+      ? await extractTransactionFromOcrText(ocrResult.text, categoryNames)
+      : await extractTransactionFromImageWithOcr(base64, file.type, ocrResult.text, categoryNames)
   } catch (err) {
     const message = (err as Error).message
     const userMessage = /Gemini error: (429|503)\b|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(message)
       ? 'El lector automático está temporalmente ocupado. Intenta de nuevo más tarde o registra la transacción manualmente.'
-      : message
+      : /Tesseract|worker|traineddata|language/i.test(message)
+        ? 'No se pudo leer la imagen. Verifica que la factura esté enfocada y tenga buena iluminación.'
+        : message
     redirect('/transacciones/ocr?error=' + encodeURIComponent(userMessage))
   }
 
@@ -51,7 +60,10 @@ export async function createTransactionFromReceipt(formData: FormData) {
     source: 'ocr',
     status: 'pendiente_revision',
     ai_confidence: rule ? 1 : extracted!.confidence,
-    raw_data: extracted,
+    raw_data: {
+      extracted,
+      ocr: ocrResult,
+    },
   })
 
   if (error) redirect('/transacciones/ocr?error=' + encodeURIComponent(error.message))

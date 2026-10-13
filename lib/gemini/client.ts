@@ -11,12 +11,19 @@ type Extracted = {
   confidence: number
 }
 
-function buildPrompt(categoryNames: string[]) {
+function buildPrompt(categoryNames: string[], ocrText?: string) {
+  const ocrContext = ocrText
+    ? `\nTexto extraído previamente por OCR. Úsalo como fuente principal y corrige errores evidentes de lectura:\n${ocrText}\n`
+    : ''
+
   return `Eres un asistente que extrae datos de un movimiento bancario o factura de Colombia.
 Categorías disponibles: ${categoryNames.join(', ')}.
+${ocrContext}
 Devuelve SOLO un JSON con esta forma exacta, sin texto adicional ni markdown:
 {"occurred_at":"YYYY-MM-DD","amount":number,"description":string,"suggested_category":string,"confidence":number}
-"confidence" es tu nivel de seguridad (0 a 1) sobre la categoría sugerida.`
+"confidence" es tu nivel de seguridad (0 a 1) sobre la categoría sugerida.
+El monto debe ser el total final de la factura, sin símbolos ni separadores de miles.
+Si no puedes determinar un campo con seguridad, usa una cadena vacía para texto o 0 para números.`
 }
 
 async function callGemini(parts: object[]): Promise<Extracted> {
@@ -59,6 +66,24 @@ async function callGemini(parts: object[]): Promise<Extracted> {
 export async function extractTransactionFromImage(base64Image: string, mimeType: string, categoryNames: string[]) {
   return callGemini([
     { text: buildPrompt(categoryNames) },
+    { inlineData: { mimeType, data: base64Image } },
+  ])
+}
+
+export async function extractTransactionFromOcrText(ocrText: string, categoryNames: string[]) {
+  return callGemini([
+    { text: buildPrompt(categoryNames, ocrText) },
+  ])
+}
+
+export async function extractTransactionFromImageWithOcr(
+  base64Image: string,
+  mimeType: string,
+  ocrText: string,
+  categoryNames: string[],
+) {
+  return callGemini([
+    { text: buildPrompt(categoryNames, ocrText) },
     { inlineData: { mimeType, data: base64Image } },
   ])
 }

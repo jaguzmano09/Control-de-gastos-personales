@@ -264,13 +264,14 @@ function BudgetBar({ label, spent, total, alertThreshold, detail }: {
   const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const isOverThreshold = alertThreshold !== undefined && total > 0 && (spent / total) * 100 >= alertThreshold
   const isOverBudget = total > 0 && spent > total
+  const remaining = total - spent
 
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm">
         <span className="text-ledger-text">{label}</span>
         <span className={isOverBudget ? 'text-red-700' : 'text-ledger-muted'}>
-          {formatCOP(spent)} / {formatCOP(total)}
+          {formatCOP(spent)} / {formatCOP(total)} = {formatCOP(remaining)}
         </span>
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
