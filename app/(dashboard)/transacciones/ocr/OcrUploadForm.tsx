@@ -29,10 +29,17 @@ export function OcrUploadForm({ accounts, wallets, error }: { accounts: Account[
     <form action={createTransactionFromReceipt} className="mt-8 space-y-5">
       <div>
         <label className="block text-sm text-ledger-text">Foto o imagen del comprobante</label>
-        <input type="file" name="receipt" accept="image/*" required className={inputClass} />
-        <p className="mt-1 text-xs text-ledger-muted">
-          Puedes tomar una foto con la cámara o seleccionar una imagen guardada en tu dispositivo.
-        </p>
+        <div className="mt-1 grid gap-2 sm:grid-cols-2">
+          <label className="btn btn-secondary cursor-pointer text-center">
+            Tomar foto
+            <input type="file" name="receipt_camera" accept="image/*" capture="environment" className="sr-only" />
+          </label>
+          <label className="btn btn-secondary cursor-pointer text-center">
+            Subir imagen
+            <input type="file" name="receipt_upload" accept="image/*" className="sr-only" />
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-ledger-muted">Elige una opción para adjuntar el comprobante.</p>
       </div>
 
       <div>

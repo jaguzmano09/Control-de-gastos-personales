@@ -12,7 +12,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const file = formData.get('receipt') as File
+  const cameraFile = formData.get('receipt_camera')
+  const uploadFile = formData.get('receipt_upload')
+  const file = (cameraFile instanceof File && cameraFile.size > 0 ? cameraFile : uploadFile) as File
   const account_id = formData.get('account_id') as string
   const wallet_id = (formData.get('wallet_id') as string) || null
 
