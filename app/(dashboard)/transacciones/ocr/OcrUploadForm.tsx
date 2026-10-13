@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import Link from 'next/link'
 import { createTransactionFromReceipt } from '@/lib/actions/ocr'
@@ -15,13 +15,16 @@ function SubmitButton() {
   const { pending } = useFormStatus()
   return (
     <button type="submit" disabled={pending} className="btn btn-primary btn-full">
-      {pending ? 'Leyendo factura…' : 'Subir y extraer datos'}
+      {pending ? 'Procesando comprobante…' : 'Subir y extraer datos'}
     </button>
   )
 }
 
 export function OcrUploadForm({ accounts, wallets, error }: { accounts: Account[]; wallets: Wallet[]; error?: string }) {
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
+  const [selectedFileName, setSelectedFileName] = useState('')
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
   const selectedAccount = accounts.find((a) => a.id === accountId)
   const walletsForAccount = useMemo(() => wallets.filter((w) => w.account_id === accountId), [wallets, accountId])
 
@@ -32,14 +35,41 @@ export function OcrUploadForm({ accounts, wallets, error }: { accounts: Account[
         <div className="mt-1 grid gap-2 sm:grid-cols-2">
           <label className="btn btn-secondary cursor-pointer text-center">
             Tomar foto
-            <input type="file" name="receipt_camera" accept="image/*" capture="environment" className="sr-only" />
+            <input
+              type="file"
+              name="receipt_camera"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              ref={cameraInputRef}
+              onChange={(event) => {
+                if (event.target.files?.[0]) uploadInputRef.current!.value = ''
+                setSelectedFileName(event.target.files?.[0]?.name ?? '')
+              }}
+            />
           </label>
           <label className="btn btn-secondary cursor-pointer text-center">
             Subir imagen
-            <input type="file" name="receipt_upload" accept="image/*" className="sr-only" />
+            <input
+              type="file"
+              name="receipt_upload"
+              accept="image/*"
+              className="sr-only"
+              ref={uploadInputRef}
+              onChange={(event) => {
+                if (event.target.files?.[0]) cameraInputRef.current!.value = ''
+                setSelectedFileName(event.target.files?.[0]?.name ?? '')
+              }}
+            />
           </label>
         </div>
-        <p className="mt-1 text-xs text-ledger-muted">Elige una opción para adjuntar el comprobante.</p>
+        {selectedFileName ? (
+          <p className="mt-2 text-xs text-ledger-green" role="status">
+            ✓ Imagen adjuntada correctamente: {selectedFileName}
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-ledger-muted">Elige una opción para adjuntar el comprobante.</p>
+        )}
       </div>
 
       <div>

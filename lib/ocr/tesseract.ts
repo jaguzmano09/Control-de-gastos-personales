@@ -7,6 +7,7 @@ type TesseractWorker = Awaited<ReturnType<typeof import('tesseract.js')['createW
 
 let workerPromise: Promise<TesseractWorker> | undefined
 let recognitionQueue = Promise.resolve()
+const OCR_TIMEOUT_MS = 30_000
 
 async function getWorker() {
   if (!workerPromise) {
@@ -21,8 +22,17 @@ async function getWorker() {
   return workerPromise
 }
 
+function resetWorker() {
+  const currentWorker = workerPromise
+  workerPromise = undefined
+  void currentWorker?.then((worker) => worker.terminate()).catch(() => undefined)
+}
+
 export async function extractTextWithTesseract(image: Buffer): Promise<OcrResult> {
-  const worker = await getWorker()
+  const worker = await Promise.race([
+    getWorker(),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Tesseract timeout')), OCR_TIMEOUT_MS)),
+  ])
   const previousRecognition = recognitionQueue
   let releaseQueue!: () => void
   recognitionQueue = new Promise((resolve) => { releaseQueue = resolve })
@@ -35,7 +45,10 @@ export async function extractTextWithTesseract(image: Buffer): Promise<OcrResult
       user_defined_dpi: '300',
     })
 
-    const { data } = await worker.recognize(image, {}, { text: true })
+    const { data } = await Promise.race([
+      worker.recognize(image, {}, { text: true }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Tesseract timeout')), OCR_TIMEOUT_MS)),
+    ])
 
     return {
       text: data.text.trim(),
@@ -44,4 +57,8 @@ export async function extractTextWithTesseract(image: Buffer): Promise<OcrResult
   } finally {
     releaseQueue()
   }
+}
+
+export async function discardTesseractWorker() {
+  resetWorker()
 }
