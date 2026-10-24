@@ -107,8 +107,8 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
 
     if (t.category_id && (t.type === 'Gasto' || t.type === 'Ahorro')) {
       const categoryAmount = t.type === 'Ahorro' && t.savings_operation === 'ingreso'
-        ? -amount
-        : amount
+        ? amount
+        : -amount
       gastoByCategory.set(t.category_id, (gastoByCategory.get(t.category_id) ?? 0) + categoryAmount)
     }
     if (t.type === 'Gasto' && t.wallet_id) {

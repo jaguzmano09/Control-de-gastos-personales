@@ -42,8 +42,9 @@ export default async function PresupuestoCategoriasPage({
           const assigned = Number(budget?.amount ?? 0)
           const rollover = Number(budget?.rollover_amount ?? 0)
           const totalBudget = assigned + rollover
-          const spent = summary.gastoByCategory.get(category.id) ?? 0
-          const remaining = totalBudget - spent
+          const movement = summary.gastoByCategory.get(category.id) ?? 0
+          const spent = Math.max(0, -movement)
+          const remaining = totalBudget + movement
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = totalBudget > 0 ? Math.min((spent / totalBudget) * 100, 100) : 0
           const isOverBudget = totalBudget > 0 && spent >= totalBudget
@@ -54,7 +55,7 @@ export default async function PresupuestoCategoriasPage({
               <div className="flex items-baseline justify-between">
                 <p className="text-sm text-ledger-text">{category.name}</p>
                 <p className={isOverBudget ? 'text-sm text-red-700' : isOverThreshold ? 'text-sm text-amber-700' : 'text-sm text-ledger-muted'}>
-                  {formatCOP(spent)} / {formatCOP(totalBudget)}
+                  Movimiento: {formatCOP(movement)}
                 </p>
               </div>
               <p className="mt-2 text-xs text-ledger-muted">

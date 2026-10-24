@@ -158,16 +158,19 @@ export default async function DashboardHomePage({
       <section>
         <h2 className="font-serif text-lg text-ledger-text">Presupuesto por categoría</h2>
         <div className="mt-4 space-y-3">
-          {(categoryBudgets ?? []).map((budget) => (
-            <BudgetBar
-              key={budget.category_id}
-              label={categoryNameById.get(budget.category_id) ?? 'Categoría'}
-              spent={summary.gastoByCategory.get(budget.category_id) ?? 0}
-              total={Number(budget.amount) + Number(budget.rollover_amount)}
-              alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
-              detail={`Presupuesto ${formatCOP(Number(budget.amount))} + Sobrante ${formatCOP(Number(budget.rollover_amount))}`}
-            />
-          ))}
+          {(categoryBudgets ?? []).map((budget) => {
+            const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
+            return (
+              <BudgetBar
+                key={budget.category_id}
+                label={categoryNameById.get(budget.category_id) ?? 'Categoría'}
+                spent={Math.max(0, -movement)}
+                total={Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)}
+                alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
+                detail={`Presupuesto ${formatCOP(Number(budget.amount))} + Sobrante ${formatCOP(Number(budget.rollover_amount))}`}
+              />
+            )
+          })}
           {(categoryBudgets ?? []).length === 0 && (
             <p className="text-sm text-ledger-muted">Aún no has asignado presupuesto por categoría este mes.</p>
           )}
