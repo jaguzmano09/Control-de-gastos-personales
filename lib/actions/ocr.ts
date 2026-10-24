@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { matchCategorizationRule } from '@/lib/categorization/match'
 import { discardTesseractWorker, extractTextWithTesseract } from '@/lib/ocr/tesseract'
 import { parseOcrText } from '@/lib/ocr/parse'
+import { extractTransactionFromImage } from '@/lib/gemini/client'
 
 export async function createTransactionFromReceipt(formData: FormData) {
   const supabase = await createClient()
@@ -29,34 +30,70 @@ export async function createTransactionFromReceipt(formData: FormData) {
   if (!file.type.startsWith('image/')) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('El archivo seleccionado no es una imagen válida.'))
   }
+  if (file.size > 10 * 1024 * 1024) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('La imagen no puede superar los 10 MB.'))
+  }
 
-  const { data: categories } = await supabase.from('categories').select('id, name').eq('is_active', true)
+  if (!account_id) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('Selecciona una cuenta para registrar la transacción.'))
+  }
+
+  const { data: categories, error: categoriesError } = await supabase
+    .from('categories')
+    .select('id, name')
+    .eq('is_active', true)
+  if (categoriesError) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudieron cargar las categorías. Intenta nuevamente.'))
+  }
 
   const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
 
-  let extracted
+  let extracted: {
+    occurred_at: string
+    amount: number
+    description: string
+    suggested_category: string
+    confidence: number
+  } | undefined
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
+  let tesseractError: Error | undefined
+  const categoryNames = (categories ?? []).map((category) => category.name)
+
   try {
-    ocrResult = await extractTextWithTesseract(Buffer.from(base64, 'base64'))
-    extracted = parseOcrText(ocrResult.text)
+    const geminiResult = await extractTransactionFromImage(base64, file.type, categoryNames)
+    extracted = {
+      occurred_at: geminiResult.occurred_at,
+      amount: geminiResult.amount,
+      description: geminiResult.description,
+      suggested_category: geminiResult.suggested_category,
+      confidence: geminiResult.confidence,
+    }
   } catch (err) {
-    const message = (err as Error).message
-    if (/Tesseract timeout/i.test(message)) await discardTesseractWorker()
-    const userMessage = /Tesseract|worker|traineddata|language|timeout/i.test(message)
-      ? 'No se pudo leer el comprobante a tiempo. Intenta con una imagen más nítida o registra la transacción manualmente.'
-      : message
-    redirect('/transacciones/ocr?error=' + encodeURIComponent(userMessage))
+    try {
+      ocrResult = await extractTextWithTesseract(Buffer.from(base64, 'base64'))
+      const parsed = parseOcrText(ocrResult.text)
+      extracted = {
+        ...parsed,
+        suggested_category: '',
+      }
+    } catch (tesseractErr) {
+      tesseractError = tesseractErr instanceof Error ? tesseractErr : new Error('Error desconocido de Tesseract')
+      if (/Tesseract timeout/i.test(tesseractError.message)) await discardTesseractWorker()
+    }
   }
 
-  if (extracted.amount <= 0 || !extracted.occurred_at || !extracted.description) {
+  if (!extracted || extracted.amount <= 0 || !extracted.occurred_at || !extracted.description) {
+    const errorMessage = tesseractError
+      ? 'No se pudo leer el comprobante. Verifica GEMINI_API_KEY o intenta con una imagen más nítida.'
+      : 'No se pudieron identificar con suficiente claridad la fecha, el total o la descripción. Intenta con una imagen más nítida.'
     redirect('/transacciones/ocr?error=' + encodeURIComponent(
-      'No se pudieron identificar con suficiente claridad la fecha, el total o la descripción. Intenta con una imagen más nítida.',
+      errorMessage,
     ))
   }
 
   // Rules-first: una regla aprendida/manual tiene prioridad sobre la sugerencia de Gemini.
   const rule = await matchCategorizationRule(supabase, user!.id, extracted!.description)
-  const category = categories?.find((c) => c.name === extracted!.suggested_category)
+  const category = categories?.find((c) => c.name.toLowerCase() === extracted!.suggested_category.toLowerCase())
 
   const { error } = await supabase.from('transactions').insert({
     user_id: user!.id,

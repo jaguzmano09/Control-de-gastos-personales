@@ -11,12 +11,15 @@ const OCR_TIMEOUT_MS = 30_000
 
 async function getWorker() {
   if (!workerPromise) {
-    workerPromise = import('tesseract.js').then(({ createWorker }) =>
-      createWorker('spa', undefined, {
+    workerPromise = import('tesseract.js')
+      .then(({ createWorker }) => createWorker('spa', undefined, {
         logger: () => undefined,
         cacheMethod: 'write',
-      }),
-    )
+      }))
+      .catch((error) => {
+        workerPromise = undefined
+        throw error
+      })
   }
 
   return workerPromise

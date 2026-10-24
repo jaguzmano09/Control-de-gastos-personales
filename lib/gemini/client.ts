@@ -1,6 +1,6 @@
 // Verifica el nombre del modelo contra la documentación vigente de Gemini
 // antes de desplegar — los modelos cambian con el tiempo.
-const GEMINI_MODEL = 'gemini-3.6-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 type Extracted = {
@@ -27,6 +27,10 @@ Si no puedes determinar un campo con seguridad, usa una cadena vacía para texto
 }
 
 async function callGemini(parts: object[]): Promise<Extracted> {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY no está configurada')
+  }
+
   const request = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -43,7 +47,11 @@ async function callGemini(parts: object[]): Promise<Extracted> {
       const data = await res.json()
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text
       if (!text) throw new Error('Gemini no devolvió contenido')
-      return JSON.parse(text) as Extracted
+      try {
+        return JSON.parse(text) as Extracted
+      } catch {
+        throw new Error('Gemini devolvió una respuesta con formato inválido')
+      }
     }
 
     const errorText = await res.text()
