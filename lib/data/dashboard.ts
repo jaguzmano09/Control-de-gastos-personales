@@ -105,8 +105,11 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
     accountById.set(t.account_id, accountSummary)
 
-    if (t.type === 'Gasto' && t.category_id) {
-      gastoByCategory.set(t.category_id, (gastoByCategory.get(t.category_id) ?? 0) + amount)
+    if (t.category_id && (t.type === 'Gasto' || t.type === 'Ahorro')) {
+      const categoryAmount = t.type === 'Ahorro' && t.savings_operation === 'ingreso'
+        ? -amount
+        : amount
+      gastoByCategory.set(t.category_id, (gastoByCategory.get(t.category_id) ?? 0) + categoryAmount)
     }
     if (t.type === 'Gasto' && t.wallet_id) {
       gastoByWallet.set(t.wallet_id, (gastoByWallet.get(t.wallet_id) ?? 0) + amount)

@@ -33,7 +33,7 @@ export default async function PresupuestoCategoriasPage({
   return (
     <div className="max-w-2xl">
       <h1 className="font-serif text-2xl text-ledger-text">Presupuesto por categoría</h1>
-      <p className="mt-1 text-sm text-ledger-muted">Se asigna registrando un Ingreso en Transacciones con esa categoría.</p>
+      <p className="mt-1 text-sm text-ledger-muted">El resumen incluye gastos y movimientos de ahorro asociados a cada categoría.</p>
       <div className="mt-3"><MonthSelector yearMonth={yearMonth} basePath="/presupuestos/categorias" /></div>
 
       <div className="mt-8 space-y-4">
@@ -43,6 +43,7 @@ export default async function PresupuestoCategoriasPage({
           const rollover = Number(budget?.rollover_amount ?? 0)
           const totalBudget = assigned + rollover
           const spent = summary.gastoByCategory.get(category.id) ?? 0
+          const remaining = totalBudget - spent
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = totalBudget > 0 ? Math.min((spent / totalBudget) * 100, 100) : 0
           const isOverBudget = totalBudget > 0 && spent >= totalBudget
@@ -59,13 +60,16 @@ export default async function PresupuestoCategoriasPage({
               <p className="mt-2 text-xs text-ledger-muted">
                 Presupuesto: {formatCOP(assigned)} · Sobrante: {formatCOP(rollover)} · Total: {formatCOP(totalBudget)}
               </p>
+              <p className={`mt-1 text-xs ${remaining < 0 ? 'text-red-700' : 'text-ledger-muted'}`}>
+                Restante: {formatCOP(remaining)}
+              </p>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
                 <div
                   className={`h-full rounded-full ${isOverBudget ? 'bg-red-700' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`}
                   style={{ width: `${percent}%` }}
                 />
               </div>
-              {isOverBudget && <p className="mt-2 text-xs text-red-700">Gastaste el presupuesto de esta categoría.</p>}
+              {isOverBudget && <p className="mt-2 text-xs text-red-700">Superaste el presupuesto de esta categoría.</p>}
               {isOverThreshold && <p className="mt-2 text-xs text-amber-700">Cruzaste el umbral de alerta ({threshold}%) !Ten Cuidado¡.</p>}
               {totalBudget === 0 && <p className="mt-2 text-xs text-ledger-muted">Sin presupuesto ni sobrante para esta categoría este mes.</p>}
 
