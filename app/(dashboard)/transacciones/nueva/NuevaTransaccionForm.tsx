@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useFormStatus } from 'react-dom'
 import { createManualTransaction } from '@/lib/actions/transactions'
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Ahorro', 'Inversion'] as const
@@ -24,6 +25,7 @@ export function NuevaTransaccionForm({
   error?: string
 }) {
   const [step, setStep] = useState<'form' | 'confirm'>('form')
+  const [submissionId] = useState(() => crypto.randomUUID())
 
   const [occurredAt, setOccurredAt] = useState(() => {
     const today = new Date()
@@ -33,6 +35,7 @@ export function NuevaTransaccionForm({
     return `${year}-${month}-${day}`
   })
   const [type, setType] = useState<typeof TYPES[number]>('Gasto')
+  const [savingsOperation, setSavingsOperation] = useState<'ingreso' | 'retiro'>('ingreso')
   const [categoryId, setCategoryId] = useState('')
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
   const [walletId, setWalletId] = useState('')
@@ -69,6 +72,16 @@ export function NuevaTransaccionForm({
               {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
+
+          {type === 'Ahorro' && (
+            <div>
+              <label className="block text-sm text-ledger-text">Operación de ahorro</label>
+              <select value={savingsOperation} onChange={(e) => setSavingsOperation(e.target.value as typeof savingsOperation)} required className={inputClass}>
+                <option value="ingreso">Ingreso para el ahorro</option>
+                <option value="retiro">Retiro o gasto del ahorro</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm text-ledger-text">Categoría</label>
@@ -127,6 +140,7 @@ export function NuevaTransaccionForm({
             <dl className="mt-3 space-y-1.5 text-sm">
               <Row label="Fecha" value={new Date(occurredAt + 'T00:00:00').toLocaleDateString('es-CO')} />
               <Row label="Tipo" value={type} />
+              {type === 'Ahorro' && <Row label="Operación" value={savingsOperation === 'ingreso' ? 'Ingreso para el ahorro' : 'Retiro o gasto del ahorro'} />}
               <Row label="Categoría" value={categoryName ?? '— Sin categoría —'} />
               <Row label="Cuenta" value={selectedAccount?.name ?? ''} />
               {walletName && <Row label="Bolsillo" value={walletName} />}
@@ -139,6 +153,8 @@ export function NuevaTransaccionForm({
           {/* Campos ocultos: van los mismos valores que ya validó el paso anterior */}
           <input type="hidden" name="occurred_at" value={occurredAt} />
           <input type="hidden" name="type" value={type} />
+          <input type="hidden" name="submission_id" value={submissionId} />
+          <input type="hidden" name="savings_operation" value={type === 'Ahorro' ? savingsOperation : ''} />
           <input type="hidden" name="category_id" value={categoryId} />
           <input type="hidden" name="account_id" value={accountId} />
           <input type="hidden" name="wallet_id" value={walletId} />
@@ -152,13 +168,21 @@ export function NuevaTransaccionForm({
             <button type="button" onClick={() => setStep('form')} className="btn btn-secondary flex-1">
               Corregir
             </button>
-            <button type="submit" className="btn btn-primary flex-1">
-              Confirmar
-            </button>
+            <ConfirmButton />
           </div>
         </>
       )}
     </form>
+  )
+}
+
+function ConfirmButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button type="submit" disabled={pending} className="btn btn-primary flex-1 disabled:cursor-not-allowed disabled:opacity-60">
+      {pending ? 'Guardando...' : 'Confirmar'}
+    </button>
   )
 }
 

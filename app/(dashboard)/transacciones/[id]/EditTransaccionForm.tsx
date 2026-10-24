@@ -15,6 +15,7 @@ type Transaction = {
   id: string
   occurred_at: string
   type: string
+  savings_operation: 'ingreso' | 'retiro' | null
   category_id: string | null
   account_id: string
   wallet_id: string | null
@@ -35,6 +36,7 @@ export function EditTransaccionForm({
   error?: string
 }) {
   const [accountId, setAccountId] = useState(transaction.account_id)
+  const [type, setType] = useState(transaction.type)
   const selectedAccount = accounts.find((a) => a.id === accountId)
   const walletsForAccount = useMemo(
     () => wallets.filter((w) => w.account_id === accountId),
@@ -59,10 +61,20 @@ export function EditTransaccionForm({
 
         <div>
           <label className="block text-sm text-ledger-text">Tipo</label>
-          <select name="type" defaultValue={transaction.type} required className={inputClass}>
+          <select name="type" value={type} onChange={(e) => setType(e.target.value)} required className={inputClass}>
             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
+
+        {type === 'Ahorro' && (
+          <div>
+            <label className="block text-sm text-ledger-text">Operación de ahorro</label>
+            <select name="savings_operation" defaultValue={transaction.savings_operation ?? 'retiro'} required className={inputClass}>
+              <option value="ingreso">Ingreso para el ahorro</option>
+              <option value="retiro">Retiro o gasto del ahorro</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm text-ledger-text">Categoría</label>

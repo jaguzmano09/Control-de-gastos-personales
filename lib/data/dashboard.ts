@@ -39,7 +39,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
   const { start, end } = getMonthRange(monthStart)
   const { data: transactions, error } = await supabase
     .from('transactions')
-    .select('type, amount, category_id, wallet_id, account_id')
+    .select('type, savings_operation, amount, category_id, wallet_id, account_id')
     .gte('occurred_at', start)
     .lt('occurred_at', end)
     .eq('status', 'confirmada')
@@ -83,7 +83,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     switch (t.type) {
       case 'Ingreso': totals.ingreso += amount; break
       case 'Gasto': totals.gasto += amount; break
-      case 'Ahorro': totals.ahorro += amount; break
+      case 'Ahorro': totals.ahorro += t.savings_operation === 'retiro' ? -amount : amount; break
       case 'Inversion': totals.inversion += amount; break
       case 'Transferencia': totals.transferencia += amount; break
     }
@@ -91,7 +91,13 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     switch (t.type) {
       case 'Ingreso': accountSummary.ingreso += amount; break
       case 'Gasto': accountSummary.gasto += amount; accountSummary.outflow += amount; break
-      case 'Ahorro': accountSummary.ahorro += amount; accountSummary.outflow += amount; break
+      case 'Ahorro': {
+        const savingsAmount = t.savings_operation === 'retiro' ? -amount : amount
+        accountSummary.ahorro += savingsAmount
+        if (t.savings_operation === 'retiro') accountSummary.outflow += amount
+        else accountSummary.ingreso += amount
+        break
+      }
       case 'Inversion': accountSummary.inversion += amount; accountSummary.outflow += amount; break
       case 'Transferencia': accountSummary.transferencia += amount; break
     }
@@ -107,7 +113,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     }
   }
 
-  const balance = totals.ingreso + rolloverTotal - totals.gasto - totals.ahorro - totals.inversion
+  const balance = totals.ingreso + totals.ahorro + rolloverTotal - totals.gasto - totals.inversion
   return { totals, rolloverTotal, balance, gastoByCategory, gastoByWallet, accountById }
 }
 

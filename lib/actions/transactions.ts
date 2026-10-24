@@ -6,12 +6,15 @@ import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/types/database.types'
 
 type TransactionType = Database['public']['Enums']['transaction_type']
+type SavingsOperation = Database['public']['Enums']['savings_operation']
 
 export async function createManualTransaction(formData: FormData) {
   const supabase = await createClient()
 
   const occurred_at = formData.get('occurred_at') as string
   const type = formData.get('type') as TransactionType
+  const savings_operation = (formData.get('savings_operation') as SavingsOperation) || null
+  const submission_id = (formData.get('submission_id') as string) || null
   const category_id = (formData.get('category_id') as string) || null
   const account_id = formData.get('account_id') as string
   const wallet_id = (formData.get('wallet_id') as string) || null
@@ -20,7 +23,7 @@ export async function createManualTransaction(formData: FormData) {
   const isNecessaryRaw = formData.get('is_necessary') as string | null
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
 
-  if (!occurred_at || !type || !account_id || !amount || amount <= 0) {
+  if (!occurred_at || !type || !account_id || !amount || amount <= 0 || (type === 'Ahorro' && !savings_operation)) {
     redirect('/transacciones/nueva?error=' + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
   }
 
@@ -39,9 +42,16 @@ export async function createManualTransaction(formData: FormData) {
     is_necessary,
     source: 'manual',
     status: 'confirmada',
+    savings_operation,
+    submission_id,
   })
 
   if (error) {
+    if (error.code === '23505' && submission_id) {
+      revalidatePath('/transacciones')
+      revalidatePath('/')
+      redirect('/transacciones')
+    }
     redirect('/transacciones/nueva?error=' + encodeURIComponent(error.message))
   }
 
@@ -56,6 +66,7 @@ export async function updateTransaction(formData: FormData) {
 
   const occurred_at = formData.get('occurred_at') as string
   const type = formData.get('type') as TransactionType
+  const savings_operation = (formData.get('savings_operation') as SavingsOperation) || null
   const category_id = (formData.get('category_id') as string) || null
   const account_id = formData.get('account_id') as string
   const wallet_id = (formData.get('wallet_id') as string) || null
@@ -64,13 +75,13 @@ export async function updateTransaction(formData: FormData) {
   const isNecessaryRaw = formData.get('is_necessary') as string | null
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
 
-  if (!id || !occurred_at || !type || !account_id || !amount || amount <= 0) {
+  if (!id || !occurred_at || !type || !account_id || !amount || amount <= 0 || (type === 'Ahorro' && !savings_operation)) {
     redirect(`/transacciones/${id}?error=` + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
   }
 
   const { error } = await supabase
     .from('transactions')
-    .update({ occurred_at, type, category_id, account_id, wallet_id, description, amount, is_necessary })
+    .update({ occurred_at, type, savings_operation, category_id, account_id, wallet_id, description, amount, is_necessary })
     .eq('id', id)
 
   if (error) {

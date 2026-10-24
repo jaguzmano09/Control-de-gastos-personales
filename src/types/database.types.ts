@@ -232,6 +232,7 @@ export type Database = {
           occurred_at: string
           month: string
           type: Database['public']['Enums']['transaction_type']
+          savings_operation: Database['public']['Enums']['savings_operation'] | null
           category_id: string | null
           account_id: string
           wallet_id: string | null
@@ -252,6 +253,7 @@ export type Database = {
           occurred_at: string
           month?: string
           type: Database['public']['Enums']['transaction_type']
+          savings_operation?: Database['public']['Enums']['savings_operation'] | null
           category_id?: string | null
           account_id: string
           wallet_id?: string | null
@@ -272,6 +274,7 @@ export type Database = {
           occurred_at?: string
           month?: string
           type?: Database['public']['Enums']['transaction_type']
+          savings_operation?: Database['public']['Enums']['savings_operation'] | null
           category_id?: string | null
           account_id?: string
           wallet_id?: string | null
@@ -452,6 +455,9 @@ export type Database = {
         | 'Transferencia'
         | 'Ahorro'
         | 'Inversion'
+      savings_operation:
+        | 'ingreso'
+        | 'retiro'
 
       transaction_source:
         | 'manual'
