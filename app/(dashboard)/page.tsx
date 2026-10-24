@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary, getPendingReviewCount } from '@/lib/data/dashboard'
+import type { ReactNode } from 'react'
 
 function firstDayOfMonth(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
@@ -164,14 +165,18 @@ export default async function DashboardHomePage({
             const ahorroIngreso = summary.ahorroIngresoByCategory.get(budget.category_id) ?? 0
             const ahorroRetiro = summary.ahorroRetiroByCategory.get(budget.category_id) ?? 0
             return (
-              <BudgetBar
+              <BudgetCard
                 key={budget.category_id}
                 label={categoryNameById.get(budget.category_id) ?? 'Categoría'}
                 spent={Math.max(0, -movement)}
                 total={Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)}
                 alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
-                detail={`Ahorro ingresado ${formatCOP(ahorroIngreso)} · Gastos ${formatCOP(gastoNormal)} · Retiros de ahorro ${formatCOP(ahorroRetiro)} · Presupuesto ${formatCOP(Number(budget.amount) + Number(budget.rollover_amount))}`}
-              />
+              >
+                <BudgetMetric label="Ahorro ingresado" value={ahorroIngreso} positive />
+                <BudgetMetric label="Gastos" value={gastoNormal} />
+                <BudgetMetric label="Retiros de ahorro" value={ahorroRetiro} />
+                <BudgetMetric label="Base" value={Number(budget.amount) + Number(budget.rollover_amount)} />
+              </BudgetCard>
             )
           })}
           {(categoryBudgets ?? []).length === 0 && (
@@ -184,14 +189,16 @@ export default async function DashboardHomePage({
         <h2 className="font-serif text-lg text-ledger-text">Bolsillos</h2>
         <div className="mt-4 space-y-3">
           {(walletBudgets ?? []).map((budget) => (
-            <BudgetBar
+            <BudgetCard
               key={budget.wallet_id}
               label={walletNameById.get(budget.wallet_id) ?? 'Bolsillo'}
               spent={summary.gastoByWallet.get(budget.wallet_id) ?? 0}
               total={Number(budget.total_budget)}
               alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
-              detail={`Asignado ${formatCOP(Number(budget.assigned_amount))} + Sobrante ${formatCOP(Number(budget.rollover_amount))}`}
-            />
+            >
+              <BudgetMetric label="Asignado" value={Number(budget.assigned_amount)} />
+              <BudgetMetric label="Sobrante" value={Number(budget.rollover_amount)} />
+            </BudgetCard>
           ))}
           {(walletBudgets ?? []).length === 0 && (
             <p className="text-sm text-ledger-muted">Aún no has asignado presupuesto a ningún bolsillo este mes.</p>
@@ -264,8 +271,8 @@ function SummaryStat({ label, value, emphasize = false }: { label: string; value
   )
 }
 
-function BudgetBar({ label, spent, total, alertThreshold, detail }: {
-  label: string; spent: number; total: number; alertThreshold?: number; detail?: string
+function BudgetCard({ label, spent, total, alertThreshold, children }: {
+  label: string; spent: number; total: number; alertThreshold?: number; children?: ReactNode
 }) {
   const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const isOverThreshold = alertThreshold !== undefined && total > 0 && (spent / total) * 100 >= alertThreshold
@@ -273,20 +280,41 @@ function BudgetBar({ label, spent, total, alertThreshold, detail }: {
   const remaining = total - spent
 
   return (
-    <div>
-      <div className="flex items-baseline justify-between text-sm">
-        <span className="text-ledger-text">{label}</span>
-        <span className={isOverBudget ? 'text-red-700' : 'text-ledger-muted'}>
-          {formatCOP(spent)} / {formatCOP(total)} = {formatCOP(remaining)}
-        </span>
+    <div className="rounded-sm border border-black/10 bg-white p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-ledger-text">{label}</p>
+          <p className="mt-1 text-xs text-ledger-muted">{percent.toFixed(0)}% utilizado</p>
+        </div>
+        <div className="text-right">
+          <p className={`text-sm font-medium ${isOverBudget ? 'text-red-700' : 'text-ledger-text'}`}>
+            {formatCOP(remaining)}
+          </p>
+          <p className="text-xs text-ledger-muted">disponible</p>
+        </div>
       </div>
-      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-black/5">
         <div
           className={`h-full rounded-full ${isOverBudget ? 'bg-red-700' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`}
           style={{ width: `${percent}%` }}
         />
       </div>
-      {detail && <p className="mt-1 text-xs text-ledger-muted">{detail}</p>}
+      <div className="mt-3 flex items-center justify-between text-xs">
+        <span className="text-ledger-muted">Utilizado <strong className="text-ledger-text">{formatCOP(spent)}</strong></span>
+        <span className="text-ledger-muted">Total <strong className="text-ledger-text">{formatCOP(total)}</strong></span>
+      </div>
+      {children && <div className="mt-3 grid grid-cols-2 gap-2 border-t border-black/5 pt-3 sm:grid-cols-4">{children}</div>}
+      {isOverBudget && <p className="mt-3 text-xs text-red-700">Presupuesto superado.</p>}
+      {isOverThreshold && !isOverBudget && <p className="mt-3 text-xs text-amber-700">Alcanzaste el umbral del {alertThreshold}%.</p>}
+    </div>
+  )
+}
+
+function BudgetMetric({ label, value, positive = false }: { label: string; value: number; positive?: boolean }) {
+  return (
+    <div className="rounded-sm bg-black/[0.03] px-2 py-1.5 text-xs">
+      <p className="text-ledger-muted">{label}</p>
+      <p className={`mt-0.5 ${positive ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
     </div>
   )
 }
