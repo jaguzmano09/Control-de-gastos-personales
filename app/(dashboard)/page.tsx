@@ -207,47 +207,71 @@ export default async function DashboardHomePage({
       </section>
 
       <section>
-        <h2 className="font-serif text-lg text-ledger-text">Estado de cuentas</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-lg text-ledger-text">Estado de cuentas</h2>
+            <p className="mt-1 text-xs text-ledger-muted">Consulta el saldo y el movimiento de cada cuenta.</p>
+          </div>
+          <span className="hidden rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-medium text-ledger-green sm:inline-flex">
+            {accounts?.length ?? 0} activas
+          </span>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {(accounts ?? []).map((account) => {
             const accountSummary = summary.accountById.get(account.id)
             const income = accountSummary?.ingreso ?? 0
             const rollover = accountSummary?.rollover ?? 0
             const outflow = accountSummary?.outflow ?? 0
             const balance = (accountSummary?.ingreso ?? 0) + rollover - outflow
+            const availableBeforeOutflow = income + rollover
+            const outflowPercent = availableBeforeOutflow > 0
+              ? Math.min((outflow / availableBeforeOutflow) * 100, 100)
+              : 0
 
             return (
-              <div key={account.id} className="rounded-sm border border-black/10 bg-white p-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="text-sm font-medium text-ledger-text">{account.name}</p>
-                  <p className={balance >= 0 ? 'text-sm text-ledger-green' : 'text-sm text-red-700'}>
-                    {formatCOP(balance)}
-                  </p>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                  <div className="space-y-2">
-                    {income > 0 && (
+              <div key={account.id} className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <div className="border-b border-black/5 bg-gradient-to-br from-ledger-green/10 via-white to-white p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ledger-green text-white shadow-sm" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <rect x="3" y="5" width="18" height="14" rx="2" />
+                          <path d="M3 9h18M16 14h2" />
+                        </svg>
+                      </span>
                       <div>
-                        <p className="text-ledger-muted">Ingresos</p>
-                        <p className="mt-0.5 text-ledger-text">{formatCOP(income)}</p>
+                        <p className="text-sm font-semibold text-ledger-text">{account.name}</p>
+                        <p className="mt-0.5 text-xs text-ledger-muted">Saldo actual</p>
                       </div>
-                    )}
-                    {rollover > 0 && (
-                      <div>
-                        <p className="text-ledger-muted">Sobrantes</p>
-                        <p className="mt-0.5 text-ledger-text">{formatCOP(rollover)}</p>
-                      </div>
-                    )}
-                    {income === 0 && rollover === 0 && (
-                      <div>
-                        <p className="text-ledger-muted">Ingresos y sobrantes</p>
-                        <p className="mt-0.5 text-ledger-text">{formatCOP(0)}</p>
-                      </div>
-                    )}
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xl font-semibold tracking-tight ${balance >= 0 ? 'text-ledger-green' : 'text-red-700'}`}>
+                        {formatCOP(balance)}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-ledger-muted">{balance >= 0 ? 'Disponible' : 'Saldo negativo'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-ledger-muted">Salidas</p>
-                    <p className="mt-0.5 text-ledger-text">{formatCOP(outflow)}</p>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <AccountMetric label="Entradas" value={availableBeforeOutflow} tone="green" />
+                    <AccountMetric label="Salidas" value={outflow} tone="red" />
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] text-ledger-muted">
+                      <span>Uso de entradas</span>
+                      <span>{outflowPercent.toFixed(0)}%</span>
+                    </div>
+                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/5">
+                      <div
+                        className={`h-full rounded-full ${balance < 0 ? 'bg-red-600' : 'bg-ledger-green'}`}
+                        style={{ width: `${outflowPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-3 text-xs">
+                    <span className="text-ledger-muted">Sobrante incluido</span>
+                    <span className="font-medium text-ledger-text">{formatCOP(rollover)}</span>
                   </div>
                 </div>
               </div>
@@ -267,6 +291,15 @@ function SummaryStat({ label, value, emphasize = false }: { label: string; value
     <div className="rounded-sm border border-black/10 bg-white px-4 py-3">
       <p className="text-xs text-ledger-muted">{label}</p>
       <p className={`mt-1 text-lg ${emphasize ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
+    </div>
+  )
+}
+
+function AccountMetric({ label, value, tone }: { label: string; value: number; tone: 'green' | 'red' }) {
+  return (
+    <div className={`rounded-xl border px-3 py-2.5 ${tone === 'green' ? 'border-ledger-green/15 bg-ledger-green/5' : 'border-red-200/70 bg-red-50/60'}`}>
+      <p className="text-[11px] text-ledger-muted">{label}</p>
+      <p className={`mt-1 text-sm font-semibold ${tone === 'green' ? 'text-ledger-green' : 'text-red-700'}`}>{formatCOP(value)}</p>
     </div>
   )
 }
