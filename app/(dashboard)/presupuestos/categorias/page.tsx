@@ -43,6 +43,9 @@ export default async function PresupuestoCategoriasPage({
           const rollover = Number(budget?.rollover_amount ?? 0)
           const totalBudget = assigned + rollover
           const movement = summary.gastoByCategory.get(category.id) ?? 0
+          const gastoNormal = summary.gastoNormalByCategory.get(category.id) ?? 0
+          const ahorroIngreso = summary.ahorroIngresoByCategory.get(category.id) ?? 0
+          const ahorroRetiro = summary.ahorroRetiroByCategory.get(category.id) ?? 0
           const spent = Math.max(0, -movement)
           const remaining = totalBudget + movement
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
@@ -58,12 +61,17 @@ export default async function PresupuestoCategoriasPage({
                   Movimiento: {formatCOP(movement)}
                 </p>
               </div>
-              <p className="mt-2 text-xs text-ledger-muted">
-                Presupuesto: {formatCOP(assigned)} · Sobrante: {formatCOP(rollover)} · Total: {formatCOP(totalBudget)}
-              </p>
-              <p className={`mt-1 text-xs ${remaining < 0 ? 'text-red-700' : 'text-ledger-muted'}`}>
-                Restante: {formatCOP(remaining)}
-              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                <Metric label="Presupuesto" value={assigned} />
+                <Metric label="Sobrante" value={rollover} />
+                <Metric label="Ahorro ingresado" value={ahorroIngreso} positive />
+                <Metric label="Gastos" value={gastoNormal} />
+                <Metric label="Retiros de ahorro" value={ahorroRetiro} />
+              </div>
+              <div className={`mt-3 flex items-center justify-between border-t border-black/5 pt-2 text-sm ${remaining < 0 ? 'text-red-700' : 'text-ledger-text'}`}>
+                <span>Restante</span>
+                <strong>{formatCOP(remaining)}</strong>
+              </div>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
                 <div
                   className={`h-full rounded-full ${isOverBudget ? 'bg-red-700' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`}
@@ -87,6 +95,15 @@ export default async function PresupuestoCategoriasPage({
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function Metric({ label, value, positive = false }: { label: string; value: number; positive?: boolean }) {
+  return (
+    <div className="rounded-sm bg-black/[0.03] px-2 py-1.5">
+      <p className="text-ledger-muted">{label}</p>
+      <p className={`mt-0.5 ${positive ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
     </div>
   )
 }

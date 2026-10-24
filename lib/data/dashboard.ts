@@ -61,6 +61,9 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
   const totals = emptyTotals()
   let rolloverTotal = 0
   const gastoByCategory = new Map<string, number>()
+  const gastoNormalByCategory = new Map<string, number>()
+  const ahorroIngresoByCategory = new Map<string, number>()
+  const ahorroRetiroByCategory = new Map<string, number>()
   const gastoByWallet = new Map<string, number>()
   const accountById = new Map<string, AccountSummary>()
   const accountIdByWalletId = new Map((walletBudgets ?? []).map((wallet) => [wallet.id, wallet.account_id]))
@@ -110,6 +113,15 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
         ? amount
         : -amount
       gastoByCategory.set(t.category_id, (gastoByCategory.get(t.category_id) ?? 0) + categoryAmount)
+      if (t.type === 'Ahorro' && t.savings_operation === 'ingreso') {
+        ahorroIngresoByCategory.set(t.category_id, (ahorroIngresoByCategory.get(t.category_id) ?? 0) + amount)
+      }
+      if (t.type === 'Ahorro' && t.savings_operation === 'retiro') {
+        ahorroRetiroByCategory.set(t.category_id, (ahorroRetiroByCategory.get(t.category_id) ?? 0) + amount)
+      }
+      if (t.type === 'Gasto') {
+        gastoNormalByCategory.set(t.category_id, (gastoNormalByCategory.get(t.category_id) ?? 0) + amount)
+      }
     }
     if (t.type === 'Gasto' && t.wallet_id) {
       gastoByWallet.set(t.wallet_id, (gastoByWallet.get(t.wallet_id) ?? 0) + amount)
@@ -117,7 +129,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
   }
 
   const balance = totals.ingreso + totals.ahorro + rolloverTotal - totals.gasto - totals.inversion
-  return { totals, rolloverTotal, balance, gastoByCategory, gastoByWallet, accountById }
+  return { totals, rolloverTotal, balance, gastoByCategory, gastoNormalByCategory, ahorroIngresoByCategory, ahorroRetiroByCategory, gastoByWallet, accountById }
 }
 
 export async function getPendingReviewCount(supabase: DashboardClient) {

@@ -160,6 +160,9 @@ export default async function DashboardHomePage({
         <div className="mt-4 space-y-3">
           {(categoryBudgets ?? []).map((budget) => {
             const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
+            const gastoNormal = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
+            const ahorroIngreso = summary.ahorroIngresoByCategory.get(budget.category_id) ?? 0
+            const ahorroRetiro = summary.ahorroRetiroByCategory.get(budget.category_id) ?? 0
             return (
               <BudgetBar
                 key={budget.category_id}
@@ -167,7 +170,7 @@ export default async function DashboardHomePage({
                 spent={Math.max(0, -movement)}
                 total={Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)}
                 alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
-                detail={`Presupuesto ${formatCOP(Number(budget.amount))} + Sobrante ${formatCOP(Number(budget.rollover_amount))}`}
+                detail={`Ahorro ingresado ${formatCOP(ahorroIngreso)} · Gastos ${formatCOP(gastoNormal)} · Retiros de ahorro ${formatCOP(ahorroRetiro)} · Presupuesto ${formatCOP(Number(budget.amount) + Number(budget.rollover_amount))}`}
               />
             )
           })}
