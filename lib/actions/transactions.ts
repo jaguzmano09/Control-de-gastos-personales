@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/types/database.types'
 
 type TransactionType = Database['public']['Enums']['transaction_type']
-type SavingsOperation = Database['public']['Enums']['savings_operation']
+type SavingsOperation = 'ingreso' | 'retiro'
 
 export async function createManualTransaction(formData: FormData) {
   const supabase = await createClient()

@@ -18,11 +18,13 @@ export function NuevaTransaccionForm({
   accounts,
   wallets,
   error,
+  initialValues,
 }: {
   categories: Category[]
   accounts: Account[]
   wallets: Wallet[]
   error?: string
+  initialValues?: { occurredAt?: string; description?: string; amount?: string }
 }) {
   const [step, setStep] = useState<'form' | 'confirm'>('form')
   const [submissionId] = useState(() => crypto.randomUUID())
@@ -32,15 +34,15 @@ export function NuevaTransaccionForm({
     const year = today.getFullYear()
     const month = String(today.getMonth() + 1).padStart(2, '0')
     const day = String(today.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+    return initialValues?.occurredAt || `${year}-${month}-${day}`
   })
   const [type, setType] = useState<typeof TYPES[number]>('Gasto')
   const [savingsOperation, setSavingsOperation] = useState<'ingreso' | 'retiro'>('ingreso')
   const [categoryId, setCategoryId] = useState('')
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
   const [walletId, setWalletId] = useState('')
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState(initialValues?.description ?? '')
+  const [amount, setAmount] = useState(initialValues?.amount ?? '')
   const [isNecessary, setIsNecessary] = useState('')
 
   const selectedAccount = accounts.find((a) => a.id === accountId)

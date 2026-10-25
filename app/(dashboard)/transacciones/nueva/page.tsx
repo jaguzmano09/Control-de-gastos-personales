@@ -4,9 +4,9 @@ import { NuevaTransaccionForm } from './NuevaTransaccionForm'
 export default async function NuevaTransaccionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; occurred_at?: string; description?: string; amount?: string }>
 }) {
-  const { error } = await searchParams
+  const { error, occurred_at, description, amount } = await searchParams
   const supabase = await createClient()
 
   const [{ data: categories }, { data: accounts }, { data: wallets }] = await Promise.all([
@@ -24,6 +24,7 @@ export default async function NuevaTransaccionPage({
         accounts={accounts ?? []}
         wallets={wallets ?? []}
         error={error}
+        initialValues={{ occurredAt: occurred_at, description, amount }}
       />
     </div>
   )

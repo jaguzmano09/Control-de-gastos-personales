@@ -6,6 +6,7 @@ import { signOut } from '@/lib/actions/auth'
 const NAV_ITEMS = [
   { href: '/', label: 'Resumen' },
   { href: '/transacciones', label: 'Transacciones' },
+  { href: '/mercado', label: 'Lista de mercado' },
   { href: '/revision', label: 'Revisión' },
   { href: '/presupuestos/categorias', label: 'Presupuesto por categoría' },
   { href: '/presupuestos/bolsillos', label: 'Presupuesto por bolsillo' },
