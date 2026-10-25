@@ -43,15 +43,18 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
   )
 
   return (
-    <div className="rounded-sm border border-black/10 bg-white p-4">
-      <div className="flex items-baseline justify-between">
-        <p className="text-sm text-ledger-text">
-          {new Date(transaction.occurred_at + 'T00:00:00').toLocaleDateString('es-CO')} · {transaction.type} · {transaction.source}
-        </p>
-        <ConfidenceBadge confidence={transaction.ai_confidence} />
-      </div>
-
-      <form action={confirmTransaction} className="mt-3 grid grid-cols-2 gap-3">
+    <details className="rounded-xl border border-black/10 bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-ledger-text">{transaction.description || 'Movimiento sin descripción'}</p>
+          <p className="mt-1 text-xs text-ledger-muted">
+            {new Date(transaction.occurred_at + 'T00:00:00').toLocaleDateString('es-CO')} · {transaction.type} · {transaction.source}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3"><ConfidenceBadge confidence={transaction.ai_confidence} /><span className="text-xs text-ledger-muted">Revisar</span></div>
+      </summary>
+      <div className="border-t border-black/10 p-4">
+      <form action={confirmTransaction} className="grid grid-cols-2 gap-3">
         <input type="hidden" name="id" value={transaction.id} />
 
         <div className="col-span-2">
@@ -107,6 +110,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
           Descartar (no es un gasto real)
         </button>
       </form>
-    </div>
+      </div>
+    </details>
   )
 }

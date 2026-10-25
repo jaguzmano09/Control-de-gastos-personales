@@ -14,8 +14,8 @@ type RolloverReview = {
 export function RolloverReviewCard({ review, categories }: { review: RolloverReview; categories: Category[] }) {
   const assignedCategory = categories.find((category) => category.id === review.category_id)
   return (
-    <div className="rounded-sm border border-black/10 bg-white p-4">
-      <div className="flex items-baseline justify-between gap-3">
+    <details className="rounded-xl border border-black/10 bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
         <div>
           <p className="text-sm text-ledger-text">
             {review.wallet_name ? `Bolsillo: ${review.wallet_name} · ${review.account_name}` : `Cuenta: ${review.account_name}`}
@@ -30,9 +30,10 @@ export function RolloverReviewCard({ review, categories }: { review: RolloverRev
         <p className="text-sm font-medium text-ledger-green">
           {Number(review.amount).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}
         </p>
-      </div>
+      </summary>
 
-      <form action={assignRolloverCategory} className="mt-3 flex items-end gap-3">
+      <div className="border-t border-black/10 p-4">
+      <form action={assignRolloverCategory} className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
         <input type="hidden" name="review_id" value={review.id} />
         <div className="flex-1">
           <label className="text-xs text-ledger-muted">
@@ -47,6 +48,7 @@ export function RolloverReviewCard({ review, categories }: { review: RolloverRev
           {assignedCategory ? 'Actualizar' : 'Asignar'}
         </button>
       </form>
-    </div>
+      </div>
+    </details>
   )
 }

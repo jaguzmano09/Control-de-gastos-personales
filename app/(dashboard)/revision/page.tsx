@@ -147,21 +147,32 @@ export default async function RevisionPage() {
   )
 
   return (
-    <div className="space-y-10">
-      <header>
-        <h1 className="font-serif text-2xl text-ledger-text">
-          Bandeja de revisión
-        </h1>
-
-        <div className="mt-2 h-px w-10 bg-ledger-green" />
+    <div className="space-y-6">
+      <header className="border-b border-black/10 pb-5">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-ledger-muted">Centro de control</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-serif text-3xl text-ledger-text">Bandeja de revisión</h1>
+            <p className="mt-1 max-w-xl text-sm text-ledger-muted">Revisa y confirma los movimientos que necesitan tu decisión.</p>
+          </div>
+          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">
+            {pendientes.length + pendingRollovers.length + duplicadosConMatch.length} por atender
+          </span>
+        </div>
       </header>
 
-      <section>
-        <h2 className="font-serif text-lg text-ledger-text">
-          Pendientes ({pendientes.length})
-        </h2>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="panel p-4"><p className="text-xs uppercase tracking-wide text-ledger-muted">Movimientos</p><p className="mt-1 text-2xl font-semibold text-ledger-text">{pendientes.length}</p><p className="text-xs text-ledger-muted">pendientes</p></div>
+        <div className="panel p-4"><p className="text-xs uppercase tracking-wide text-ledger-muted">Sobrantes</p><p className="mt-1 text-2xl font-semibold text-ledger-text">{pendingRollovers.length}</p><p className="text-xs text-ledger-muted">por asignar</p></div>
+        <div className="panel p-4"><p className="text-xs uppercase tracking-wide text-ledger-muted">Duplicados</p><p className="mt-1 text-2xl font-semibold text-amber-700">{duplicadosConMatch.length}</p><p className="text-xs text-ledger-muted">por verificar</p></div>
+      </div>
 
-        <div className="mt-4 space-y-4">
+      <details open={pendientes.length > 0} className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+          <div><h2 className="font-serif text-xl text-ledger-text">Movimientos pendientes</h2><p className="mt-1 text-sm text-ledger-muted">Confirma los datos antes de incorporarlos.</p></div>
+          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">{pendientes.length}</span>
+        </summary>
+        <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
           {pendientes.map((t) => (
             <ReviewCard
               key={t.id}
@@ -173,21 +184,19 @@ export default async function RevisionPage() {
           ))}
 
           {pendientes.length === 0 && (
-            <p className="text-sm text-ledger-muted">
+            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">
               No hay transacciones pendientes de revisión.
             </p>
           )}
         </div>
-      </section>
+      </details>
 
-      <section>
-        <h2 className="font-serif text-lg text-ledger-text">
-          Sobrantes pendientes del mes ({pendingRollovers.length})
-        </h2>
-        <p className="mt-1 text-sm text-ledger-muted">
-          Asigna una categoría a cada sobrante del mes actual.
-        </p>
-        <div className="mt-4 space-y-4">
+      <details className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+          <div><h2 className="font-serif text-xl text-ledger-text">Sobrantes por asignar</h2><p className="mt-1 text-sm text-ledger-muted">Asigna una categoría a cada sobrante del mes.</p></div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">{pendingRollovers.length}</span>
+        </summary>
+        <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
           {pendingRollovers.map((rollover) => (
             <RolloverReviewCard
               key={rollover.id}
@@ -200,19 +209,17 @@ export default async function RevisionPage() {
             />
           ))}
           {pendingRollovers.length === 0 && (
-            <p className="text-sm text-ledger-muted">No hay sobrantes pendientes de asignación.</p>
+            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">No hay sobrantes pendientes de asignación.</p>
           )}
         </div>
-      </section>
+      </details>
 
-      <section>
-        <h2 className="font-serif text-lg text-ledger-text">
-          Sobrantes asignados del mes ({assignedRollovers.length})
-        </h2>
-        <p className="mt-1 text-sm text-ledger-muted">
-          Estas asignaciones ya están aplicadas. Puedes actualizarlas cuando lo necesites.
-        </p>
-        <div className="mt-4 space-y-4">
+      <details className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+          <div><h2 className="font-serif text-xl text-ledger-text">Sobrantes asignados</h2><p className="mt-1 text-sm text-ledger-muted">Puedes actualizar estas asignaciones cuando lo necesites.</p></div>
+          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">{assignedRollovers.length}</span>
+        </summary>
+        <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
           {assignedRollovers.map((rollover) => (
             <RolloverReviewCard
               key={rollover.id}
@@ -225,21 +232,21 @@ export default async function RevisionPage() {
             />
           ))}
           {assignedRollovers.length === 0 && (
-            <p className="text-sm text-ledger-muted">No hay sobrantes asignados en el mes actual.</p>
+            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">No hay sobrantes asignados en el mes actual.</p>
           )}
         </div>
-      </section>
+      </details>
 
-      <section>
-        <h2 className="font-serif text-lg text-ledger-text">
-          Posibles duplicados ({duplicadosConMatch.length})
-        </h2>
-
-        <div className="mt-4 space-y-4">
+      <details className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+          <div><h2 className="font-serif text-xl text-ledger-text">Posibles duplicados</h2><p className="mt-1 text-sm text-ledger-muted">Compara y decide si el movimiento debe conservarse.</p></div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">{duplicadosConMatch.length}</span>
+        </summary>
+        <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
           {duplicadosConMatch.map((t) => (
             <div
               key={t.id}
-              className="rounded-sm border border-amber-300 bg-amber-50 p-4"
+              className="rounded-xl border border-amber-200 bg-amber-50/70 p-4"
             >
               <p className="text-sm text-ledger-text">
                 {new Date(
@@ -311,12 +318,12 @@ export default async function RevisionPage() {
           ))}
 
           {duplicadosConMatch.length === 0 && (
-            <p className="text-sm text-ledger-muted">
+            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">
               No hay duplicados por revisar.
             </p>
           )}
         </div>
-      </section>
+      </details>
     </div>
   )
 }
