@@ -94,71 +94,99 @@ export default async function DashboardHomePage({
   ]
 
   return (
-    <div className="space-y-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-2xl text-ledger-text">Resumen del mes</h1>
-          <p className="mt-1 text-sm text-ledger-muted">
-            {new Date(monthStart + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <form method="get" className="flex flex-wrap items-end gap-2 rounded-sm border border-black/10 bg-white p-3">
-            <div className="min-w-40">
-              <label className="block text-xs text-ledger-muted">Mes y año</label>
-              <input type="month" name="period" defaultValue={selectedPeriod} className={`${inputClass} mt-1 w-full`} />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Filtrar
-            </button>
-            <a href="/" className="btn btn-secondary">
-              Actual
-            </a>
-          </form>
+    <div className="space-y-8">
+      <header className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-ledger-muted">Panel financiero</p>
+            <h1 className="mt-2 font-serif text-3xl text-ledger-text">Resumen del mes</h1>
+            <p className="mt-1 capitalize text-sm text-ledger-muted">
+              {new Date(monthStart + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
           {pendingCount > 0 && (
-            <a href="/revision" className="btn btn-secondary">
+            <a href="/revision" className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100">
+              <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />
               {pendingCount} por revisar
             </a>
           )}
         </div>
+        <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-t border-black/5 pt-4">
+          <p className="text-sm text-ledger-muted">Consulta el movimiento y el estado de tus finanzas.</p>
+          <form method="get" className="flex flex-wrap items-end gap-2">
+            <div className="min-w-40">
+              <label className="block text-xs text-ledger-muted">Cambiar periodo</label>
+              <input type="month" name="period" defaultValue={selectedPeriod} className={`${inputClass} mt-1 w-full`} />
+            </div>
+            <button type="submit" className="btn btn-primary">Filtrar</button>
+            <a href="/" className="btn btn-secondary">Actual</a>
+          </form>
+        </div>
       </header>
 
       <section>
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="font-serif text-xl text-ledger-text">Accesos rápidos</h2>
+            <p className="mt-1 text-sm text-ledger-muted">Consulta las áreas que más utilizas.</p>
+          </div>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {quickActions.map((action) => (
             <a
               key={action.href}
               href={action.href}
-              className="group rounded-sm border border-black/10 bg-white p-4 transition hover:-translate-y-0.5 hover:border-ledger-green/40 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
+              className="group rounded-xl border border-black/10 bg-white p-4 transition hover:-translate-y-0.5 hover:border-ledger-green/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-ledger-text">{action.label}</p>
                   <p className="mt-1 text-xs text-ledger-muted">{action.detail}</p>
                 </div>
-                <span className={`rounded-sm border px-2 py-1 text-xs font-medium ${action.accent}`}>
+                <span className="text-lg text-ledger-muted transition group-hover:translate-x-0.5 group-hover:text-ledger-green" aria-hidden="true">→</span>
+                <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${action.accent}`}>
                   {action.value}
                 </span>
-              </div>
-              <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-black/5">
-                <div className="h-full w-1/3 rounded-full bg-ledger-green transition-all group-hover:w-full" />
               </div>
             </a>
           ))}
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-        <SummaryStat label="Ingresos" value={summary.totals.ingreso} />
-        <SummaryStat label="Sobrantes del mes anterior" value={summary.rolloverTotal} />
-        <SummaryStat label="Gastos" value={summary.totals.gasto} />
-        <SummaryStat label="Ahorro" value={summary.totals.ahorro} />
-        <SummaryStat label="Balance" value={summary.balance} emphasize />
+      <section className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+        <div className="grid lg:grid-cols-[1.15fr_2fr]">
+          <div className="bg-ledger-green p-5 text-white sm:p-6">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-white/70">Balance del periodo</p>
+            <p className="mt-3 break-words text-3xl font-semibold tracking-tight sm:text-4xl">{formatCOP(summary.balance)}</p>
+            <p className="mt-2 text-sm text-white/75">Ingresos, gastos, ahorro y sobrantes incluidos.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-px bg-black/5 sm:grid-cols-4">
+            <SummaryStat label="Ingresos" value={summary.totals.ingreso} />
+            <SummaryStat label="Sobrantes anteriores" value={summary.rolloverTotal} />
+            <SummaryStat label="Gastos" value={summary.totals.gasto} />
+            <SummaryStat label="Ahorro" value={summary.totals.ahorro} />
+          </div>
+        </div>
       </section>
 
-      <section>
-        <h2 className="font-serif text-lg text-ledger-text">Presupuesto por categoría</h2>
-        <div className="mt-4 space-y-3">
+      <details open className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ledger-green/10 text-ledger-green" aria-hidden="true">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-6" strokeLinecap="round" />
+              </svg>
+            </span>
+            <div>
+              <h2 className="font-serif text-xl text-ledger-text sm:text-2xl">Presupuesto por categoría</h2>
+              <p className="mt-1 text-sm text-ledger-muted">Controla el consumo y el saldo disponible de cada categoría.</p>
+            </div>
+          </div>
+          <span className="hidden rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-medium text-ledger-green sm:inline-flex">
+            {(categoryBudgets ?? []).length} categorías
+          </span>
+        </summary>
+        <div className="space-y-3 bg-white/40 p-4 sm:p-6">
           {(categoryBudgets ?? []).map((budget) => {
             const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
             const gastoNormal = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
@@ -183,11 +211,27 @@ export default async function DashboardHomePage({
             <p className="text-sm text-ledger-muted">Aún no has asignado presupuesto por categoría este mes.</p>
           )}
         </div>
-      </section>
+      </details>
 
-      <section>
-        <h2 className="font-serif text-lg text-ledger-text">Bolsillos</h2>
-        <div className="mt-4 space-y-3">
+      <details open className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700" aria-hidden="true">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <path d="M5 7.5h14A1.5 1.5 0 0 1 20.5 9v8A1.5 1.5 0 0 1 19 18.5H5A1.5 1.5 0 0 1 3.5 17V9A1.5 1.5 0 0 1 5 7.5Z" />
+                <path d="M16 12h4.5v3H16a1.5 1.5 0 0 1 0-3ZM6.5 7.5V6A1.5 1.5 0 0 1 8 4.5h9A1.5 1.5 0 0 1 18.5 6v1.5" />
+              </svg>
+            </span>
+            <div>
+              <h2 className="font-serif text-xl text-ledger-text sm:text-2xl">Bolsillos</h2>
+              <p className="mt-1 text-sm text-ledger-muted">Consulta cuánto tienes asignado y cuánto queda disponible.</p>
+            </div>
+          </div>
+          <span className="hidden rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 sm:inline-flex">
+            {(walletBudgets ?? []).length} bolsillos
+          </span>
+        </summary>
+        <div className="space-y-3 bg-white/40 p-4 sm:p-6">
           {(walletBudgets ?? []).map((budget) => (
             <BudgetCard
               key={budget.wallet_id}
@@ -204,13 +248,30 @@ export default async function DashboardHomePage({
             <p className="text-sm text-ledger-muted">Aún no has asignado presupuesto a ningún bolsillo este mes.</p>
           )}
         </div>
-      </section>
+      </details>
 
-      <section>
+      <details open className="panel overflow-hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700" aria-hidden="true">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <rect x="4" y="5" width="16" height="14" rx="2" />
+                <path d="M4 9h16M8 14h3M8 16.5h6" strokeLinecap="round" />
+              </svg>
+            </span>
+            <div>
+              <h2 className="font-serif text-xl text-ledger-text sm:text-2xl">Estado de cuentas</h2>
+              <p className="mt-1 text-sm text-ledger-muted">Consulta el saldo y el movimiento de cada cuenta.</p>
+            </div>
+          </div>
+          <span className="hidden rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700 sm:inline-flex">
+            {accounts?.length ?? 0} activas
+          </span>
+        </summary>
+        <div className="bg-white/40 p-4 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="font-serif text-lg text-ledger-text">Estado de cuentas</h2>
-            <p className="mt-1 text-xs text-ledger-muted">Consulta el saldo y el movimiento de cada cuenta.</p>
+            <p className="text-xs text-ledger-muted">Saldos disponibles y uso de entradas del periodo.</p>
           </div>
           <span className="hidden rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-medium text-ledger-green sm:inline-flex">
             {accounts?.length ?? 0} activas
@@ -281,7 +342,8 @@ export default async function DashboardHomePage({
             <p className="text-sm text-ledger-muted">No hay cuentas activas para mostrar.</p>
           )}
         </div>
-      </section>
+        </div>
+      </details>
     </div>
   )
 }
