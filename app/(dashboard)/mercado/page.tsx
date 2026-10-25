@@ -24,10 +24,28 @@ type List = {
 }
 type PriceMemory = { name: string; name_key: string; store_id: string | null; unit: string; unit_price: number; observed_on: string }
 
+function displayError(value: string) {
+  try {
+    const decoded = decodeURIComponent(value)
+    if (!decoded.includes('Ã') && !decoded.includes('Â')) return decoded
+    return decodeURIComponent(escape(decoded))
+  } catch {
+    return value
+  }
+}
+
+function displayMessage(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 export default async function MercadoPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: { error?: string; success?: string; success_list_id?: string }
 }) {
   const supabase = await createClient()
   const [{ data: storesData }, { data: listsData }, { data: historyData }, { data: itemNames }] = await Promise.all([
@@ -48,7 +66,7 @@ export default async function MercadoPage({
       <h1 className="font-serif text-2xl text-ledger-text">Lista de mercado</h1>
       <div className="mt-2 h-px w-10 bg-ledger-green" />
       {searchParams.error && (
-        <p className="mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-700">{searchParams.error}</p>
+        <p className="mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-700">{displayError(searchParams.error)}</p>
       )}
 
       <section className="mt-8">
@@ -105,7 +123,13 @@ export default async function MercadoPage({
         </div>
       </section>
 
-      <ShoppingLists lists={lists} stores={stores} itemSuggestions={itemSuggestions} />
+      <ShoppingLists
+        lists={lists}
+        stores={stores}
+        itemSuggestions={itemSuggestions}
+        itemSuccess={searchParams.success ? displayMessage(searchParams.success) : undefined}
+        itemSuccessListId={searchParams.success_list_id}
+      />
     </div>
   )
 }

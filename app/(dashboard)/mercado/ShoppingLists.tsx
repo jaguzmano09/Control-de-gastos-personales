@@ -11,6 +11,7 @@ import {
   registerShoppingPurchase,
   updateShoppingList,
   updateShoppingListItem,
+  toggleShoppingListItem,
 } from '@/lib/actions/shopping-lists'
 
 type Store = { id: string; name: string }
@@ -38,25 +39,54 @@ const inputClass = 'input min-w-0 flex-1'
 const units = ['und', 'kg', 'g', 'lb', 'l', 'ml']
 const money = (value: number | null) => value == null ? '—' : `$${value.toFixed(2)}`
 
-export function ShoppingLists({ lists, stores, itemSuggestions }: { lists: List[]; stores: Store[]; itemSuggestions: string[] }) {
+export function ShoppingLists({
+  lists,
+  stores,
+  itemSuggestions,
+  itemSuccess,
+  itemSuccessListId,
+}: {
+  lists: List[]
+  stores: Store[]
+  itemSuggestions: string[]
+  itemSuccess?: string
+  itemSuccessListId?: string
+}) {
   const [open, setOpen] = useState<string | null>(lists[0]?.id ?? null)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [checkedOverrides, setCheckedOverrides] = useState<Record<string, boolean>>({})
+  const [dirtyItems, setDirtyItems] = useState<Record<string, boolean>>({})
   const [isPending, startTransition] = useTransition()
 
   function isItemChecked(item: Item) {
     return checkedOverrides[item.id] ?? item.is_checked
   }
 
-  function toggleItem(item: Item, form: HTMLFormElement | null) {
-    if (!form) return
+  function toggleItem(item: Item) {
     const nextChecked = !isItemChecked(item)
     setCheckedOverrides((current) => ({ ...current, [item.id]: nextChecked }))
-    const formData = new FormData(form)
+    const formData = new FormData()
+    formData.set('id', item.id)
     formData.set('is_checked', String(nextChecked))
     startTransition(() => {
-      updateShoppingListItem(formData)
+      toggleShoppingListItem(formData).then((result) => {
+        if (result?.error) {
+          setCheckedOverrides((current) => ({ ...current, [item.id]: !nextChecked }))
+        }
+      })
     })
+  }
+
+  function updateDirtyState(item: Item, form: HTMLFormElement | null) {
+    if (!form) return
+    const value = (name: string) => String(new FormData(form).get(name) ?? '')
+    const dirty =
+      value('name') !== item.name ||
+      value('quantity') !== String(item.quantity) ||
+      value('unit') !== item.unit ||
+      value('estimated_unit_price') !== (item.estimated_unit_price == null ? '' : String(item.estimated_unit_price)) ||
+      value('actual_unit_price') !== (item.actual_unit_price == null ? '' : String(item.actual_unit_price))
+    setDirtyItems((current) => ({ ...current, [item.id]: dirty }))
   }
 
   return (
@@ -123,7 +153,7 @@ export function ShoppingLists({ lists, stores, itemSuggestions }: { lists: List[
                       <input type="hidden" name="id" value={item.id} />
                       <input type="hidden" name="is_checked" value={checkedState ? 'true' : 'false'} />
                       <div className="flex items-start gap-3">
-                        <button type="button" onClick={(event) => toggleItem(item, event.currentTarget.form)} disabled={isPending} className="mt-1 h-9 w-9 shrink-0 rounded-lg border border-black/20 bg-white text-sm disabled:opacity-60" aria-label={checkedState ? 'Desmarcar artículo' : 'Marcar artículo'}>{checkedState ? '✓' : ''}</button>
+                        <button type="button" onClick={() => toggleItem(item)} disabled={isPending} className="mt-1 h-9 w-9 shrink-0 rounded-lg border border-black/20 bg-white text-sm disabled:opacity-60" aria-label={checkedState ? 'Desmarcar artículo' : 'Marcar artículo'}>{checkedState ? '✓' : ''}</button>
                         <button type="button" onClick={() => setExpandedItems((current) => {
                           const next = new Set(current)
                           if (next.has(item.id)) next.delete(item.id)
@@ -135,15 +165,15 @@ export function ShoppingLists({ lists, stores, itemSuggestions }: { lists: List[
                         </button>
                       </div>
                       {expanded && <div className="mt-3 border-t border-black/5 pt-3">
-                        <label className="block text-xs font-medium text-ledger-muted">Artículo<input name="name" list="shopping-item-suggestions" defaultValue={item.name} className="input mt-1 w-full text-base" /></label>
+                        <label className="block text-xs font-medium text-ledger-muted">Artículo<input name="name" list="shopping-item-suggestions" defaultValue={item.name} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full text-base" /></label>
                         <div className="mt-3 grid grid-cols-2 gap-2">
-                        <label className="text-xs text-ledger-muted">Cantidad<input name="quantity" type="number" min="0.001" step="0.001" defaultValue={item.quantity} className="input mt-1 w-full" /></label>
-                        <label className="text-xs text-ledger-muted">Unidad<select name="unit" defaultValue={item.unit} className="input mt-1 w-full">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
-                        <label className="text-xs text-ledger-muted">Precio estimado<input name="estimated_unit_price" type="number" min="0" step="0.01" placeholder="Opcional" defaultValue={item.estimated_unit_price ?? ''} className="input mt-1 w-full" /></label>
-                        <label className="text-xs text-ledger-muted">Precio real<input name="actual_unit_price" type="number" min="0" step="0.01" placeholder="Opcional" defaultValue={item.actual_unit_price ?? ''} className="input mt-1 w-full" /></label>
+                        <label className="text-xs text-ledger-muted">Cantidad<input name="quantity" type="number" min="0.001" step="0.001" defaultValue={item.quantity} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full" /></label>
+                        <label className="text-xs text-ledger-muted">Unidad<select name="unit" defaultValue={item.unit} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
+                        <label className="text-xs text-ledger-muted">Precio estimado<input name="estimated_unit_price" type="number" min="0" step="0.01" placeholder="Opcional" defaultValue={item.estimated_unit_price ?? ''} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full" /></label>
+                        <label className="text-xs text-ledger-muted">Precio real<input name="actual_unit_price" type="number" min="0" step="0.01" placeholder="Opcional" defaultValue={item.actual_unit_price ?? ''} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full" /></label>
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 border-t border-black/5 pt-3">
-                          <button className="btn btn-secondary btn-sm w-full" type="submit">Guardar</button>
+                          <button className="btn btn-secondary btn-sm w-full disabled:cursor-not-allowed disabled:opacity-50" type="submit" disabled={!dirtyItems[item.id]}>Guardar cambios</button>
                           <button className="btn-link btn-sm w-full justify-center text-red-700" formAction={deleteShoppingListItem}>Borrar</button>
                         </div>
                       </div>}
@@ -151,18 +181,23 @@ export function ShoppingLists({ lists, stores, itemSuggestions }: { lists: List[
                     )
                   })}
                 </div>
-                {list.status === 'activa' && <form action={addShoppingListItem} className="rounded-xl border border-dashed border-ledger-green/30 bg-ledger-green/5 p-4">
+                {list.status === 'activa' && <form key={`add-item-${list.id}-${itemSuccessListId === list.id ? itemSuccess : 'empty'}`} action={addShoppingListItem} className="rounded-xl border border-dashed border-ledger-green/30 bg-ledger-green/5 p-4">
                   <p className="mb-3 text-sm font-medium text-ledger-text">Agregar artículo</p>
                   <input type="hidden" name="list_id" value={list.id} />
                   <div className="space-y-3">
                     <label className="block text-xs font-medium text-ledger-muted">Artículo<input name="name" list="shopping-item-suggestions" placeholder="Ej. Leche" required className="input mt-1 w-full text-base" /></label>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className="text-xs text-ledger-muted">Cantidad<input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" className="input mt-1 w-full" /></label>
+                      <label className="text-xs text-ledger-muted">Cantidad<input name="quantity" type="number" min="0.001" step="0.001" placeholder="Opcional" className="input mt-1 w-full" /></label>
                       <label className="text-xs text-ledger-muted">Unidad<select name="unit" defaultValue="und" className="input mt-1 w-full">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
                     </div>
                     <label className="block text-xs text-ledger-muted">Precio estimado <span className="font-normal">(opcional)</span><input name="estimated_unit_price" type="number" min="0" step="0.01" placeholder="Ej. 4500" className="input mt-1 w-full" /></label>
                     <button className="btn btn-primary w-full" type="submit">Agregar artículo</button>
                   </div>
+                  {itemSuccess && itemSuccessListId === list.id && (
+                    <p role="status" className="mt-3 rounded-lg border border-ledger-green/20 bg-white/70 px-3 py-2 text-sm text-ledger-green">
+                      {itemSuccess}
+                    </p>
+                  )}
                 </form>}
                 <div className="grid gap-2 border-t border-black/10 pt-5 sm:flex sm:flex-wrap">
                   {list.status === 'activa' ? <form action={completeShoppingList}><input type="hidden" name="id" value={list.id} /><input type="hidden" name="observed_on" value={new Date().toLocaleDateString('en-CA')} /><button className="btn btn-primary w-full sm:w-auto">Completar lista</button></form> : <form action={reopenShoppingList}><input type="hidden" name="id" value={list.id} /><button className="btn btn-secondary w-full sm:w-auto">Reabrir lista</button></form>}

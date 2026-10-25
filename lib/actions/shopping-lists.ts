@@ -113,7 +113,8 @@ export async function addShoppingListItem(formData: FormData) {
   const { supabase, user } = await getUser()
   const listId = requiredText(formData, 'list_id')
   const name = requiredText(formData, 'name')
-  const quantity = Number(formData.get('quantity') ?? 1)
+  const quantityValue = requiredText(formData, 'quantity')
+  const quantity = quantityValue ? Number(quantityValue) : 1
   const unit = requiredText(formData, 'unit') || 'und'
   const estimated = requiredText(formData, 'estimated_unit_price')
   if (!listId || !name || !Number.isFinite(quantity) || quantity <= 0) {
@@ -140,7 +141,7 @@ export async function addShoppingListItem(formData: FormData) {
   })
   if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
   revalidatePath(SHOPPING_PATH)
-  redirect(SHOPPING_PATH)
+  redirect(`${SHOPPING_PATH}?success=${encodeURIComponent(`"${name}" se agregó a la lista`)}&success_list_id=${encodeURIComponent(listId)}`)
 }
 
 export async function updateShoppingListItem(formData: FormData) {
@@ -153,7 +154,7 @@ export async function updateShoppingListItem(formData: FormData) {
   const actual = requiredText(formData, 'actual_unit_price')
   const isChecked = formData.get('is_checked') === 'true'
   if (!id || !name || !Number.isFinite(quantity) || quantity <= 0) {
-    redirect(`${SHOPPING_PATH}?error=Datos inválidos para el artículo`)
+    redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('Datos inválidos para el artículo')}`)
   }
 
   const { error } = await supabase.from('shopping_list_items').update({
@@ -168,6 +169,22 @@ export async function updateShoppingListItem(formData: FormData) {
   if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
+}
+
+export async function toggleShoppingListItem(formData: FormData) {
+  const { supabase } = await getUser()
+  const id = requiredText(formData, 'id')
+  const isChecked = formData.get('is_checked') === 'true'
+  if (!id) return { error: 'No se encontró el artículo' }
+
+  const { error } = await supabase
+    .from('shopping_list_items')
+    .update({ is_checked: isChecked })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath(SHOPPING_PATH)
+  return { error: null }
 }
 
 export async function deleteShoppingListItem(formData: FormData) {
