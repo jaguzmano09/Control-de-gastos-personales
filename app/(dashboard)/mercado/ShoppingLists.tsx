@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import {
   addShoppingListItem,
   completeShoppingList,
@@ -40,12 +40,30 @@ const money = (value: number | null) => value == null ? '—' : `$${value.toFixe
 
 export function ShoppingLists({ lists, stores, itemSuggestions }: { lists: List[]; stores: Store[]; itemSuggestions: string[] }) {
   const [open, setOpen] = useState<string | null>(lists[0]?.id ?? null)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+  const [checkedOverrides, setCheckedOverrides] = useState<Record<string, boolean>>({})
+  const [isPending, startTransition] = useTransition()
+
+  function isItemChecked(item: Item) {
+    return checkedOverrides[item.id] ?? item.is_checked
+  }
+
+  function toggleItem(item: Item, form: HTMLFormElement | null) {
+    if (!form) return
+    const nextChecked = !isItemChecked(item)
+    setCheckedOverrides((current) => ({ ...current, [item.id]: nextChecked }))
+    const formData = new FormData(form)
+    formData.set('is_checked', String(nextChecked))
+    startTransition(() => {
+      updateShoppingListItem(formData)
+    })
+  }
 
   return (
     <div className="mt-8 space-y-5">
       {lists.map((list) => {
         const estimated = list.shopping_list_items.reduce((sum, i) => sum + (i.estimated_unit_price ?? 0) * i.quantity, 0)
-        const checked = list.shopping_list_items.filter((i) => i.is_checked)
+        const checked = list.shopping_list_items.filter((i) => isItemChecked(i))
         const marked = checked.reduce((sum, i) => sum + (i.actual_unit_price ?? i.estimated_unit_price ?? 0) * i.quantity, 0)
         const store = stores.find((s) => s.id === list.store_id)?.name
         const isOpen = open === list.id
@@ -97,29 +115,41 @@ export function ShoppingLists({ lists, stores, itemSuggestions }: { lists: List[
                   </div>
                 </div>
                 <div className="space-y-2">
-                  {[...list.shopping_list_items].sort((a, b) => a.position - b.position).map((item) => (
-                    <form key={item.id} action={updateShoppingListItem} className={`rounded-xl border p-3 ${item.is_checked ? 'border-ledger-green/30 bg-ledger-green/5' : 'border-black/10 bg-white/70'}`}>
+                  {[...list.shopping_list_items].sort((a, b) => a.position - b.position).map((item) => {
+                    const checkedState = isItemChecked(item)
+                    const expanded = expandedItems.has(item.id)
+                    return (
+                    <form key={item.id} action={updateShoppingListItem} className={`rounded-xl border p-3 ${checkedState ? 'border-ledger-green/30 bg-ledger-green/5' : 'border-black/10 bg-white/70'}`}>
                       <input type="hidden" name="id" value={item.id} />
-                      <input type="hidden" name="is_checked" value={item.is_checked ? 'false' : 'true'} />
+                      <input type="hidden" name="is_checked" value={checkedState ? 'true' : 'false'} />
                       <div className="flex items-start gap-3">
-                        <button type="submit" className="mt-1 h-9 w-9 shrink-0 rounded-lg border border-black/20 bg-white text-sm" aria-label={item.is_checked ? 'Desmarcar artículo' : 'Marcar artículo'}>{item.is_checked ? '✓' : ''}</button>
-                        <label className="min-w-0 flex-1 text-xs font-medium text-ledger-muted">
-                          Artículo
-                          <input name="name" list="shopping-item-suggestions" defaultValue={item.name} className="input mt-1 w-full text-base" />
-                        </label>
+                        <button type="button" onClick={(event) => toggleItem(item, event.currentTarget.form)} disabled={isPending} className="mt-1 h-9 w-9 shrink-0 rounded-lg border border-black/20 bg-white text-sm disabled:opacity-60" aria-label={checkedState ? 'Desmarcar artículo' : 'Marcar artículo'}>{checkedState ? '✓' : ''}</button>
+                        <button type="button" onClick={() => setExpandedItems((current) => {
+                          const next = new Set(current)
+                          if (next.has(item.id)) next.delete(item.id)
+                          else next.add(item.id)
+                          return next
+                        })} className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left">
+                          <span className={`truncate text-base font-medium ${checkedState ? 'text-ledger-muted line-through' : 'text-ledger-text'}`}>{item.name}</span>
+                          <span className="shrink-0 text-xs text-ledger-muted">{expanded ? 'Ocultar' : 'Editar'}</span>
+                        </button>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
+                      {expanded && <div className="mt-3 border-t border-black/5 pt-3">
+                        <label className="block text-xs font-medium text-ledger-muted">Artículo<input name="name" list="shopping-item-suggestions" defaultValue={item.name} className="input mt-1 w-full text-base" /></label>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
                         <label className="text-xs text-ledger-muted">Cantidad<input name="quantity" type="number" min="0.001" step="0.001" defaultValue={item.quantity} className="input mt-1 w-full" /></label>
                         <label className="text-xs text-ledger-muted">Unidad<select name="unit" defaultValue={item.unit} className="input mt-1 w-full">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
                         <label className="text-xs text-ledger-muted">Precio estimado<input name="estimated_unit_price" type="number" min="0" step="0.01" placeholder="Opcional" defaultValue={item.estimated_unit_price ?? ''} className="input mt-1 w-full" /></label>
                         <label className="text-xs text-ledger-muted">Precio real<input name="actual_unit_price" type="number" min="0" step="0.01" placeholder="Opcional" defaultValue={item.actual_unit_price ?? ''} className="input mt-1 w-full" /></label>
-                      </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-black/5 pt-3">
-                        <button className="btn btn-secondary btn-sm w-full" type="submit">Guardar</button>
-                        <button className="btn-link btn-sm w-full justify-center text-red-700" formAction={deleteShoppingListItem}>Borrar</button>
-                      </div>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-black/5 pt-3">
+                          <button className="btn btn-secondary btn-sm w-full" type="submit">Guardar</button>
+                          <button className="btn-link btn-sm w-full justify-center text-red-700" formAction={deleteShoppingListItem}>Borrar</button>
+                        </div>
+                      </div>}
                     </form>
-                  ))}
+                    )
+                  })}
                 </div>
                 {list.status === 'activa' && <form action={addShoppingListItem} className="rounded-xl border border-dashed border-ledger-green/30 bg-ledger-green/5 p-4">
                   <p className="mb-3 text-sm font-medium text-ledger-text">Agregar artículo</p>
