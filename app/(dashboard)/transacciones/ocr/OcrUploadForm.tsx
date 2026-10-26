@@ -15,7 +15,7 @@ function SubmitButton() {
   const { pending } = useFormStatus()
   return (
     <button type="submit" disabled={pending} className="btn btn-primary btn-full">
-      {pending ? 'Procesando comprobante…' : 'Subir y extraer datos'}
+      {pending ? 'Procesando comprobante (máximo 3 min)…' : 'Subir y extraer datos'}
     </button>
   )
 }
@@ -91,6 +91,9 @@ export function OcrUploadForm({ accounts, wallets, error }: { accounts: Account[
       {error && <p role="alert" className="text-sm text-red-700">{decodeURIComponent(error)}</p>}
 
       <SubmitButton />
+      <p className="text-center text-xs text-ledger-muted">
+        Si la lectura automática no termina en 3 minutos, el comprobante se enviará a revisión manual.
+      </p>
       <p className="text-center text-sm text-ledger-muted">
         ¿Prefieres no usar OCR?{' '}
         <Link href="/transacciones/nueva" className="text-ledger-green hover:underline">

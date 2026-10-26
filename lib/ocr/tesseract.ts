@@ -7,7 +7,7 @@ type TesseractWorker = Awaited<ReturnType<typeof import('tesseract.js')['createW
 
 let workerPromise: Promise<TesseractWorker> | undefined
 let recognitionQueue = Promise.resolve()
-const OCR_TIMEOUT_MS = 30_000
+const OCR_TIMEOUT_MS = 20_000
 const TESSERACT_WORKER_PATH = require.resolve('tesseract.js/src/worker-script/node/index.js')
 
 async function getWorker() {
@@ -62,6 +62,23 @@ export async function extractTextWithTesseract(image: Buffer): Promise<OcrResult
   } finally {
     releaseQueue()
   }
+}
+
+export async function extractTextFromImagesWithTesseract(images: Buffer[]): Promise<OcrResult> {
+  let best: OcrResult = { text: '', confidence: 0 }
+  const errors: string[] = []
+
+  for (const image of images) {
+    try {
+      const result = await extractTextWithTesseract(image)
+      if (result.confidence > best.confidence || (!best.text && result.text)) best = result
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : 'Error desconocido de Tesseract')
+    }
+  }
+
+  if (!best.text && errors.length > 0) throw new Error(errors.join('; '))
+  return best
 }
 
 export async function discardTesseractWorker() {

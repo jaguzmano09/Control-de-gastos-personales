@@ -29,8 +29,11 @@ function parseMoney(value: string) {
 }
 
 function findAmount(lines: string[]) {
-  const amountPattern = /[$]?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+)/
-  const totalLineIndex = lines.findIndex((line) => /\b(?:total|fotal)\b/i.test(line) && !/impuesto/i.test(line))
+  const amountPattern = /[$]?\s*(\d[\d.,]*)/
+  const totalLineIndex = lines.findIndex((line) =>
+    /\b(?:t[o0]tal|f[o0]tal|t[o0]t[aá]l|valor\s+(?:total|a\s+pagar)|a\s+pagar)\b/i.test(line)
+    && !/impuesto/i.test(line),
+  )
   if (totalLineIndex >= 0) {
     const sameLineMatches = lines[totalLineIndex].match(/[$]?\s*(\d[\d.,]*)/g) ?? []
     const nextLineMatches = lines[totalLineIndex + 1]?.match(/[$]?\s*(\d[\d.,]*)/g) ?? []
@@ -39,7 +42,7 @@ function findAmount(lines: string[]) {
     if (totalMatch) return parseMoney(totalMatch)
   }
 
-  const amountLabelIndex = lines.findIndex((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago)/i.test(line))
+  const amountLabelIndex = lines.findIndex((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago|factura)/i.test(line))
   if (amountLabelIndex >= 0) {
     const amountText = lines.slice(amountLabelIndex, amountLabelIndex + 3).join(' ')
     const amountMatch = amountText.match(amountPattern)
@@ -50,6 +53,12 @@ function findAmount(lines: string[]) {
     const currencyMatch = line.match(/[$]\s*(\d[\d.,]*)/)
     if (currencyMatch) return parseMoney(currencyMatch[1])
   }
+
+  const candidates = lines
+    .flatMap((line) => line.match(/\b\d{1,3}(?:[.,]\d{3})+\b/g) ?? [])
+    .map(parseMoney)
+    .filter((amount) => amount > 0)
+  if (candidates.length > 0) return Math.max(...candidates)
 
   return 0
 }
@@ -85,12 +94,15 @@ export function parseOcrText(text: string) {
   const amount = findAmount(lines)
   const occurred_at = findDate(text)
   const description = findDescription(lines)
+  const confidence = amount > 0
+    ? occurred_at && description ? 0.75 : occurred_at || description ? 0.55 : 0.35
+    : 0
 
   return {
     occurred_at,
     amount,
     description,
     suggested_category: '',
-    confidence: amount > 0 && occurred_at && description ? 0.75 : 0,
+    confidence,
   }
 }

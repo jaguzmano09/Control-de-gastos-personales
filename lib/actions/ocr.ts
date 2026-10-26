@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { matchCategorizationRule } from '@/lib/categorization/match'
-import { discardTesseractWorker, extractTextWithTesseract } from '@/lib/ocr/tesseract'
+import { discardTesseractWorker, extractTextFromImagesWithTesseract } from '@/lib/ocr/tesseract'
+import { preprocessReceipt } from '@/lib/ocr/preprocess'
+import { extractWithConfiguredPaddleOcr } from '@/lib/ocr/paddle'
 import { parseOcrText } from '@/lib/ocr/parse'
 import {
   extractTransactionFromImage,
@@ -12,6 +14,8 @@ import {
   isUsableExtraction,
   type Extracted,
 } from '@/lib/gemini/client'
+
+const MAX_OCR_PROCESSING_MS = 180_000
 
 export async function createTransactionFromReceipt(formData: FormData) {
   const supabase = await createClient()
@@ -51,69 +55,127 @@ export async function createTransactionFromReceipt(formData: FormData) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudieron cargar las categorías. Intenta nuevamente.'))
   }
 
-  const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
+  const originalBuffer = Buffer.from(await file.arrayBuffer())
+  let imageVariants: Array<{ buffer: Buffer; mimeType: string; label: string }> = [
+    { buffer: originalBuffer, mimeType: file.type, label: 'original' },
+  ]
+  try {
+    imageVariants = [
+      ...imageVariants,
+      ...(await preprocessReceipt(originalBuffer)),
+    ]
+  } catch {
+    // The original image remains available if preprocessing cannot run.
+  }
 
   let extracted: Extracted | undefined
   let partialExtraction: Partial<Extracted> | undefined
-  let extractionEngine: 'gemini-vision' | 'gemini-vision-ocr' | 'tesseract-local' | 'manual-review' | undefined
+  let extractionEngine: string | undefined
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
   const extractionErrors: string[] = []
   const categoryNames = (categories ?? []).map((category) => category.name)
+  const processingDeadline = Date.now() + MAX_OCR_PROCESSING_MS
+  const hasTimeRemaining = () => Date.now() < processingDeadline
+  const geminiVariants = [
+    ...imageVariants.filter((variant) => variant.label === 'enhanced'),
+    ...imageVariants.filter((variant) => variant.label === 'original'),
+  ].slice(0, 1)
+  const processingController = new AbortController()
+  const deadlineTimer = setTimeout(() => processingController.abort(), MAX_OCR_PROCESSING_MS)
 
   try {
-    const geminiResult = await extractTransactionFromImage(base64, file.type, categoryNames)
-    if (isUsableExtraction(geminiResult)) {
-      extracted = geminiResult
-      extractionEngine = 'gemini-vision'
-    } else {
-      partialExtraction = geminiResult
-      extractionEngine = 'gemini-vision'
-    }
-  } catch (error) {
-    extractionErrors.push(`gemini-vision: ${error instanceof Error ? error.message : 'error desconocido'}`)
-  }
+    for (const variant of geminiVariants) {
+      if (!hasTimeRemaining()) break
+      try {
+        const paddleResult = await extractWithConfiguredPaddleOcr(
+          variant.buffer,
+          variant.mimeType,
+          categoryNames,
+          processingController.signal,
+        )
+        if (paddleResult) {
+          if (isUsableExtraction(paddleResult)) {
+            extracted = {
+              occurred_at: paddleResult.occurred_at ?? '',
+              amount: paddleResult.amount ?? 0,
+              description: paddleResult.description ?? '',
+              suggested_category: paddleResult.suggested_category ?? '',
+              confidence: paddleResult.confidence ?? 0,
+            }
+            extractionEngine = `paddleocr-${variant.label}`
+            break
+          }
+          partialExtraction = paddleResult
+          extractionEngine = `paddleocr-${variant.label}`
+        }
 
-  if (!extracted) {
-    try {
-      ocrResult = await extractTextWithTesseract(Buffer.from(base64, 'base64'))
-      if (ocrResult.text) {
-        try {
-          const geminiResult = await extractTransactionFromImageWithOcr(
-            base64,
-            file.type,
-            ocrResult.text,
-            categoryNames,
-          )
-          if (isUsableExtraction(geminiResult)) {
-            extracted = geminiResult
-            extractionEngine = 'gemini-vision-ocr'
+        const geminiResult = await extractTransactionFromImage(
+          variant.buffer.toString('base64'),
+          variant.mimeType,
+          categoryNames,
+          processingController.signal,
+        )
+        if (isUsableExtraction(geminiResult)) {
+          extracted = geminiResult
+          extractionEngine = `gemini-vision-${variant.label}`
+          break
+        }
+        if (!partialExtraction || geminiResult.amount > (partialExtraction.amount ?? 0)) {
+          partialExtraction = geminiResult
+          extractionEngine = `gemini-vision-${variant.label}`
+        }
+      } catch (error) {
+        extractionErrors.push(`gemini-vision-${variant.label}: ${error instanceof Error ? error.message : 'error desconocido'}`)
+        if (error instanceof Error && /(?:401|403|404|GEMINI_API_KEY)/i.test(error.message)) break
+      }
+    }
+
+    if (!extracted && hasTimeRemaining()) {
+      try {
+        ocrResult = await extractTextFromImagesWithTesseract(
+          imageVariants.filter((variant) => variant.label !== 'original').map((variant) => variant.buffer),
+        )
+        if (ocrResult.text && hasTimeRemaining()) {
+          try {
+            const geminiResult = await extractTransactionFromImageWithOcr(
+              imageVariants.find((variant) => variant.label === 'enhanced')?.buffer.toString('base64')
+                ?? originalBuffer.toString('base64'),
+              'image/jpeg',
+              ocrResult.text,
+              categoryNames,
+              processingController.signal,
+            )
+            if (isUsableExtraction(geminiResult)) {
+              extracted = geminiResult
+              extractionEngine = 'gemini-vision-ocr'
+            } else if (!partialExtraction) {
+              partialExtraction = geminiResult
+              extractionEngine = 'gemini-vision-ocr'
+            }
+          } catch (error) {
+            extractionErrors.push(`gemini-vision-ocr: ${error instanceof Error ? error.message : 'error desconocido'}`)
+          }
+        }
+
+        if (!extracted) {
+          const parsed = parseOcrText(ocrResult.text)
+          if (isUsableExtraction(parsed)) {
+            extracted = { ...parsed, suggested_category: '' }
+            extractionEngine = 'tesseract-local'
           } else if (!partialExtraction) {
-            partialExtraction = geminiResult
-            extractionEngine = 'gemini-vision-ocr'
+            partialExtraction = parsed
+            extractionEngine = 'tesseract-local'
           }
-        } catch (error) {
-          extractionErrors.push(`gemini-vision-ocr: ${error instanceof Error ? error.message : 'error desconocido'}`)
         }
+      } catch (error) {
+        const tesseractError = error instanceof Error ? error : new Error('Error desconocido de Tesseract')
+        extractionErrors.push(`tesseract-local: ${tesseractError.message}`)
+        if (/Tesseract timeout/i.test(tesseractError.message)) await discardTesseractWorker()
       }
-
-      if (!extracted) {
-        const parsed = parseOcrText(ocrResult.text)
-        if (isUsableExtraction(parsed)) {
-          extracted = {
-            ...parsed,
-            suggested_category: '',
-          }
-          extractionEngine = 'tesseract-local'
-        } else if (!partialExtraction) {
-          partialExtraction = parsed
-          extractionEngine = 'tesseract-local'
-        }
-      }
-    } catch (error) {
-      const tesseractError = error instanceof Error ? error : new Error('Error desconocido de Tesseract')
-      extractionErrors.push(`tesseract-local: ${tesseractError.message}`)
-      if (/Tesseract timeout/i.test(tesseractError.message)) await discardTesseractWorker()
     }
+  } finally {
+    clearTimeout(deadlineTimer)
+    processingController.abort()
   }
 
   if (!extracted) {
@@ -131,8 +193,15 @@ export async function createTransactionFromReceipt(formData: FormData) {
   const rule = await matchCategorizationRule(supabase, user!.id, extracted!.description)
   const category = categories?.find((c) => c.name.toLowerCase() === extracted!.suggested_category.toLowerCase())
   const extractionConfidence = extractionEngine === 'tesseract-local'
-    ? Math.min(extracted!.confidence, ocrResult.confidence / 100)
-    : extracted!.confidence
+    ? Math.max(
+      Math.min(extracted!.confidence, ocrResult.confidence / 100),
+      extracted!.amount > 0 ? 0.35 : 0,
+    )
+    : extracted!.confidence > 0
+      ? extracted!.confidence
+      : extracted!.amount > 0
+        ? 0.35
+        : 0
 
   const { error } = await supabase.from('transactions').insert({
     user_id: user!.id,

@@ -2,6 +2,7 @@
 // antes de desplegar — los modelos cambian con el tiempo.
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-flash-latest'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_REQUEST_TIMEOUT_MS = 35_000
 
 export type Extracted = {
   occurred_at: string
@@ -33,7 +34,7 @@ El monto debe ser el total final de la factura, sin símbolos ni separadores de 
 Si no puedes determinar un campo con seguridad, usa una cadena vacía para texto o 0 para números.`
 }
 
-async function callGemini(parts: object[]): Promise<Extracted> {
+async function callGemini(parts: object[], signal?: AbortSignal): Promise<Extracted> {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY no está configurada')
   }
@@ -47,8 +48,26 @@ async function callGemini(parts: object[]): Promise<Extracted> {
     }),
   }
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, request)
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), GEMINI_REQUEST_TIMEOUT_MS)
+    const abort = () => controller.abort()
+    signal?.addEventListener('abort', abort, { once: true })
+    let res: Response
+    try {
+      res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
+        ...request,
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Gemini timeout después de ${GEMINI_REQUEST_TIMEOUT_MS / 1000}s`)
+      }
+      throw error
+    } finally {
+      clearTimeout(timeout)
+      signal?.removeEventListener('abort', abort)
+    }
 
     if (res.ok) {
       const data = await res.json()
@@ -87,11 +106,16 @@ async function callGemini(parts: object[]): Promise<Extracted> {
   throw new Error('Gemini no respondió después de varios intentos')
 }
 
-export async function extractTransactionFromImage(base64Image: string, mimeType: string, categoryNames: string[]) {
+export async function extractTransactionFromImage(
+  base64Image: string,
+  mimeType: string,
+  categoryNames: string[],
+  signal?: AbortSignal,
+) {
   return callGemini([
     { text: buildPrompt(categoryNames) },
     { inlineData: { mimeType, data: base64Image } },
-  ])
+  ], signal)
 }
 
 export async function extractTransactionFromOcrText(ocrText: string, categoryNames: string[]) {
@@ -105,11 +129,12 @@ export async function extractTransactionFromImageWithOcr(
   mimeType: string,
   ocrText: string,
   categoryNames: string[],
+  signal?: AbortSignal,
 ) {
   return callGemini([
     { text: buildPrompt(categoryNames, ocrText) },
     { inlineData: { mimeType, data: base64Image } },
-  ])
+  ], signal)
 }
 
 export async function extractTransactionFromText(emailText: string, categoryNames: string[]) {
