@@ -161,88 +161,131 @@ export default async function RevisionPage() {
         </div>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="panel p-4"><p className="text-xs uppercase tracking-wide text-ledger-muted">Movimientos</p><p className="mt-1 text-2xl font-semibold text-ledger-text">{pendientes.length}</p><p className="text-xs text-ledger-muted">pendientes</p></div>
-        <div className="panel p-4"><p className="text-xs uppercase tracking-wide text-ledger-muted">Sobrantes</p><p className="mt-1 text-2xl font-semibold text-ledger-text">{pendingRollovers.length}</p><p className="text-xs text-ledger-muted">por asignar</p></div>
-        <div className="panel p-4"><p className="text-xs uppercase tracking-wide text-ledger-muted">Duplicados</p><p className="mt-1 text-2xl font-semibold text-amber-700">{duplicadosConMatch.length}</p><p className="text-xs text-ledger-muted">por verificar</p></div>
-      </div>
-
       <details open={pendientes.length > 0} className="panel overflow-hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
-          <div><h2 className="font-serif text-xl text-ledger-text">Movimientos pendientes</h2><p className="mt-1 text-sm text-ledger-muted">Confirma los datos antes de incorporarlos.</p></div>
-          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">{pendientes.length}</span>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ledger-green">Centro de actividad</p>
+            <h2 className="mt-1 font-serif text-xl text-ledger-text">Movimientos</h2>
+            <p className="mt-1 text-sm text-ledger-muted">Revisa los movimientos que necesitan tu decisión.</p>
+          </div>
+          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">
+            {pendientes.length} pendientes
+          </span>
         </summary>
-        <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
-          {pendientes.map((t) => (
-            <ReviewCard
-              key={t.id}
-              transaction={t}
-              categories={categories}
-              accounts={accounts}
-              wallets={wallets}
-            />
-          ))}
+        <div className="border-t border-black/10 bg-white/40 p-4 sm:p-5">
+          <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
+            <div className="flex items-center justify-between gap-3 border-b border-black/5 px-4 py-3">
+              <div>
+                <h3 className="text-sm font-semibold text-ledger-text">Movimientos pendientes</h3>
+                <p className="mt-1 text-xs text-ledger-muted">Confirma los datos antes de incorporarlos.</p>
+              </div>
+              <span className="rounded-full bg-ledger-green/10 px-2.5 py-1 text-xs font-medium text-ledger-green">{pendientes.length}</span>
+            </div>
+            <div className="space-y-3 bg-black/[0.015] p-3">
+              {pendientes.map((t) => (
+                <ReviewCard
+                  key={t.id}
+                  transaction={t}
+                  categories={categories}
+                  accounts={accounts}
+                  wallets={wallets}
+                />
+              ))}
 
-          {pendientes.length === 0 && (
-            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">
-              No hay transacciones pendientes de revisión.
-            </p>
-          )}
+              {pendientes.length === 0 && (
+                <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">
+                  No hay transacciones pendientes de revisión.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </details>
 
       <details className="panel overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
-          <div><h2 className="font-serif text-xl text-ledger-text">Sobrantes por asignar</h2><p className="mt-1 text-sm text-ledger-muted">Asigna una categoría a cada sobrante del mes.</p></div>
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">{pendingRollovers.length}</span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Presupuesto arrastrado</p>
+            <h2 className="mt-1 font-serif text-xl text-ledger-text">Sobrantes</h2>
+            <p className="mt-1 text-sm text-ledger-muted">Gestiona los sobrantes pendientes y revisa los que ya fueron asignados.</p>
+          </div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">
+            {pendingRollovers.length + assignedRollovers.length} registros
+          </span>
         </summary>
         <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
-          {pendingRollovers.map((rollover) => (
-            <RolloverReviewCard
-              key={rollover.id}
-              review={{
-                ...rollover,
-                account_name: accountNames.get(rollover.account_id ?? '') ?? 'Cuenta',
-                wallet_name: rollover.wallet_id ? walletNames.get(rollover.wallet_id) ?? null : null,
-              }}
-              categories={categories}
-            />
-          ))}
-          {pendingRollovers.length === 0 && (
-            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">No hay sobrantes pendientes de asignación.</p>
-          )}
+          <details open={pendingRollovers.length > 0} className="overflow-hidden rounded-2xl border border-amber-200/70 bg-white">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+              <div>
+                <p className="text-sm font-semibold text-ledger-text">Por asignar</p>
+                <p className="mt-1 text-xs text-ledger-muted">Asigna una categoría a cada sobrante del mes.</p>
+              </div>
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">{pendingRollovers.length}</span>
+            </summary>
+            <div className="space-y-3 border-t border-amber-200/60 bg-amber-50/30 p-3">
+              {pendingRollovers.map((rollover) => (
+                <RolloverReviewCard
+                  key={rollover.id}
+                  review={{
+                    ...rollover,
+                    account_name: accountNames.get(rollover.account_id ?? '') ?? 'Cuenta',
+                    wallet_name: rollover.wallet_id ? walletNames.get(rollover.wallet_id) ?? null : null,
+                  }}
+                  categories={categories}
+                />
+              ))}
+              {pendingRollovers.length === 0 && (
+                <p className="rounded-lg border border-dashed border-amber-200 p-4 text-sm text-ledger-muted">No hay sobrantes pendientes de asignación.</p>
+              )}
+            </div>
+          </details>
+
+          <details className="overflow-hidden rounded-2xl border border-ledger-green/20 bg-white">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+              <div>
+                <p className="text-sm font-semibold text-ledger-text">Asignados</p>
+                <p className="mt-1 text-xs text-ledger-muted">Puedes actualizar estas asignaciones cuando lo necesites.</p>
+              </div>
+              <span className="rounded-full bg-ledger-green/10 px-2.5 py-1 text-xs font-medium text-ledger-green">{assignedRollovers.length}</span>
+            </summary>
+            <div className="space-y-3 border-t border-ledger-green/10 bg-ledger-green/[0.03] p-3">
+              {assignedRollovers.map((rollover) => (
+                <RolloverReviewCard
+                  key={rollover.id}
+                  review={{
+                    ...rollover,
+                    account_name: accountNames.get(rollover.account_id ?? '') ?? 'Cuenta',
+                    wallet_name: rollover.wallet_id ? walletNames.get(rollover.wallet_id) ?? null : null,
+                  }}
+                  categories={categories}
+                />
+              ))}
+              {assignedRollovers.length === 0 && (
+                <p className="rounded-lg border border-dashed border-ledger-green/20 p-4 text-sm text-ledger-muted">No hay sobrantes asignados en el mes actual.</p>
+              )}
+            </div>
+          </details>
         </div>
       </details>
 
       <details className="panel overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
-          <div><h2 className="font-serif text-xl text-ledger-text">Sobrantes asignados</h2><p className="mt-1 text-sm text-ledger-muted">Puedes actualizar estas asignaciones cuando lo necesites.</p></div>
-          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">{assignedRollovers.length}</span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Control de calidad</p>
+            <h2 className="mt-1 font-serif text-xl text-ledger-text">Duplicados</h2>
+            <p className="mt-1 text-sm text-ledger-muted">Compara y decide si cada movimiento debe conservarse.</p>
+          </div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">{duplicadosConMatch.length} por verificar</span>
         </summary>
         <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
-          {assignedRollovers.map((rollover) => (
-            <RolloverReviewCard
-              key={rollover.id}
-              review={{
-                ...rollover,
-                account_name: accountNames.get(rollover.account_id ?? '') ?? 'Cuenta',
-                wallet_name: rollover.wallet_id ? walletNames.get(rollover.wallet_id) ?? null : null,
-              }}
-              categories={categories}
-            />
-          ))}
-          {assignedRollovers.length === 0 && (
-            <p className="rounded-lg border border-dashed border-black/10 p-4 text-sm text-ledger-muted">No hay sobrantes asignados en el mes actual.</p>
-          )}
-        </div>
-      </details>
-
-      <details className="panel overflow-hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
-          <div><h2 className="font-serif text-xl text-ledger-text">Posibles duplicados</h2><p className="mt-1 text-sm text-ledger-muted">Compara y decide si el movimiento debe conservarse.</p></div>
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">{duplicadosConMatch.length}</span>
-        </summary>
-        <div className="space-y-3 border-t border-black/10 bg-white/40 p-4 sm:p-5">
+          <div className="rounded-2xl border border-amber-200/70 bg-amber-50/30 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3 px-1">
+              <div>
+                <h3 className="text-sm font-semibold text-ledger-text">Movimientos por verificar</h3>
+                <p className="mt-1 text-xs text-ledger-muted">Revisa la coincidencia antes de confirmar o descartar.</p>
+              </div>
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">{duplicadosConMatch.length}</span>
+            </div>
           {duplicadosConMatch.map((t) => (
             <div
               key={t.id}
@@ -322,6 +365,7 @@ export default async function RevisionPage() {
               No hay duplicados por revisar.
             </p>
           )}
+          </div>
         </div>
       </details>
     </div>
