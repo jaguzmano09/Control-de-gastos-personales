@@ -114,23 +114,25 @@ export default async function DashboardHomePage({
 
   return (
     <div className="space-y-8">
-      <header className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+      <header className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_12px_35px_rgba(23,35,31,0.07)]">
+        <div className="bg-gradient-to-br from-ledger-green via-[#347957] to-[#1f5239] px-5 py-6 text-white sm:px-7 sm:py-8">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-ledger-muted">Panel financiero</p>
-            <h1 className="mt-2 font-serif text-3xl text-ledger-text">Resumen del mes</h1>
-            <p className="mt-1 capitalize text-sm text-ledger-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Panel financiero</p>
+            <h1 className="mt-2 font-serif text-3xl text-white sm:text-4xl">Resumen del mes</h1>
+            <p className="mt-1 capitalize text-sm text-white/75">
               {new Date(monthStart + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
             </p>
           </div>
           {pendingCount > 0 && (
-            <a href="/revision" className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100">
-              <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />
+            <a href="/revision" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/25">
+              <span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" />
               {pendingCount} por revisar
             </a>
           )}
         </div>
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-t border-black/5 pt-4">
+        </div>
+        <div className="flex flex-wrap items-end justify-between gap-4 bg-white px-5 py-4 sm:px-7">
           <p className="text-sm text-ledger-muted">Consulta el movimiento y el estado de tus finanzas.</p>
           <form method="get" className="flex flex-wrap items-end gap-2">
             <div className="min-w-40">
@@ -144,10 +146,11 @@ export default async function DashboardHomePage({
       </header>
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-4 flex items-end justify-between">
           <div>
-            <h2 className="font-serif text-xl text-ledger-text">Accesos rápidos</h2>
-            <p className="mt-1 text-sm text-ledger-muted">Consulta las áreas que más utilizas.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ledger-green">Atajos</p>
+            <h2 className="mt-1 font-serif text-2xl text-ledger-text">Accesos rápidos</h2>
+            <p className="mt-1 text-sm text-ledger-muted">Las acciones más útiles para continuar tu gestión.</p>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -155,26 +158,30 @@ export default async function DashboardHomePage({
             <a
               key={action.href}
               href={action.href}
-              className="group rounded-xl border border-black/10 bg-white p-4 transition hover:-translate-y-0.5 hover:border-ledger-green/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
+              className="group rounded-2xl border border-black/10 bg-white p-5 transition hover:-translate-y-1 hover:border-ledger-green/40 hover:shadow-[0_10px_25px_rgba(23,35,31,0.08)] focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-ledger-text">{action.label}</p>
+                  <p className="text-sm font-semibold text-ledger-text">{action.label}</p>
                   <p className="mt-1 text-xs text-ledger-muted">{action.detail}</p>
                 </div>
-                <span className="text-lg text-ledger-muted transition group-hover:translate-x-0.5 group-hover:text-ledger-green" aria-hidden="true">→</span>
                 <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${action.accent}`}>
                   {action.value}
                 </span>
+              </div>
+              <div className="mt-5 flex items-center justify-between border-t border-black/5 pt-3 text-xs text-ledger-muted">
+                <span>Ir a sección</span>
+                <span className="transition group-hover:translate-x-1 group-hover:text-ledger-green" aria-hidden="true">→</span>
               </div>
             </a>
           ))}
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_10px_30px_rgba(23,35,31,0.06)]">
         <div className="grid lg:grid-cols-[1.15fr_2fr]">
-          <div className="bg-ledger-green p-5 text-white sm:p-6">
+          <div className="relative overflow-hidden bg-ledger-green p-5 text-white sm:p-7">
+            <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full border border-white/10" aria-hidden="true" />
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-white/70">Balance del periodo</p>
             <p className="mt-3 break-words text-3xl font-semibold tracking-tight sm:text-4xl">{formatCOP(summary.balance)}</p>
             <p className="mt-2 text-sm text-white/75">Ingresos, gastos, ahorro y sobrantes incluidos.</p>
