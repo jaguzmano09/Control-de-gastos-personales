@@ -13,12 +13,14 @@ export default async function OcrPage({ searchParams }: { searchParams: Promise<
   const loadError = accountsError ?? walletsError
 
   return (
-    <div className="max-w-lg">
-      <h1 className="font-serif text-2xl text-ledger-text">Registrar por foto</h1>
+    <div className="max-w-2xl">
+      <header className="border-b border-black/10 pb-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Captura inteligente</p>
+      <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Registrar por foto</h1>
       <p className="mt-1 text-sm text-ledger-muted">
         Sube la foto de una factura o recibo — la IA extrae los datos y queda pendiente de tu revisión.
       </p>
-      <div className="mt-2 h-px w-10 bg-ledger-green" />
+      </header>
       <OcrUploadForm
         accounts={accounts ?? []}
         wallets={wallets ?? []}

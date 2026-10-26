@@ -62,16 +62,19 @@ export default async function MercadoPage({
   const itemSuggestions = Array.from(new Map((itemNames ?? []).map((item) => [item.name_key, item.name])).values())
 
   return (
-    <div>
-      <h1 className="font-serif text-2xl text-ledger-text">Lista de mercado</h1>
-      <div className="mt-2 h-px w-10 bg-ledger-green" />
+    <div className="max-w-5xl">
+      <header className="border-b border-black/10 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Compras del hogar</p>
+        <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Lista de mercado</h1>
+        <p className="mt-1 text-sm text-ledger-muted">Organiza tus compras y conserva memoria de precios por tienda.</p>
+      </header>
       {searchParams.error && (
         <p className="mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-700">{displayError(searchParams.error)}</p>
       )}
 
       <section className="mt-8">
-        <form action={createShoppingList} className="panel p-4">
-          <h2 className="font-serif text-lg">Nueva lista</h2>
+        <form action={createShoppingList} className="panel rounded-2xl p-5">
+          <h2 className="font-serif text-xl">Nueva lista</h2>
           <div className="mt-3 flex gap-2">
             <input name="name" placeholder="Compra semanal" required className="input flex-1" />
             <select name="store_id" className="input w-36">

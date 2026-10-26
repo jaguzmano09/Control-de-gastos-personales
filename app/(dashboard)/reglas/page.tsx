@@ -37,14 +37,16 @@ export default async function ReglasPage() {
   const categories = (rawCategories ?? []) as unknown as Category[]
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-serif text-2xl text-ledger-text">Reglas de categorización</h1>
-      <p className="mt-1 text-sm text-ledger-muted">Lo que definiste a mano y lo que el sistema ha aprendido de tus correcciones.</p>
-      <div className="mt-2 h-px w-10 bg-ledger-green" />
+    <div className="max-w-4xl">
+      <header className="border-b border-black/10 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Automatización</p>
+        <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Reglas de categorización</h1>
+        <p className="mt-1 text-sm text-ledger-muted">Administra las reglas manuales y los aprendizajes de tus correcciones.</p>
+      </header>
 
       <div className="mt-8 space-y-3">
         {rules.map((rule) => (
-          <div key={rule.id} className={`rounded-sm border border-black/10 bg-white p-4 ${!rule.is_active ? 'opacity-50' : ''}`}>
+          <div key={rule.id} className={`rounded-2xl border border-black/10 bg-white p-5 shadow-sm ${!rule.is_active ? 'opacity-50' : ''}`}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-ledger-text">

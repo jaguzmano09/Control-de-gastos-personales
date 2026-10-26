@@ -28,14 +28,17 @@ export default async function CorreoPage({
   const accounts = accountsData as Array<{ id: string; name: string }> | null
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-serif text-2xl text-ledger-text">Correo</h1>
-      <div className="mt-2 h-px w-10 bg-ledger-green" />
+    <div className="max-w-4xl">
+      <header className="border-b border-black/10 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Integraciones</p>
+        <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Correo</h1>
+        <p className="mt-1 text-sm text-ledger-muted">Conecta tu correo bancario y administra las direcciones autorizadas.</p>
+      </header>
 
       {connected && <p className="mt-4 text-sm text-ledger-green">Gmail conectado correctamente.</p>}
       {error && <p className="mt-4 text-sm text-red-700">{decodeURIComponent(error)}</p>}
 
-      <section className="mt-8 rounded-sm border border-black/10 bg-white p-4">
+      <section className="mt-7 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
         <p className="text-sm text-ledger-text">Conexión con Gmail</p>
         {connection ? (
           <p className="mt-1 text-xs text-ledger-muted">
@@ -56,7 +59,7 @@ export default async function CorreoPage({
         <h2 className="font-serif text-lg text-ledger-text">Direcciones autorizadas</h2>
         <div className="mt-4 space-y-2">
           {(sources ?? []).map((s) => (
-            <div key={s.id} className="flex items-center justify-between rounded-sm border border-black/10 bg-white p-3">
+            <div key={s.id} className="flex items-center justify-between rounded-xl border border-black/10 bg-white p-4 shadow-sm">
               <div>
                 <p className="text-sm text-ledger-text">{s.email_address}</p>
                 <p className="text-xs text-ledger-muted">{s.accounts?.name}</p>

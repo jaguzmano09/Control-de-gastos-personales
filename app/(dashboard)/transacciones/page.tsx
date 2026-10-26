@@ -152,23 +152,20 @@ export default async function TransaccionesPage({
   const transactions = (rawTransactions ?? []) as unknown as Transaction[]
 
   return (
-    <div>
-      <header className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl text-ledger-text">
-          Transacciones
-        </h1>
+    <div className="max-w-5xl">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-black/10 pb-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Registro financiero</p>
+          <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Transacciones</h1>
+          <p className="mt-1 text-sm text-ledger-muted">Consulta, filtra y administra todos tus movimientos.</p>
+        </div>
 
-        <a
-          href="/transacciones/nueva"
-          className="btn btn-primary"
-        >
-          Nueva
-        </a>
+        <a href="/transacciones/nueva" className="btn btn-primary">Nueva transacción</a>
       </header>
 
       <form
         method="get"
-        className="mt-6 flex flex-wrap items-end gap-3 rounded-sm border border-black/10 bg-white p-4"
+        className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-black/10 bg-white p-5 shadow-sm"
       >
         <div>
           <label className="block text-xs text-ledger-muted">
@@ -390,4 +387,3 @@ export default async function TransaccionesPage({
     </div>
   )
 }
-

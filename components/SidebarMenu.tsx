@@ -19,8 +19,8 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="relative w-full border-b border-black/10 bg-ledger-paper/95 shadow-sm backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center px-4 py-3 sm:px-6">
+    <header className="relative w-full border-b border-black/10 bg-white/90 shadow-[0_4px_18px_rgba(23,35,31,0.05)] backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center px-4 py-4 sm:px-6">
         <button
           onClick={() => setOpen(true)}
           aria-label="Abrir menú"
@@ -42,7 +42,7 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
       {open && (
         <div className="fixed inset-0 z-[60] bg-black/35" onClick={() => setOpen(false)}>
           <nav
-            className="fixed inset-y-0 left-0 z-[61] flex h-screen min-h-full w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-black/10 bg-ledger-paper p-6 shadow-xl"
+          className="fixed inset-y-0 left-0 z-[61] flex h-screen min-h-full w-72 max-w-[85vw] flex-col overflow-y-auto border-r border-black/10 bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -53,13 +53,13 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
             </div>
             <div className="mt-2 h-px w-8 bg-ledger-green" />
 
-            <div className="mt-6 flex flex-col gap-1">
+            <div className="mt-6 flex flex-col gap-1.5">
               {NAV_ITEMS.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-xl px-3 py-2.5 text-sm text-ledger-text transition hover:bg-ledger-green/10 hover:text-ledger-green"
+                  className="rounded-xl border border-transparent px-3 py-2.5 text-sm text-ledger-text transition hover:border-ledger-green/15 hover:bg-ledger-green/10 hover:text-ledger-green"
                 >
                   {item.label}
                 </a>

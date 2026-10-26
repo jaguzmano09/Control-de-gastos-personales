@@ -16,9 +16,12 @@ export default async function NuevaTransaccionPage({
   ])
 
   return (
-    <div className="max-w-lg">
-      <h1 className="font-serif text-2xl text-ledger-text">Nueva transacción</h1>
-      <div className="mt-2 h-px w-10 bg-ledger-green" />
+    <div className="max-w-2xl">
+      <header className="border-b border-black/10 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Registro financiero</p>
+        <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Nueva transacción</h1>
+        <p className="mt-1 text-sm text-ledger-muted">Registra un movimiento y asígnalo a la cuenta o bolsillo correspondiente.</p>
+      </header>
       <NuevaTransaccionForm
         categories={categories ?? []}
         accounts={accounts ?? []}

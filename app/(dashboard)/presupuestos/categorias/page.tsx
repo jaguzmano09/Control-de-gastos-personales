@@ -31,10 +31,15 @@ export default async function PresupuestoCategoriasPage({
   const budgetByCategory = new Map((budgets ?? []).map((b) => [b.category_id, b]))
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-serif text-2xl text-ledger-text">Presupuesto por categoría</h1>
-      <p className="mt-1 text-sm text-ledger-muted">El resumen incluye gastos y movimientos de ahorro asociados a cada categoría.</p>
-      <div className="mt-3"><MonthSelector yearMonth={yearMonth} basePath="/presupuestos/categorias" /></div>
+    <div className="max-w-4xl">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-black/10 pb-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Planificación mensual</p>
+          <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Presupuesto por categoría</h1>
+          <p className="mt-1 text-sm text-ledger-muted">Controla gastos, ahorros y el saldo restante de cada categoría.</p>
+        </div>
+        <MonthSelector yearMonth={yearMonth} basePath="/presupuestos/categorias" />
+      </header>
 
       <div className="mt-8 space-y-4">
         {(categories ?? []).map((category) => {
@@ -54,7 +59,7 @@ export default async function PresupuestoCategoriasPage({
           const isOverThreshold = !isOverBudget && threshold !== undefined && totalBudget > 0 && (spent / totalBudget) * 100 >= threshold
 
           return (
-            <div key={category.id} className="rounded-sm border border-black/10 bg-white p-4">
+            <div key={category.id} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
               <div className="flex items-baseline justify-between">
                 <p className="text-sm text-ledger-text">{category.name}</p>
                 <p className={isOverBudget ? 'text-sm text-red-700' : isOverThreshold ? 'text-sm text-amber-700' : 'text-sm text-ledger-muted'}>
