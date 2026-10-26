@@ -54,6 +54,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
   const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
 
   let extracted: Extracted | undefined
+  let partialExtraction: Partial<Extracted> | undefined
   let extractionEngine: 'gemini-vision' | 'gemini-vision-ocr' | 'tesseract-local' | undefined
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
   let tesseractError: Error | undefined
@@ -63,6 +64,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
     const geminiResult = await extractTransactionFromImage(base64, file.type, categoryNames)
     if (isUsableExtraction(geminiResult)) {
       extracted = geminiResult
+      extractionEngine = 'gemini-vision'
+    } else if (geminiResult.amount > 0) {
+      partialExtraction = geminiResult
       extractionEngine = 'gemini-vision'
     }
   } catch {
@@ -83,6 +87,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
           if (isUsableExtraction(geminiResult)) {
             extracted = geminiResult
             extractionEngine = 'gemini-vision-ocr'
+          } else if (geminiResult.amount > 0 && !partialExtraction) {
+            partialExtraction = geminiResult
+            extractionEngine = 'gemini-vision-ocr'
           }
         } catch {
           // Keep the parsed OCR result as a deterministic fallback.
@@ -97,6 +104,8 @@ export async function createTransactionFromReceipt(formData: FormData) {
             suggested_category: '',
           }
           extractionEngine = 'tesseract-local'
+        } else if (parsed.amount > 0) {
+          partialExtraction = parsed
         }
       }
     } catch (tesseractErr) {
@@ -105,10 +114,21 @@ export async function createTransactionFromReceipt(formData: FormData) {
     }
   }
 
-  if (!extracted || extracted.amount <= 0 || !extracted.occurred_at || !extracted.description) {
+  if (!extracted && partialExtraction?.amount && partialExtraction.amount > 0) {
+    extracted = {
+      occurred_at: partialExtraction.occurred_at || new Date().toISOString().slice(0, 10),
+      amount: partialExtraction.amount,
+      description: partialExtraction.description || 'Compra pendiente de identificar',
+      suggested_category: partialExtraction.suggested_category || '',
+      confidence: partialExtraction.confidence || 0.1,
+    }
+    extractionEngine = extractionEngine ?? 'tesseract-local'
+  }
+
+  if (!extracted || extracted.amount <= 0) {
     const errorMessage = tesseractError
-      ? 'No se pudo leer el comprobante. Verifica GEMINI_API_KEY o intenta con una imagen más nítida.'
-      : 'No se pudieron identificar con suficiente claridad la fecha, el total o la descripción. Intenta con una imagen más nítida.'
+      ? 'No se pudo identificar el total del comprobante. Verifica GEMINI_API_KEY o intenta con una imagen más nítida.'
+      : 'No se pudo identificar el total del comprobante. Intenta con una imagen más nítida.'
     redirect('/transacciones/ocr?error=' + encodeURIComponent(
       errorMessage,
     ))

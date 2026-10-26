@@ -11,7 +11,7 @@ export type Extracted = {
   confidence: number
 }
 
-export function isUsableExtraction(extracted: Partial<Extracted> | null | undefined): extracted is Extracted {
+export function isUsableExtraction(extracted: Partial<Extracted> | null | undefined): boolean {
   if (!extracted || typeof extracted.amount !== 'number' || extracted.amount <= 0) return false
   if (typeof extracted.description !== 'string' || !extracted.description.trim()) return false
   if (typeof extracted.occurred_at !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(extracted.occurred_at)) return false

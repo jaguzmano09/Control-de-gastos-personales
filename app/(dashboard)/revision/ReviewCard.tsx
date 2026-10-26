@@ -63,6 +63,11 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
         </div>
 
         <div>
+          <label className="text-xs text-ledger-muted">Fecha</label>
+          <input type="date" name="occurred_at" defaultValue={transaction.occurred_at} required className={inputClass} />
+        </div>
+
+        <div>
           <label className="text-xs text-ledger-muted">Monto</label>
           <input type="number" name="amount" min="0" step="1" defaultValue={transaction.amount} className={inputClass} />
         </div>

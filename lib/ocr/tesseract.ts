@@ -8,6 +8,7 @@ type TesseractWorker = Awaited<ReturnType<typeof import('tesseract.js')['createW
 let workerPromise: Promise<TesseractWorker> | undefined
 let recognitionQueue = Promise.resolve()
 const OCR_TIMEOUT_MS = 30_000
+const TESSERACT_WORKER_PATH = require.resolve('tesseract.js/src/worker-script/node/index.js')
 
 async function getWorker() {
   if (!workerPromise) {
@@ -15,6 +16,7 @@ async function getWorker() {
       .then(({ createWorker }) => createWorker('spa', undefined, {
         logger: () => undefined,
         cacheMethod: 'write',
+        workerPath: TESSERACT_WORKER_PATH,
       }))
       .catch((error) => {
         workerPromise = undefined

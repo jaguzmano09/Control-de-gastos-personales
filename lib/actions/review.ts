@@ -11,7 +11,12 @@ export async function confirmTransaction(formData: FormData) {
   const account_id = formData.get('account_id') as string
   const wallet_id = (formData.get('wallet_id') as string) || null
   const description = (formData.get('description') as string) || null
+  const occurred_at = formData.get('occurred_at') as string
   const amount = Number(formData.get('amount'))
+
+  if (!occurred_at || !Number.isFinite(amount) || amount <= 0 || !account_id) {
+    throw new Error('Fecha, cuenta y monto son obligatorios para confirmar la transacción')
+  }
 
   const { data: current } = await supabase
     .from('transactions')
@@ -21,7 +26,7 @@ export async function confirmTransaction(formData: FormData) {
 
   const { data: updated, error } = await supabase
     .from('transactions')
-    .update({ status: 'confirmada', category_id, account_id, wallet_id, description, amount })
+    .update({ status: 'confirmada', occurred_at, category_id, account_id, wallet_id, description, amount })
     .eq('id', id)
     .select('id')
   if (error) throw error
