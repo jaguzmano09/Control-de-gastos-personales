@@ -69,7 +69,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
 
         <div>
           <label className="text-xs text-ledger-muted">Monto</label>
-          <input type="number" name="amount" min="0" step="1" defaultValue={transaction.amount} className={inputClass} />
+          <input type="number" name="amount" min="1" step="1" required defaultValue={transaction.amount || ''} className={inputClass} />
         </div>
 
         <div>

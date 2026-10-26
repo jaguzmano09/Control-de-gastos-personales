@@ -861,7 +861,7 @@ export type Database = {
     Enums: {
       rule_match_type: "contains" | "exact" | "regex"
       transaction_source: "manual" | "ocr" | "email_webhook" | "migration"
-      transaction_status: "pendiente_revision" | "confirmada" | "duplicado"
+      transaction_status: "pendiente_revision" | "confirmada" | "duplicado" | "descartada"
       transaction_type:
         | "Ingreso"
         | "Gasto"
@@ -997,7 +997,7 @@ export const Constants = {
     Enums: {
       rule_match_type: ["contains", "exact", "regex"],
       transaction_source: ["manual", "ocr", "email_webhook", "migration"],
-      transaction_status: ["pendiente_revision", "confirmada", "duplicado"],
+      transaction_status: ["pendiente_revision", "confirmada", "duplicado", "descartada"],
       transaction_type: [
         "Ingreso",
         "Gasto",

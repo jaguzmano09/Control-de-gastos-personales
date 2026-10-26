@@ -1,6 +1,6 @@
 // Verifica el nombre del modelo contra la documentación vigente de Gemini
 // antes de desplegar — los modelos cambian con el tiempo.
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-flash-latest'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 export type Extracted = {
@@ -71,13 +71,13 @@ async function callGemini(parts: object[]): Promise<Extracted> {
     }
 
     const errorText = await res.text()
-    if (res.status !== 429 && res.status !== 503) {
+    if (![429, 500, 503, 504].includes(res.status)) {
       throw new Error(`Gemini error: ${res.status} ${errorText}`)
     }
 
     if (attempt < 2) {
       const retryAfter = Number(res.headers.get('retry-after'))
-      const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 1000
+      const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** (attempt + 1) * 1000
       await new Promise((resolve) => setTimeout(resolve, delay))
     } else {
       throw new Error(`Gemini error: ${res.status} ${errorText}`)
