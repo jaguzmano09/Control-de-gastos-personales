@@ -29,6 +29,17 @@ function getMonthRange(monthStart: string) {
   }
 }
 
+function getTodayDate() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+function addOneDay(date: string) {
+  const value = new Date(`${date}T00:00:00Z`)
+  value.setUTCDate(value.getUTCDate() + 1)
+  return value.toISOString().slice(0, 10)
+}
+
 function emptyTotals(): Totals {
   return { ingreso: 0, gasto: 0, ahorro: 0, inversion: 0, transferencia: 0 }
 }
@@ -38,7 +49,11 @@ function emptyAccountSummary(): AccountSummary {
 }
 
 export async function getMonthSummary(supabase: DashboardClient, monthStart: string) {
-  const { start, end } = getMonthRange(monthStart)
+  const { start, end: monthEnd } = getMonthRange(monthStart)
+  const today = getTodayDate()
+  const end = monthStart.slice(0, 7) === today.slice(0, 7)
+    ? (addOneDay(today) < monthEnd ? addOneDay(today) : monthEnd)
+    : monthEnd
   const { data: transactions, error } = await supabase
     .from('transactions')
     .select('type, savings_operation, amount, category_id, wallet_id, account_id, occurred_at')

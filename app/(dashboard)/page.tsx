@@ -61,6 +61,24 @@ export default async function DashboardHomePage({
   const categoryNameById = new Map((categories ?? []).map((c) => [c.id, c.name]))
   const walletNameById = new Map((wallets ?? []).map((w) => [w.id, w.name]))
   const walletAccountNameById = new Map((wallets ?? []).map((w) => [w.id, w.accounts?.name ?? 'Cuenta']))
+  const walletsByAccount = new Map<string, DashboardWallet[]>()
+  for (const wallet of wallets ?? []) {
+    const list = walletsByAccount.get(wallet.account_id) ?? []
+    list.push(wallet)
+    walletsByAccount.set(wallet.account_id, list)
+  }
+  const walletsWithMovement = (wallets ?? []).filter((wallet) => summary.walletIdsWithMovement.has(wallet.id))
+  const accountsWithMovement = (accounts ?? []).filter((account) => {
+    const accountSummary = summary.accountById.get(account.id)
+    return accountSummary
+      ? accountSummary.ingreso > 0
+        || accountSummary.gasto > 0
+        || accountSummary.ahorro !== 0
+        || accountSummary.inversion > 0
+        || accountSummary.transferencia > 0
+      : false
+  })
+  const accountsWithoutMovement = (accounts ?? []).filter((account) => !accountsWithMovement.some((item) => item.id === account.id))
   const quickActions = [
     {
       href: `/transacciones?period=${selectedPeriod}`,
@@ -214,7 +232,18 @@ export default async function DashboardHomePage({
         </div>
       </details>
 
-      <details open className="panel overflow-hidden">
+      <section className="panel overflow-hidden">
+        <div className="flex flex-wrap items-end justify-between gap-3 bg-white px-5 py-5 sm:px-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ledger-green">Destinos financieros</p>
+            <h2 className="mt-1 font-serif text-2xl text-ledger-text">Bolsillos y cuentas</h2>
+            <p className="mt-1 text-sm text-ledger-muted">Revisa los destinos con actividad y el estado general de tus cuentas este mes.</p>
+          </div>
+          <span className="rounded-full bg-black/[0.04] px-3 py-1.5 text-xs font-medium text-ledger-muted">
+            {accountsWithMovement.length} con actividad · {accountsWithoutMovement.length} sin actividad
+          </span>
+        </div>
+      <details open className="hidden border-t border-black/10 overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
           <div className="flex items-start gap-3">
             <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700" aria-hidden="true">
@@ -229,35 +258,39 @@ export default async function DashboardHomePage({
             </div>
           </div>
           <span className="hidden rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 sm:inline-flex">
-            {(wallets ?? []).length} bolsillos
+            {walletsWithMovement.length} con movimiento
           </span>
         </summary>
         <div className="space-y-3 bg-white/40 p-4 sm:p-6">
-          {(wallets ?? []).filter((wallet) => summary.walletIdsWithMovement.has(wallet.id)).map((wallet) => {
+          {walletsWithMovement.map((wallet) => {
             const budget = (walletBudgets ?? []).find((item) => item.wallet_id === wallet.id)
+            const spent = summary.gastoByWallet.get(wallet.id) ?? 0
+            const total = Number(budget?.total_budget ?? 0)
+            const yieldAmount = summary.yieldByWallet.get(wallet.id) ?? 0
+            const available = Math.max(total - spent + yieldAmount, 0)
             return (
               <BudgetCard
                 key={wallet.id}
                 label={wallet.name}
                 sublabel={wallet.accounts?.name}
-                spent={summary.gastoByWallet.get(wallet.id) ?? 0}
-                total={Number(budget?.total_budget ?? 0)}
+                spent={spent}
+                total={total}
                 alertThreshold={budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
               >
                 <BudgetMetric label="Asignado" value={Number(budget?.assigned_amount ?? 0)} />
                 <BudgetMetric label="Sobrante" value={Number(budget?.rollover_amount ?? 0)} />
-                <BudgetMetric label="Saldo" value={summary.balanceByWallet.get(wallet.id) ?? 0} positive />
-                <BudgetMetric label="Rendimientos" value={summary.yieldByWallet.get(wallet.id) ?? 0} positive />
+                <BudgetMetric label="Saldo" value={available} positive />
+                <BudgetMetric label="Rendimientos" value={yieldAmount} positive />
               </BudgetCard>
             )
           })}
-          {(wallets ?? []).filter((wallet) => summary.walletIdsWithMovement.has(wallet.id)).length === 0 && (
+          {walletsWithMovement.length === 0 && (
             <p className="text-sm text-ledger-muted">No hay movimientos en bolsillos durante este periodo.</p>
           )}
         </div>
       </details>
 
-      <details open className="panel overflow-hidden">
+      <details open className="border-t border-black/10 overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
           <div className="flex items-start gap-3">
             <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700" aria-hidden="true">
@@ -278,14 +311,14 @@ export default async function DashboardHomePage({
         <div className="bg-white/40 p-4 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs text-ledger-muted">Saldos disponibles y uso de entradas del periodo.</p>
+            <p className="text-xs text-ledger-muted">Cuentas con actividad priorizadas para el período seleccionado.</p>
           </div>
           <span className="hidden rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-medium text-ledger-green sm:inline-flex">
-            {accounts?.length ?? 0} activas
+            {accountsWithMovement.length} con movimiento
           </span>
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {(accounts ?? []).map((account) => {
+          {accountsWithMovement.map((account) => {
             const accountSummary = summary.accountById.get(account.id)
             const income = accountSummary?.ingreso ?? 0
             const rollover = accountSummary?.rollover ?? 0
@@ -353,15 +386,77 @@ export default async function DashboardHomePage({
                     <span className="font-medium text-ledger-text">{formatCOP(rollover)}</span>
                   </div>
                 </div>
+                {(walletsByAccount.get(account.id) ?? []).length > 0 && (
+                  <details className="border-t border-black/10 bg-black/[0.015]">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-medium text-ledger-text [&::-webkit-details-marker]:hidden">
+                      <span>Bolsillos de {account.name}</span>
+                      <span className="text-xs font-normal text-ledger-muted">
+                        {(walletsByAccount.get(account.id) ?? []).length} registrados
+                      </span>
+                    </summary>
+                    <div className="space-y-3 border-t border-black/5 p-4">
+                      {(walletsByAccount.get(account.id) ?? [])
+                        .filter((wallet) => {
+                          const budget = (walletBudgets ?? []).find((item) => item.wallet_id === wallet.id)
+                          return summary.walletIdsWithMovement.has(wallet.id) || Number(budget?.total_budget ?? 0) > 0
+                        })
+                        .map((wallet) => {
+                          const budget = (walletBudgets ?? []).find((item) => item.wallet_id === wallet.id)
+                          const spent = summary.gastoByWallet.get(wallet.id) ?? 0
+                          const total = Number(budget?.total_budget ?? 0)
+                          const yieldAmount = summary.yieldByWallet.get(wallet.id) ?? 0
+                          return (
+                            <BudgetCard
+                              key={wallet.id}
+                              label={wallet.name}
+                              spent={spent}
+                              total={total}
+                              alertThreshold={budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
+                            >
+                              <BudgetMetric label="Asignado" value={Number(budget?.assigned_amount ?? 0)} />
+                              <BudgetMetric label="Sobrante" value={Number(budget?.rollover_amount ?? 0)} />
+                              <BudgetMetric label="Saldo" value={Math.max(total - spent + yieldAmount, 0)} positive />
+                              <BudgetMetric label="Rendimientos" value={yieldAmount} positive />
+                            </BudgetCard>
+                          )
+                        })}
+                    </div>
+                  </details>
+                )}
               </div>
             )
           })}
-          {(accounts ?? []).length === 0 && (
+          {accountsWithMovement.length === 0 && (
             <p className="text-sm text-ledger-muted">No hay cuentas activas para mostrar.</p>
           )}
         </div>
+        {accountsWithoutMovement.length > 0 && (
+          <details className="mt-5 overflow-hidden rounded-2xl border border-black/10 bg-white">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+              <div>
+                <p className="text-sm font-semibold text-ledger-text">Sin movimientos en este período</p>
+                <p className="mt-1 text-xs text-ledger-muted">Estas cuentas no registraron actividad en el mes seleccionado.</p>
+              </div>
+              <span className="rounded-full bg-black/[0.04] px-3 py-1 text-xs font-medium text-ledger-muted">
+                {accountsWithoutMovement.length} cuentas
+              </span>
+            </summary>
+            <div className="grid gap-3 border-t border-black/5 bg-black/[0.015] p-4 sm:grid-cols-2">
+              {accountsWithoutMovement.map((account) => (
+                <div key={account.id} className="flex items-center justify-between rounded-xl border border-black/5 bg-white px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-ledger-text">{account.name}</p>
+                    <p className="mt-1 text-xs text-ledger-muted">Sin actividad mensual</p>
+                  </div>
+                  <span className="h-2 w-2 rounded-full bg-black/20" aria-hidden="true" />
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         </div>
       </details>
+      </section>
     </div>
   )
 }

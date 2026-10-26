@@ -79,9 +79,7 @@ export default async function PresupuestoBolsillosPage({
           const yieldAmount = target.wallet_id
             ? summary.yieldByWallet.get(target.wallet_id) ?? 0
             : summary.yieldByAccount.get(target.account_id!) ?? 0
-          const currentBalance = target.wallet_id
-            ? summary.balanceByWallet.get(target.wallet_id) ?? 0
-            : summary.accountById.get(target.account_id!)?.balance ?? 0
+          const currentBalance = Math.max(total - spent + yieldAmount, 0)
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
           const isOverBudget = total > 0 && spent >= total
