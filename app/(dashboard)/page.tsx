@@ -79,6 +79,17 @@ export default async function DashboardHomePage({
       : false
   })
   const accountsWithoutMovement = (accounts ?? []).filter((account) => !accountsWithMovement.some((item) => item.id === account.id))
+  const categoryBudgetStats = (categoryBudgets ?? []).reduce(
+    (totals, budget) => {
+      const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
+      const total = Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)
+      return {
+        total: totals.total + total,
+        spent: totals.spent + Math.max(0, -movement),
+      }
+    },
+    { total: 0, spent: 0 },
+  )
   const quickActions = [
     {
       href: `/transacciones?period=${selectedPeriod}`,
@@ -195,8 +206,8 @@ export default async function DashboardHomePage({
         </div>
       </section>
 
-      <details open className="panel overflow-hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
+      <details className="panel overflow-hidden">
+        <summary className="cursor-pointer list-none bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
           <div className="flex items-start gap-3">
             <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ledger-green/10 text-ledger-green" aria-hidden="true">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7">
@@ -208,11 +219,29 @@ export default async function DashboardHomePage({
               <p className="mt-1 text-sm text-ledger-muted">Controla el consumo y el saldo disponible de cada categoría.</p>
             </div>
           </div>
-          <span className="hidden rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-medium text-ledger-green sm:inline-flex">
-            {(categoryBudgets ?? []).length} categorías
-          </span>
+          <div className="mt-5 grid grid-cols-2 gap-2 border-t border-black/5 pt-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-ledger-green/[0.06] px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Categorías</p>
+              <p className="mt-1 text-base font-semibold text-ledger-text">{(categoryBudgets ?? []).length}</p>
+            </div>
+            <div className="rounded-xl bg-black/[0.03] px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Asignado</p>
+              <p className="mt-1 text-base font-semibold text-ledger-text">{formatCOP(categoryBudgetStats.total)}</p>
+            </div>
+            <div className="col-span-2 rounded-xl bg-amber-50/80 px-3 py-2.5 sm:col-span-1">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Consumido</p>
+              <p className="mt-1 text-base font-semibold text-amber-700">{formatCOP(categoryBudgetStats.spent)}</p>
+            </div>
+          </div>
         </summary>
-        <div className="space-y-3 bg-white/40 p-4 sm:p-6">
+        <div className="border-t border-black/5 bg-black/[0.015] p-4 sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ledger-muted">Detalle por categoría</p>
+            <a href={`/presupuestos/categorias?period=${selectedPeriod}`} className="text-xs font-medium text-ledger-green transition hover:text-ledger-text">
+              Administrar presupuestos
+            </a>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
           {(categoryBudgets ?? []).map((budget) => {
             const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
             const gastoNormal = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
@@ -233,22 +262,40 @@ export default async function DashboardHomePage({
               </BudgetCard>
             )
           })}
+          </div>
           {(categoryBudgets ?? []).length === 0 && (
-            <p className="text-sm text-ledger-muted">Aún no has asignado presupuesto por categoría este mes.</p>
+            <div className="rounded-2xl border border-dashed border-black/15 bg-white px-5 py-8 text-center">
+              <p className="text-sm font-medium text-ledger-text">Aún no has asignado presupuesto por categoría.</p>
+              <p className="mt-1 text-sm text-ledger-muted">Configura tus categorías para comenzar a controlar el mes.</p>
+              <a href={`/presupuestos/categorias?period=${selectedPeriod}`} className="btn btn-primary btn-sm mt-4">
+                Configurar presupuesto
+              </a>
+            </div>
           )}
         </div>
       </details>
 
       <section className="panel overflow-hidden">
-        <div className="flex flex-wrap items-end justify-between gap-3 bg-white px-5 py-5 sm:px-6">
+        <div className="bg-white px-5 py-5 sm:px-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ledger-green">Destinos financieros</p>
             <h2 className="mt-1 font-serif text-2xl text-ledger-text">Bolsillos y cuentas</h2>
             <p className="mt-1 text-sm text-ledger-muted">Revisa los destinos con actividad y el estado general de tus cuentas este mes.</p>
           </div>
-          <span className="rounded-full bg-black/[0.04] px-3 py-1.5 text-xs font-medium text-ledger-muted">
-            {accountsWithMovement.length} con actividad · {accountsWithoutMovement.length} sin actividad
-          </span>
+          <div className="mt-5 grid grid-cols-2 gap-2 border-t border-black/5 pt-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-sky-50/80 px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Cuentas activas</p>
+              <p className="mt-1 text-base font-semibold text-ledger-text">{accounts?.length ?? 0}</p>
+            </div>
+            <div className="rounded-xl bg-ledger-green/[0.06] px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Con actividad</p>
+              <p className="mt-1 text-base font-semibold text-ledger-green">{accountsWithMovement.length}</p>
+            </div>
+            <div className="col-span-2 rounded-xl bg-black/[0.03] px-3 py-2.5 sm:col-span-1">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Sin actividad</p>
+              <p className="mt-1 text-base font-semibold text-ledger-text">{accountsWithoutMovement.length}</p>
+            </div>
+          </div>
         </div>
       <details open className="hidden border-t border-black/10 overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
@@ -297,7 +344,7 @@ export default async function DashboardHomePage({
         </div>
       </details>
 
-      <details open className="border-t border-black/10 overflow-hidden">
+      <details className="border-t border-black/10 overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
           <div className="flex items-start gap-3">
             <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700" aria-hidden="true">
@@ -315,7 +362,7 @@ export default async function DashboardHomePage({
             {accounts?.length ?? 0} activas
           </span>
         </summary>
-        <div className="bg-white/40 p-4 sm:p-6">
+        <div className="bg-black/[0.015] p-4 sm:p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs text-ledger-muted">Cuentas con actividad priorizadas para el período seleccionado.</p>
@@ -495,21 +542,24 @@ function BudgetCard({ label, sublabel, spent, total, alertThreshold, children }:
   const remaining = total - spent
 
   return (
-    <div className="rounded-sm border border-black/10 bg-white p-4">
+    <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-ledger-green/25 hover:shadow-[0_8px_20px_rgba(23,35,31,0.07)] sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-ledger-text">{label}</p>
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${isOverBudget ? 'bg-red-600' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`} aria-hidden="true" />
+            <p className="text-sm font-semibold text-ledger-text">{label}</p>
+          </div>
           {sublabel && <p className="mt-1 text-xs text-ledger-muted">Cuenta: {sublabel}</p>}
           <p className="mt-1 text-xs text-ledger-muted">{percent.toFixed(0)}% utilizado</p>
         </div>
         <div className="text-right">
-          <p className={`text-sm font-medium ${isOverBudget ? 'text-red-700' : 'text-ledger-text'}`}>
+          <p className={`text-base font-semibold ${isOverBudget ? 'text-red-700' : 'text-ledger-green'}`}>
             {formatCOP(remaining)}
           </p>
-          <p className="text-xs text-ledger-muted">disponible</p>
+          <p className="text-[11px] uppercase tracking-[0.1em] text-ledger-muted">disponible</p>
         </div>
       </div>
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-black/5">
+      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-black/5">
         <div
           className={`h-full rounded-full ${isOverBudget ? 'bg-red-700' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`}
           style={{ width: `${percent}%` }}
@@ -519,7 +569,7 @@ function BudgetCard({ label, sublabel, spent, total, alertThreshold, children }:
         <span className="text-ledger-muted">Utilizado <strong className="text-ledger-text">{formatCOP(spent)}</strong></span>
         <span className="text-ledger-muted">Total <strong className="text-ledger-text">{formatCOP(total)}</strong></span>
       </div>
-      {children && <div className="mt-3 grid grid-cols-2 gap-2 border-t border-black/5 pt-3 sm:grid-cols-4">{children}</div>}
+      {children && <div className="mt-4 grid grid-cols-2 gap-2 border-t border-black/5 pt-4 sm:grid-cols-4">{children}</div>}
       {isOverBudget && <p className="mt-3 text-xs text-red-700">Presupuesto superado.</p>}
       {isOverThreshold && !isOverBudget && <p className="mt-3 text-xs text-amber-700">Alcanzaste el umbral del {alertThreshold}%.</p>}
     </div>
