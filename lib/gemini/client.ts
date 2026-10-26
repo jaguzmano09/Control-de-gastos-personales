@@ -3,12 +3,19 @@
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
-type Extracted = {
+export type Extracted = {
   occurred_at: string
   amount: number
   description: string
   suggested_category: string
   confidence: number
+}
+
+export function isUsableExtraction(extracted: Partial<Extracted> | null | undefined): extracted is Extracted {
+  if (!extracted || typeof extracted.amount !== 'number' || extracted.amount <= 0) return false
+  if (typeof extracted.description !== 'string' || !extracted.description.trim()) return false
+  if (typeof extracted.occurred_at !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(extracted.occurred_at)) return false
+  return true
 }
 
 function buildPrompt(categoryNames: string[], ocrText?: string) {
@@ -48,7 +55,16 @@ async function callGemini(parts: object[]): Promise<Extracted> {
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text
       if (!text) throw new Error('Gemini no devolvió contenido')
       try {
-        return JSON.parse(text) as Extracted
+        const parsed = JSON.parse(text) as Partial<Extracted>
+        return {
+          occurred_at: typeof parsed.occurred_at === 'string' ? parsed.occurred_at : '',
+          amount: typeof parsed.amount === 'number' && Number.isFinite(parsed.amount) ? parsed.amount : 0,
+          description: typeof parsed.description === 'string' ? parsed.description.trim() : '',
+          suggested_category: typeof parsed.suggested_category === 'string' ? parsed.suggested_category.trim() : '',
+          confidence: typeof parsed.confidence === 'number' && Number.isFinite(parsed.confidence)
+            ? Math.max(0, Math.min(1, parsed.confidence))
+            : 0,
+        }
       } catch {
         throw new Error('Gemini devolvió una respuesta con formato inválido')
       }

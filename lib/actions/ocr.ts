@@ -6,7 +6,12 @@ import { createClient } from '@/lib/supabase/server'
 import { matchCategorizationRule } from '@/lib/categorization/match'
 import { discardTesseractWorker, extractTextWithTesseract } from '@/lib/ocr/tesseract'
 import { parseOcrText } from '@/lib/ocr/parse'
-import { extractTransactionFromImage } from '@/lib/gemini/client'
+import {
+  extractTransactionFromImage,
+  extractTransactionFromImageWithOcr,
+  isUsableExtraction,
+  type Extracted,
+} from '@/lib/gemini/client'
 
 export async function createTransactionFromReceipt(formData: FormData) {
   const supabase = await createClient()
@@ -48,33 +53,51 @@ export async function createTransactionFromReceipt(formData: FormData) {
 
   const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
 
-  let extracted: {
-    occurred_at: string
-    amount: number
-    description: string
-    suggested_category: string
-    confidence: number
-  } | undefined
+  let extracted: Extracted | undefined
+  let extractionEngine: 'gemini-vision' | 'gemini-vision-ocr' | 'tesseract-local' | undefined
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
   let tesseractError: Error | undefined
   const categoryNames = (categories ?? []).map((category) => category.name)
 
   try {
     const geminiResult = await extractTransactionFromImage(base64, file.type, categoryNames)
-    extracted = {
-      occurred_at: geminiResult.occurred_at,
-      amount: geminiResult.amount,
-      description: geminiResult.description,
-      suggested_category: geminiResult.suggested_category,
-      confidence: geminiResult.confidence,
+    if (isUsableExtraction(geminiResult)) {
+      extracted = geminiResult
+      extractionEngine = 'gemini-vision'
     }
-  } catch (err) {
+  } catch {
+    // The local OCR pass below is the recovery path for unavailable or incomplete vision results.
+  }
+
+  if (!extracted) {
     try {
       ocrResult = await extractTextWithTesseract(Buffer.from(base64, 'base64'))
-      const parsed = parseOcrText(ocrResult.text)
-      extracted = {
-        ...parsed,
-        suggested_category: '',
+      if (ocrResult.text) {
+        try {
+          const geminiResult = await extractTransactionFromImageWithOcr(
+            base64,
+            file.type,
+            ocrResult.text,
+            categoryNames,
+          )
+          if (isUsableExtraction(geminiResult)) {
+            extracted = geminiResult
+            extractionEngine = 'gemini-vision-ocr'
+          }
+        } catch {
+          // Keep the parsed OCR result as a deterministic fallback.
+        }
+      }
+
+      if (!extracted) {
+        const parsed = parseOcrText(ocrResult.text)
+        if (isUsableExtraction(parsed)) {
+          extracted = {
+            ...parsed,
+            suggested_category: '',
+          }
+          extractionEngine = 'tesseract-local'
+        }
       }
     } catch (tesseractErr) {
       tesseractError = tesseractErr instanceof Error ? tesseractErr : new Error('Error desconocido de Tesseract')
@@ -94,6 +117,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
   // Rules-first: una regla aprendida/manual tiene prioridad sobre la sugerencia de Gemini.
   const rule = await matchCategorizationRule(supabase, user!.id, extracted!.description)
   const category = categories?.find((c) => c.name.toLowerCase() === extracted!.suggested_category.toLowerCase())
+  const extractionConfidence = extractionEngine === 'tesseract-local'
+    ? Math.min(extracted!.confidence, ocrResult.confidence / 100)
+    : extracted!.confidence
 
   const { error } = await supabase.from('transactions').insert({
     user_id: user!.id,
@@ -106,9 +132,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
     amount: extracted!.amount,
     source: 'ocr',
     status: 'pendiente_revision',
-    ai_confidence: rule ? 1 : Math.min(extracted!.confidence, ocrResult.confidence / 100),
+    ai_confidence: rule ? 1 : extractionConfidence,
     raw_data: {
-      engine: 'tesseract-local',
+      engine: extractionEngine,
       extracted,
       ocr: ocrResult,
     },
