@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/types/database.types'
+import { redirect } from 'next/navigation'
 
 export async function createAccount(formData: FormData) {
   const supabase = await createClient()
@@ -41,7 +42,12 @@ export async function createWallet(formData: FormData) {
   if (error) throw error
 
   // Mantiene consistente el flag informativo has_wallets de la cuenta padre.
-  await supabase.from('accounts').update({ has_wallets: true }).eq('id', account_id)
+  const { error: accountError } = await supabase
+    .from('accounts')
+    .update({ has_wallets: true })
+    .eq('id', account_id)
+    .eq('user_id', user.id)
+  if (accountError) throw accountError
 
   revalidatePath('/cuentas')
 }
@@ -53,4 +59,111 @@ export async function toggleWalletActive(formData: FormData) {
   const { error } = await supabase.from('wallets').update({ is_active }).eq('id', id)
   if (error) throw error
   revalidatePath('/cuentas')
+}
+
+export async function createYieldConfig(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+  const fail = (message: string): never => {
+    redirect(`/cuentas?error=${encodeURIComponent(message)}`)
+  }
+
+  const accountId = (formData.get('account_id') as string | null) || null
+  const walletId = (formData.get('wallet_id') as string | null) || null
+  const startDate = (formData.get('start_date') as string)?.trim()
+  const eaPercent = Number(formData.get('ea_percent'))
+
+  if ((accountId ? 1 : 0) + (walletId ? 1 : 0) !== 1) fail('Selecciona una cuenta o bolsillo')
+  if (!startDate || !Number.isFinite(eaPercent) || eaPercent < 0 || eaPercent > 100) {
+    fail('La tasa y la fecha de inicio no son válidas')
+  }
+
+  const { data: config, error: configError } = await supabase
+    .from('yield_configs')
+    .insert({
+      user_id: user.id,
+      account_id: accountId,
+      wallet_id: walletId,
+      start_date: startDate,
+    })
+    .select('id')
+    .single()
+  if (configError) {
+    if (configError.code === '23505') {
+      fail('Este objetivo ya tiene una configuración de alto rendimiento. Agrega una nueva tasa desde su historial.')
+    }
+    fail(configError.message)
+  }
+  const configId = config?.id
+  if (!configId) fail('No se pudo crear la configuración de rendimiento.')
+
+  const { error: rateError } = await supabase.from('yield_rates').insert({
+    user_id: user.id,
+    config_id: configId,
+    ea_percent: eaPercent,
+    valid_from: startDate,
+  })
+  if (rateError) {
+    await supabase.from('yield_configs').delete().eq('id', configId).eq('user_id', user.id)
+    if (rateError.code === '23505') {
+      fail('Ya existe una tasa registrada para esa fecha. Usa una fecha diferente.')
+    }
+    fail(rateError.message)
+  }
+
+  revalidatePath('/cuentas')
+  revalidatePath('/')
+}
+
+export async function addYieldRate(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+  const fail = (message: string): never => {
+    redirect(`/cuentas?error=${encodeURIComponent(message)}`)
+  }
+
+  const configId = formData.get('config_id') as string
+  const validFrom = (formData.get('valid_from') as string)?.trim()
+  const eaPercent = Number(formData.get('ea_percent'))
+  if (!configId || !validFrom || !Number.isFinite(eaPercent) || eaPercent < 0 || eaPercent > 100) {
+    fail('La tasa y la fecha de vigencia no son válidas')
+  }
+
+  const { error } = await supabase.from('yield_rates').insert({
+    user_id: user.id,
+    config_id: configId,
+    ea_percent: eaPercent,
+    valid_from: validFrom,
+  })
+  if (error) {
+    if (error.code === '23505') {
+      fail('Ya existe una tasa registrada para esa fecha. Usa una fecha diferente.')
+    }
+    fail(error.message)
+  }
+
+  revalidatePath('/cuentas')
+  revalidatePath('/')
+}
+
+export async function toggleYieldConfig(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+
+  const configId = formData.get('config_id') as string
+  const isActive = formData.get('is_active') === 'true'
+  if (!configId) throw new Error('Falta la configuración')
+
+  const { error } = await supabase
+    .from('yield_configs')
+    .update({ is_active: isActive })
+    .eq('id', configId)
+    .eq('user_id', user.id)
+  if (error) throw error
+
+  revalidatePath('/cuentas')
+  revalidatePath('/')
 }

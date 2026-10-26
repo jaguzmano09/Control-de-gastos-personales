@@ -19,7 +19,7 @@ const inputClass =
   'rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
 
 type DashboardCategory = { id: string; name: string }
-type DashboardWallet = { id: string; name: string }
+type DashboardWallet = { id: string; name: string; account_id: string; accounts: { name: string } | null }
 type DashboardAccount = { id: string; name: string; is_active: boolean }
 type CategoryBudget = { category_id: string; amount: number; rollover_amount: number; alert_threshold_percent: number | null }
 type WalletBudget = { wallet_id: string; assigned_amount: number; rollover_amount: number; total_budget: number; alert_threshold_percent: number | null }
@@ -44,7 +44,7 @@ export default async function DashboardHomePage({
     pendingCount,
   ] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true),
-    supabase.from('wallets').select('id, name').eq('is_active', true),
+    supabase.from('wallets').select('id, name, account_id, accounts(name)').eq('is_active', true),
     supabase.from('accounts').select('id, name, is_active').eq('is_active', true).order('name'),
     supabase.from('category_budgets').select('category_id, amount, rollover_amount, alert_threshold_percent').eq('period_month', monthStart),
     supabase.from('wallet_budgets').select('wallet_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', monthStart).not('wallet_id', 'is', null),
@@ -60,6 +60,7 @@ export default async function DashboardHomePage({
 
   const categoryNameById = new Map((categories ?? []).map((c) => [c.id, c.name]))
   const walletNameById = new Map((wallets ?? []).map((w) => [w.id, w.name]))
+  const walletAccountNameById = new Map((wallets ?? []).map((w) => [w.id, w.accounts?.name ?? 'Cuenta']))
   const quickActions = [
     {
       href: `/transacciones?period=${selectedPeriod}`,
@@ -228,24 +229,30 @@ export default async function DashboardHomePage({
             </div>
           </div>
           <span className="hidden rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 sm:inline-flex">
-            {(walletBudgets ?? []).length} bolsillos
+            {(wallets ?? []).length} bolsillos
           </span>
         </summary>
         <div className="space-y-3 bg-white/40 p-4 sm:p-6">
-          {(walletBudgets ?? []).map((budget) => (
-            <BudgetCard
-              key={budget.wallet_id}
-              label={walletNameById.get(budget.wallet_id) ?? 'Bolsillo'}
-              spent={summary.gastoByWallet.get(budget.wallet_id) ?? 0}
-              total={Number(budget.total_budget)}
-              alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
-            >
-              <BudgetMetric label="Asignado" value={Number(budget.assigned_amount)} />
-              <BudgetMetric label="Sobrante" value={Number(budget.rollover_amount)} />
-            </BudgetCard>
-          ))}
-          {(walletBudgets ?? []).length === 0 && (
-            <p className="text-sm text-ledger-muted">Aún no has asignado presupuesto a ningún bolsillo este mes.</p>
+          {(wallets ?? []).filter((wallet) => summary.walletIdsWithMovement.has(wallet.id)).map((wallet) => {
+            const budget = (walletBudgets ?? []).find((item) => item.wallet_id === wallet.id)
+            return (
+              <BudgetCard
+                key={wallet.id}
+                label={wallet.name}
+                sublabel={wallet.accounts?.name}
+                spent={summary.gastoByWallet.get(wallet.id) ?? 0}
+                total={Number(budget?.total_budget ?? 0)}
+                alertThreshold={budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
+              >
+                <BudgetMetric label="Asignado" value={Number(budget?.assigned_amount ?? 0)} />
+                <BudgetMetric label="Sobrante" value={Number(budget?.rollover_amount ?? 0)} />
+                <BudgetMetric label="Saldo" value={summary.balanceByWallet.get(wallet.id) ?? 0} positive />
+                <BudgetMetric label="Rendimientos" value={summary.yieldByWallet.get(wallet.id) ?? 0} positive />
+              </BudgetCard>
+            )
+          })}
+          {(wallets ?? []).filter((wallet) => summary.walletIdsWithMovement.has(wallet.id)).length === 0 && (
+            <p className="text-sm text-ledger-muted">No hay movimientos en bolsillos durante este periodo.</p>
           )}
         </div>
       </details>
@@ -283,8 +290,9 @@ export default async function DashboardHomePage({
             const income = accountSummary?.ingreso ?? 0
             const rollover = accountSummary?.rollover ?? 0
             const outflow = accountSummary?.outflow ?? 0
-            const balance = (accountSummary?.ingreso ?? 0) + rollover - outflow
-            const availableBeforeOutflow = income + rollover
+            const yieldAmount = accountSummary?.yield ?? 0
+            const balance = (accountSummary?.ingreso ?? 0) + rollover + yieldAmount - outflow
+            const availableBeforeOutflow = income + rollover + yieldAmount
             const outflowPercent = availableBeforeOutflow > 0
               ? Math.min((outflow / availableBeforeOutflow) * 100, 100)
               : 0
@@ -311,6 +319,16 @@ export default async function DashboardHomePage({
                       </p>
                       <p className="mt-0.5 text-[11px] text-ledger-muted">{balance >= 0 ? 'Disponible' : 'Saldo negativo'}</p>
                     </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 border-b border-black/5 p-4 text-xs">
+                  <div>
+                    <p className="text-ledger-muted">Rendimientos</p>
+                    <p className="mt-1 font-medium text-ledger-green">{formatCOP(yieldAmount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-ledger-muted">Disponible antes de gastos</p>
+                    <p className="mt-1 font-medium text-ledger-text">{formatCOP(availableBeforeOutflow)}</p>
                   </div>
                 </div>
                 <div className="p-5">
@@ -366,8 +384,8 @@ function AccountMetric({ label, value, tone }: { label: string; value: number; t
   )
 }
 
-function BudgetCard({ label, spent, total, alertThreshold, children }: {
-  label: string; spent: number; total: number; alertThreshold?: number; children?: ReactNode
+function BudgetCard({ label, sublabel, spent, total, alertThreshold, children }: {
+  label: string; sublabel?: string; spent: number; total: number; alertThreshold?: number; children?: ReactNode
 }) {
   const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const isOverThreshold = alertThreshold !== undefined && total > 0 && (spent / total) * 100 >= alertThreshold
@@ -379,6 +397,7 @@ function BudgetCard({ label, spent, total, alertThreshold, children }: {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-ledger-text">{label}</p>
+          {sublabel && <p className="mt-1 text-xs text-ledger-muted">Cuenta: {sublabel}</p>}
           <p className="mt-1 text-xs text-ledger-muted">{percent.toFixed(0)}% utilizado</p>
         </div>
         <div className="text-right">

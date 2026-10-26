@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { calculateDailyYield } from '@/lib/yield-calculation'
 
 type DashboardClient = Awaited<ReturnType<typeof createClient>>
 
@@ -14,6 +15,7 @@ type AccountSummary = Totals & {
   outflow: number
   rollover: number
   balance: number
+  yield: number
 }
 
 function getMonthRange(monthStart: string) {
@@ -32,31 +34,40 @@ function emptyTotals(): Totals {
 }
 
 function emptyAccountSummary(): AccountSummary {
-  return { ...emptyTotals(), outflow: 0, rollover: 0, balance: 0 }
+  return { ...emptyTotals(), outflow: 0, rollover: 0, balance: 0, yield: 0 }
 }
 
 export async function getMonthSummary(supabase: DashboardClient, monthStart: string) {
   const { start, end } = getMonthRange(monthStart)
   const { data: transactions, error } = await supabase
     .from('transactions')
-    .select('type, savings_operation, amount, category_id, wallet_id, account_id')
+    .select('type, savings_operation, amount, category_id, wallet_id, account_id, occurred_at')
     .gte('occurred_at', start)
     .lt('occurred_at', end)
     .eq('status', 'confirmada')
 
   if (error) throw error
 
-  const [{ data: accountBudgets, error: accountBudgetsError }, { data: walletBudgets, error: walletBudgetsError }] =
+  const [
+    { data: accountBudgets, error: accountBudgetsError },
+    { data: wallets, error: walletsError },
+    { data: yieldConfigs, error: yieldConfigsError },
+    { data: yieldRates, error: yieldRatesError },
+  ] =
     await Promise.all([
       supabase
         .from('wallet_budgets')
         .select('account_id, wallet_id, rollover_amount')
         .eq('period_month', monthStart),
       supabase.from('wallets').select('id, account_id').eq('is_active', true),
+      supabase.from('yield_configs').select('id, account_id, wallet_id, start_date, is_active'),
+      supabase.from('yield_rates').select('config_id, ea_percent, valid_from').order('valid_from'),
     ])
 
   if (accountBudgetsError) throw accountBudgetsError
-  if (walletBudgetsError) throw walletBudgetsError
+  if (walletsError) throw walletsError
+  if (yieldConfigsError) throw yieldConfigsError
+  if (yieldRatesError) throw yieldRatesError
 
   const totals = emptyTotals()
   let rolloverTotal = 0
@@ -65,8 +76,12 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
   const ahorroIngresoByCategory = new Map<string, number>()
   const ahorroRetiroByCategory = new Map<string, number>()
   const gastoByWallet = new Map<string, number>()
+  const balanceByWallet = new Map<string, number>()
+  const walletIdsWithMovement = new Set<string>()
   const accountById = new Map<string, AccountSummary>()
-  const accountIdByWalletId = new Map((walletBudgets ?? []).map((wallet) => [wallet.id, wallet.account_id]))
+  const yieldByWallet = new Map<string, number>()
+  const yieldByAccount = new Map<string, number>()
+  const accountIdByWalletId = new Map((wallets ?? []).map((wallet) => [wallet.id, wallet.account_id]))
 
   for (const budget of accountBudgets ?? []) {
     const accountId = budget.account_id ?? accountIdByWalletId.get(budget.wallet_id ?? '')
@@ -74,6 +89,9 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
 
     const accountSummary = accountById.get(accountId) ?? emptyAccountSummary()
     accountSummary.rollover += Number(budget.rollover_amount)
+    if (budget.wallet_id) {
+      balanceByWallet.set(budget.wallet_id, (balanceByWallet.get(budget.wallet_id) ?? 0) + Number(budget.rollover_amount))
+    }
     rolloverTotal += Number(budget.rollover_amount)
     accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
     accountById.set(accountId, accountSummary)
@@ -126,10 +144,72 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     if (t.type === 'Gasto' && t.wallet_id) {
       gastoByWallet.set(t.wallet_id, (gastoByWallet.get(t.wallet_id) ?? 0) + amount)
     }
+    if (t.wallet_id) {
+      walletIdsWithMovement.add(t.wallet_id)
+      const walletMovement = t.type === 'Ingreso' || (t.type === 'Ahorro' && t.savings_operation === 'ingreso')
+        ? amount
+        : t.type === 'Gasto' || t.type === 'Inversion' || (t.type === 'Ahorro' && t.savings_operation === 'retiro')
+          ? -amount
+          : 0
+      balanceByWallet.set(t.wallet_id, (balanceByWallet.get(t.wallet_id) ?? 0) + walletMovement)
+    }
   }
 
-  const balance = totals.ingreso + totals.ahorro + rolloverTotal - totals.gasto - totals.inversion
-  return { totals, rolloverTotal, balance, gastoByCategory, gastoNormalByCategory, ahorroIngresoByCategory, ahorroRetiroByCategory, gastoByWallet, accountById }
+  const ratesByConfig = new Map<string, { eaPercent: number; validFrom: string }[]>()
+  for (const rate of yieldRates ?? []) {
+    ratesByConfig.set(rate.config_id, [...(ratesByConfig.get(rate.config_id) ?? []), {
+      eaPercent: Number(rate.ea_percent),
+      validFrom: rate.valid_from,
+    }])
+  }
+  for (const config of yieldConfigs ?? []) {
+    if (!config.is_active) continue
+    const targetId = config.wallet_id ?? config.account_id
+    if (!targetId) continue
+    const budget = (accountBudgets ?? []).find((row) =>
+      config.wallet_id ? row.wallet_id === config.wallet_id : row.account_id === config.account_id,
+    )
+    const openingBalance = Number(budget?.rollover_amount ?? 0)
+    const movements = (transactions ?? [])
+      .filter((transaction) => config.wallet_id
+        ? transaction.wallet_id === config.wallet_id
+        : transaction.account_id === config.account_id && !transaction.wallet_id)
+      .map((transaction) => ({
+        date: transaction.occurred_at.slice(0, 10),
+        amount: transaction.type === 'Ingreso' || (transaction.type === 'Ahorro' && transaction.savings_operation === 'ingreso')
+          ? Number(transaction.amount)
+          : -Number(transaction.amount),
+      }))
+    const calculated = calculateDailyYield({
+      openingBalance,
+      periodStart: start,
+      periodEnd: end,
+      activationDate: config.start_date,
+      movements,
+      rates: ratesByConfig.get(config.id) ?? [],
+    })
+    if (config.wallet_id) {
+      yieldByWallet.set(config.wallet_id, calculated)
+      balanceByWallet.set(config.wallet_id, (balanceByWallet.get(config.wallet_id) ?? 0) + calculated)
+      const accountId = accountIdByWalletId.get(config.wallet_id)
+      if (accountId) {
+        const accountSummary = accountById.get(accountId) ?? emptyAccountSummary()
+        accountSummary.yield += calculated
+        accountSummary.balance += calculated
+        accountById.set(accountId, accountSummary)
+      }
+    } else if (config.account_id) {
+      yieldByAccount.set(config.account_id, calculated)
+      const accountSummary = accountById.get(config.account_id) ?? emptyAccountSummary()
+      accountSummary.yield += calculated
+      accountSummary.balance += calculated
+      accountById.set(config.account_id, accountSummary)
+    }
+  }
+
+  const totalYield = [...Array.from(yieldByWallet.values()), ...Array.from(yieldByAccount.values())].reduce((sum, value) => sum + value, 0)
+  const balance = totals.ingreso + totals.ahorro + rolloverTotal + totalYield - totals.gasto - totals.inversion
+  return { totals, rolloverTotal, totalYield, yieldByWallet, yieldByAccount, balance, balanceByWallet, walletIdsWithMovement, gastoByCategory, gastoNormalByCategory, ahorroIngresoByCategory, ahorroRetiroByCategory, gastoByWallet, accountById }
 }
 
 export async function getPendingReviewCount(supabase: DashboardClient) {

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { calculateDailyYield } from '@/lib/yield-calculation'
 
 function currentMonthStart() {
   const now = new Date()
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   const { data: previousBudgets, error: budgetsError } = await supabase
     .from('wallet_budgets')
-    .select('id, user_id, wallet_id, account_id, total_budget')
+    .select('id, user_id, wallet_id, account_id, total_budget, rollover_amount')
     .eq('period_month', previousMonth)
 
   if (budgetsError) {
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
     category_id: string | null
     category_name: string | null
     category_status: 'assigned' | 'manual_selection_required'
+    yield_amount: number
   }> = []
   const categoryRollovers = new Map<string, number>()
 
@@ -66,7 +68,61 @@ export async function GET(request: NextRequest) {
     }
 
     const spent = (spentRows ?? []).reduce((sum, row) => sum + Number(row.amount), 0)
-    const leftover = Math.max(Number(budget.total_budget) - spent, 0)
+    const { data: yieldConfig, error: yieldConfigError } = await supabase
+      .from('yield_configs')
+      .select('id, start_date, is_active')
+      .eq('user_id', budget.user_id)
+      .eq('is_active', true)
+      .match(budget.wallet_id ? { wallet_id: budget.wallet_id } : { account_id: budget.account_id })
+      .maybeSingle()
+    if (yieldConfigError) {
+      return NextResponse.json({ error: yieldConfigError.message }, { status: 500 })
+    }
+
+    let yieldAmount = 0
+    if (yieldConfig) {
+      const { data: yieldRates, error: yieldRatesError } = await supabase
+        .from('yield_rates')
+        .select('ea_percent, valid_from')
+        .eq('config_id', yieldConfig.id)
+        .order('valid_from')
+      if (yieldRatesError) {
+        return NextResponse.json({ error: yieldRatesError.message }, { status: 500 })
+      }
+
+      const { data: yieldTransactions, error: yieldTransactionsError } = await supabase
+        .from('transactions')
+        .select('occurred_at, amount, type, savings_operation, wallet_id, account_id')
+        .eq('user_id', budget.user_id)
+        .gte('occurred_at', previousMonth)
+        .lt('occurred_at', currentMonth)
+        .eq('status', 'confirmada')
+        .or(budget.wallet_id
+          ? `wallet_id.eq.${budget.wallet_id}`
+          : `account_id.eq.${budget.account_id},wallet_id.is.null`)
+      if (yieldTransactionsError) {
+        return NextResponse.json({ error: yieldTransactionsError.message }, { status: 500 })
+      }
+
+      yieldAmount = calculateDailyYield({
+        openingBalance: Number(budget.rollover_amount),
+        periodStart: previousMonth,
+        periodEnd: currentMonth,
+        activationDate: yieldConfig.start_date,
+        movements: (yieldTransactions ?? []).map((transaction) => ({
+          date: transaction.occurred_at.slice(0, 10),
+          amount: transaction.type === 'Ingreso' || (transaction.type === 'Ahorro' && transaction.savings_operation === 'ingreso')
+            ? Number(transaction.amount)
+            : -Number(transaction.amount),
+        })),
+        rates: (yieldRates ?? []).map((rate) => ({
+          eaPercent: Number(rate.ea_percent),
+          validFrom: rate.valid_from,
+        })),
+      })
+    }
+
+    const leftover = Math.max(Number(budget.total_budget) - spent + yieldAmount, 0)
     const categoryIdsInSpent = Array.from(new Set(
       (spentRows ?? []).filter((row) => row.category_id).map((row) => row.category_id as string)
     ))
@@ -146,6 +202,7 @@ export async function GET(request: NextRequest) {
       category_id: categoryId,
       category_name: null,
       category_status: categoryId ? 'assigned' : 'manual_selection_required',
+      yield_amount: yieldAmount,
     })
   }
 
