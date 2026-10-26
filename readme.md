@@ -31,9 +31,12 @@ The project was created to replace a traditional spreadsheet-based expense track
 * Transaction review workflows
 * Intelligent transaction categorization
 * Duplicate transaction detection
-* Bank notification processing
-* Future multi-user support
-* Secure user data isolation
+* OCR receipt processing with review before confirmation
+* Gmail OAuth synchronization for bank notifications
+* Shopping lists with purchase and price-history tracking
+* Savings and wallet yield tracking
+* Monthly budget rollover with an auditable review flow
+* Secure user data isolation and future multi-user support
 
 The application is designed around a simple principle:
 
@@ -98,6 +101,7 @@ Each transaction can also have a status:
 pending_review
 confirmed
 duplicate
+discarded
 ```
 
 Only **confirmed transactions** are included in financial calculations such as dashboards, budgets, and wallet balances.
@@ -127,6 +131,49 @@ No → Gemini classification
 When a user corrects an automatically suggested category, the application can store that decision as a reusable categorization rule.
 
 This allows the system to gradually improve its suggestions based on the user's own financial behavior.
+
+---
+
+### 🧾 OCR Receipt Processing
+
+Users can upload a receipt image from the dashboard. The OCR pipeline can
+preprocess the image, use Tesseract.js locally and optionally use PaddleOCR,
+then send the extracted text or image to Gemini for structured transaction
+data. The result is created as `pending_review`; editing or confirming it is
+always a user decision.
+
+The OCR endpoint validates authentication, file type and a 10 MB size limit.
+Receipt images are not stored as financial records; the extracted data is
+stored in the transaction's `raw_data` when applicable.
+
+---
+
+### 📧 Gmail Bank Notification Sync
+
+The application supports connecting one Gmail account through OAuth and
+associating monitored sender addresses with financial accounts. Gmail history
+is synchronized incrementally, and imported transactions are placed in the
+review queue. Repeated `external_reference` values are marked as `duplicate`
+instead of being silently deleted.
+
+The scheduled sync runs daily through Vercel at 06:00 UTC. OAuth refresh
+tokens remain server-side.
+
+---
+
+### 🛒 Shopping Lists
+
+The `/mercado` section supports stores, shopping lists, items, completion and
+purchase registration. Purchase prices can be retained as history to make
+future grocery planning easier.
+
+---
+
+### 📈 Savings and Yield Tracking
+
+Accounts and wallets can record savings operations and configured yield rates.
+Daily yield is calculated from the configured effective annual rate and is
+included in the relevant dashboard and rollover calculations.
 
 ---
 
@@ -292,7 +339,7 @@ The application follows a modern full-stack architecture:
 | Authentication | Supabase Auth               |
 | Database       | PostgreSQL                  |
 | Data security  | Supabase Row Level Security |
-| AI             | Gemini API                  |
+| AI/OCR         | Gemini API, Tesseract.js and optional PaddleOCR |
 | PWA            | Web App Manifest            |
 | Hosting        | Vercel                      |
 
@@ -426,9 +473,19 @@ Add the required Supabase configuration:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_server_only_service_role_key
+GEMINI_API_KEY=your_gemini_api_key
+PADDLEOCR_URL=your_optional_paddleocr_url
+GOOGLE_OAUTH_CLIENT_ID=your_google_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/api/gmail/callback
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+CRON_SECRET=your_cron_secret
 ```
 
-If AI processing or server-side integrations are enabled in your version of the application, configure the corresponding server-side secrets as well.
+`PADDLEOCR_URL` is optional when using the local Tesseract.js fallback. Gmail
+OAuth variables are required for the email integration, and `CRON_SECRET` is
+required by the scheduled endpoints.
 
 > ⚠️ Never commit `.env.local` or any secret key to Git.
 
@@ -533,12 +590,17 @@ Environment variables
 
 When deploying, configure the required environment variables in the Vercel project settings.
 
-For the monthly budget rollover, also configure `CRON_SECRET` in Vercel (Production and
-Preview if you test there). Vercel sends it as `Authorization: Bearer <CRON_SECRET>`
-when it invokes `/api/cron/rollover`. The endpoint can be tested manually with:
+For the scheduled jobs, configure `CRON_SECRET` in Vercel (Production and
+Preview if you test there). Vercel sends it as an `Authorization` header when
+it invokes the protected endpoints. The configured jobs are:
+
+* `/api/cron/rollover` — `0 5 1 * *`
+* `/api/gmail/sync` — `0 6 * * *`
+
+The rollover endpoint can be tested manually with:
 
 ```bash
-curl -i -H "Authorization: Bearer <CRON_SECRET>" \
+curl -i -H "Authorization: Bearer $CRON_SECRET" \
   https://control-de-gastos-personales-nine.vercel.app/api/cron/rollover
 ```
 
@@ -568,10 +630,15 @@ Control-de-gastos-personales/
 │
 ├── public/                 # Static assets and PWA manifest
 │
-├── src/                    # Application source code
+├── src/                    # Generated/shared TypeScript types
 │
 ├── supabase/
 │   └── migrations/         # Database migrations
+│
+├── .github/
+│   └── copilot-instructions.md # Contexto compartido para agentes
+│
+├── Especificacion_agents.md # Especificación funcional y de datos
 │
 ├── middleware.ts           # Authentication/session middleware
 │
@@ -667,25 +734,32 @@ The project is actively evolving. Planned and ongoing improvements include:
 
 * [x] Account management
 * [x] Category-based organization
-* [ ] Complete transaction lifecycle
-* [ ] Advanced financial dashboards
-* [ ] Improved budget analytics
+* [x] Transaction lifecycle and review queue
+* [x] Financial dashboard with account/category highlights
+* [x] Budget analytics and alert thresholds
 * [ ] Monthly financial summaries
 
 ### Automation
 
-* [ ] Gmail OAuth integration
-* [ ] Automated bank notification ingestion
-* [ ] OCR-based invoice processing
-* [ ] Automated transaction categorization
-* [ ] Improved duplicate detection
+* [x] Gmail OAuth integration
+* [x] Automated bank notification ingestion
+* [x] OCR-based invoice processing
+* [x] Automated transaction categorization
+* [x] Duplicate detection and review
 * [ ] Continuous categorization learning
+
+### Additional features
+
+* [x] Shopping lists and purchase price history
+* [x] Savings operations and yield configuration
+* [x] Monthly wallet/category rollover with review
+* [ ] Advanced yield and financial reports
 
 ### PWA
 
 * [x] Web manifest
 * [ ] Install experience improvements
-* [ ] Offline capabilities
+* [x] Offline fallback shell
 * [ ] Push notifications
 
 ### Security
@@ -698,7 +772,8 @@ The project is actively evolving. Planned and ongoing improvements include:
 
 ### Developer Experience
 
-* [ ] Automated tests
+* [x] Unit test coverage for yield calculations
+* [ ] Broader automated tests
 * [ ] End-to-end testing
 * [ ] CI/CD checks
 * [ ] Improved error monitoring
