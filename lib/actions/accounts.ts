@@ -116,7 +116,7 @@ export async function createYieldConfig(formData: FormData) {
   revalidatePath('/')
 }
 
-export async function addYieldRate(formData: FormData) {
+export async function updateYieldRate(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
@@ -124,25 +124,67 @@ export async function addYieldRate(formData: FormData) {
     redirect(`/cuentas?error=${encodeURIComponent(message)}`)
   }
 
-  const configId = formData.get('config_id') as string
+  const rateId = (formData.get('rate_id') as string)?.trim()
   const validFrom = (formData.get('valid_from') as string)?.trim()
   const eaPercent = Number(formData.get('ea_percent'))
-  if (!configId || !validFrom || !Number.isFinite(eaPercent) || eaPercent < 0 || eaPercent > 100) {
+  if (!rateId || !validFrom || !Number.isFinite(eaPercent) || eaPercent < 0 || eaPercent > 100) {
     fail('La tasa y la fecha de vigencia no son válidas')
   }
 
-  const { error } = await supabase.from('yield_rates').insert({
-    user_id: user.id,
-    config_id: configId,
-    ea_percent: eaPercent,
-    valid_from: validFrom,
-  })
+  const { error } = await supabase
+    .from('yield_rates')
+    .update({ ea_percent: eaPercent, valid_from: validFrom })
+    .eq('id', rateId)
+    .eq('user_id', user.id)
   if (error) {
     if (error.code === '23505') {
       fail('Ya existe una tasa registrada para esa fecha. Usa una fecha diferente.')
     }
     fail(error.message)
   }
+
+  revalidatePath('/cuentas')
+  revalidatePath('/')
+  redirect('/cuentas?success=Tasa actualizada correctamente')
+}
+
+export async function deleteYieldRate(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+  const fail = (message: string): never => {
+    redirect(`/cuentas?error=${encodeURIComponent(message)}`)
+  }
+
+  const rateId = (formData.get('rate_id') as string)?.trim()
+  if (!rateId) fail('Falta la tasa que deseas eliminar')
+
+  const { data: rate, error: rateError } = await supabase
+    .from('yield_rates')
+    .select('config_id')
+    .eq('id', rateId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (rateError) fail(rateError.message)
+  const configId = rate?.config_id
+  if (!configId) fail('No se encontró la tasa de rendimiento')
+
+  const { count, error: countError } = await supabase
+    .from('yield_rates')
+    .select('id', { count: 'exact', head: true })
+    .eq('config_id', configId)
+    .eq('user_id', user.id)
+  if (countError) fail(countError.message)
+  if ((count ?? 0) <= 1) {
+    fail('No puedes eliminar la única tasa de esta configuración')
+  }
+
+  const { error } = await supabase
+    .from('yield_rates')
+    .delete()
+    .eq('id', rateId)
+    .eq('user_id', user.id)
+  if (error) fail(error.message)
 
   revalidatePath('/cuentas')
   revalidatePath('/')
