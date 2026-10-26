@@ -90,6 +90,46 @@ export default async function DashboardHomePage({
     },
     { total: 0, spent: 0 },
   )
+  const categoryHighlights = (categoryBudgets ?? []).map((budget) => {
+    const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
+    const total = Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)
+    const spent = Math.max(0, -movement)
+    return {
+      name: categoryNameById.get(budget.category_id) ?? 'Categoría',
+      total,
+      spent,
+      remaining: total - spent,
+      percent: total > 0 ? (spent / total) * 100 : 0,
+    }
+  })
+  const categoryHighlight = categoryHighlights
+    .filter((category) => category.total > 0 && (category.remaining < 0 || category.percent >= 80))
+    .sort((a, b) => {
+      const aPriority = a.remaining < 0 ? 0 : a.percent >= 80 ? 1 : 2
+      const bPriority = b.remaining < 0 ? 0 : b.percent >= 80 ? 1 : 2
+      return aPriority - bPriority || b.percent - a.percent
+    })[0]
+  const accountHighlights = accountsWithMovement.map((account) => {
+    const accountSummary = summary.accountById.get(account.id)
+    const income = accountSummary?.ingreso ?? 0
+    const rollover = accountSummary?.rollover ?? 0
+    const outflow = accountSummary?.outflow ?? 0
+    const yieldAmount = accountSummary?.yield ?? 0
+    const available = income + rollover + yieldAmount
+    const balance = available - outflow
+    return {
+      name: account.name,
+      balance,
+      percent: available > 0 ? (balance / available) * 100 : 0,
+    }
+  })
+  const accountHighlight = accountHighlights
+    .filter((account) => account.balance < 0 || account.percent <= 20)
+    .sort((a, b) => {
+      const aPriority = a.balance < 0 ? 0 : a.percent <= 20 ? 1 : 2
+      const bPriority = b.balance < 0 ? 0 : b.percent <= 20 ? 1 : 2
+      return aPriority - bPriority || a.percent - b.percent
+    })[0]
   const quickActions = [
     {
       href: `/transacciones?period=${selectedPeriod}`,
@@ -233,6 +273,19 @@ export default async function DashboardHomePage({
               <p className="mt-1 text-base font-semibold text-amber-700">{formatCOP(categoryBudgetStats.spent)}</p>
             </div>
           </div>
+          {categoryHighlight && (
+            <div className={`mt-3 flex items-center gap-3 rounded-xl border px-3 py-2.5 ${categoryHighlight.remaining < 0 ? 'border-red-200 bg-red-50/70' : 'border-amber-200 bg-amber-50/70'}`}>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm ${categoryHighlight.remaining < 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`} aria-hidden="true">
+                !
+              </span>
+              <p className="text-xs text-ledger-text">
+                <span className="font-semibold">{categoryHighlight.name}</span>{' '}
+                {categoryHighlight.remaining < 0
+                  ? `superó el presupuesto por ${formatCOP(Math.abs(categoryHighlight.remaining))}.`
+                  : `lleva ${categoryHighlight.percent.toFixed(0)}% consumido; quedan ${formatCOP(Math.max(categoryHighlight.remaining, 0))}.`}
+              </p>
+            </div>
+          )}
         </summary>
         <div className="border-t border-black/5 bg-black/[0.015] p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -296,6 +349,19 @@ export default async function DashboardHomePage({
               <p className="mt-1 text-base font-semibold text-ledger-text">{accountsWithoutMovement.length}</p>
             </div>
           </div>
+          {accountHighlight && (
+            <div className={`mt-3 flex items-center gap-3 rounded-xl border px-3 py-2.5 ${accountHighlight.balance < 0 ? 'border-red-200 bg-red-50/70' : 'border-amber-200 bg-amber-50/70'}`}>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm ${accountHighlight.balance < 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`} aria-hidden="true">
+                !
+              </span>
+              <p className="text-xs text-ledger-text">
+                <span className="font-semibold">{accountHighlight.name}</span>{' '}
+                {accountHighlight.balance < 0
+                  ? `tiene un saldo negativo de ${formatCOP(Math.abs(accountHighlight.balance))}.`
+                  : `conserva solo ${accountHighlight.percent.toFixed(0)}% disponible (${formatCOP(accountHighlight.balance)}).`}
+              </p>
+            </div>
+          )}
         </div>
       <details open className="hidden border-t border-black/10 overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-black/10 bg-white p-5 [&::-webkit-details-marker]:hidden sm:p-6">
