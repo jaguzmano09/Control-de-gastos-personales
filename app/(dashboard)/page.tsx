@@ -395,6 +395,7 @@ export default async function DashboardHomePage({
                 sublabel={wallet.accounts?.name}
                 spent={spent}
                 total={total}
+                available={available}
                 alertThreshold={budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
               >
                 <BudgetMetric label="Asignado" value={Number(budget?.assigned_amount ?? 0)} />
@@ -531,6 +532,7 @@ export default async function DashboardHomePage({
                               label={wallet.name}
                               spent={spent}
                               total={total}
+                              available={Math.max(total - spent + yieldAmount, 0)}
                               alertThreshold={budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
                             >
                               <BudgetMetric label="Asignado" value={Number(budget?.assigned_amount ?? 0)} />
@@ -599,13 +601,13 @@ function AccountMetric({ label, value, tone }: { label: string; value: number; t
   )
 }
 
-function BudgetCard({ label, sublabel, spent, total, alertThreshold, children }: {
-  label: string; sublabel?: string; spent: number; total: number; alertThreshold?: number; children?: ReactNode
+function BudgetCard({ label, sublabel, spent, total, available, alertThreshold, children }: {
+  label: string; sublabel?: string; spent: number; total: number; available?: number; alertThreshold?: number; children?: ReactNode
 }) {
   const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const isOverThreshold = alertThreshold !== undefined && total > 0 && (spent / total) * 100 >= alertThreshold
   const isOverBudget = total > 0 && spent > total
-  const remaining = total - spent
+  const remaining = available ?? total - spent
 
   return (
     <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-ledger-green/25 hover:shadow-[0_8px_20px_rgba(23,35,31,0.07)] sm:p-5">
