@@ -45,8 +45,9 @@ function displayMessage(value: string) {
 export default async function MercadoPage({
   searchParams,
 }: {
-  searchParams: { error?: string; success?: string; success_list_id?: string }
+  searchParams: Promise<{ error?: string; success?: string; success_list_id?: string }>
 }) {
+  const params = await searchParams
   const supabase = await createClient()
   const [{ data: storesData }, { data: listsData }, { data: historyData }, { data: itemNames }] = await Promise.all([
     supabase.from('stores').select('id, name').order('name'),
@@ -68,8 +69,8 @@ export default async function MercadoPage({
         <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Lista de mercado</h1>
         <p className="mt-1 text-sm text-ledger-muted">Organiza tus compras y conserva memoria de precios por tienda.</p>
       </header>
-      {searchParams.error && (
-        <p className="mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-700">{displayError(searchParams.error)}</p>
+      {params.error && (
+        <p className="mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-700">{displayError(params.error)}</p>
       )}
 
       <section className="mt-8">
@@ -130,8 +131,8 @@ export default async function MercadoPage({
         lists={lists}
         stores={stores}
         itemSuggestions={itemSuggestions}
-        itemSuccess={searchParams.success ? displayMessage(searchParams.success) : undefined}
-        itemSuccessListId={searchParams.success_list_id}
+        itemSuccess={params.success ? displayMessage(params.success) : undefined}
+        itemSuccessListId={params.success_list_id}
       />
     </div>
   )
