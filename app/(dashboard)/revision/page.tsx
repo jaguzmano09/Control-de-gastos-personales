@@ -117,8 +117,8 @@ export default async function RevisionPage() {
   }>
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]))
   const walletNames = new Map(wallets.map((wallet) => [wallet.id, wallet.name]))
-  const pendingRollovers = rollovers.filter((rollover) => rollover.status === 'pending')
-  const assignedRollovers = rollovers.filter((rollover) => rollover.status === 'assigned')
+  const pendingRollovers = rollovers.filter((rollover) => rollover.status === 'pending' && Number(rollover.amount) > 0)
+  const assignedRollovers = rollovers.filter((rollover) => rollover.status === 'assigned' && Number(rollover.amount) > 0)
 
   const duplicadosConMatch = await Promise.all(
     duplicados.map(async (dup) => {
@@ -148,14 +148,14 @@ export default async function RevisionPage() {
 
   return (
     <div className="space-y-6">
-      <header className="border-b border-black/10 pb-5">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-ledger-muted">Centro de control</p>
+      <header className="relative overflow-hidden rounded-[1.75rem] border border-ledger-green/15 bg-gradient-to-br from-[#163c2a] via-ledger-green to-[#4a9568] px-5 py-7 text-white shadow-[0_18px_42px_rgba(20,37,29,0.12)] sm:px-8 sm:py-9">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">Centro de control</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="font-serif text-3xl text-ledger-text">Bandeja de revisión</h1>
-            <p className="mt-1 max-w-xl text-sm text-ledger-muted">Revisa y confirma los movimientos que necesitan tu decisión.</p>
+            <h1 className="font-serif text-3xl text-white sm:text-4xl">Bandeja de revisión</h1>
+            <p className="mt-2 max-w-xl text-sm text-white/75">Revisa y confirma los movimientos que necesitan tu decisión.</p>
           </div>
-          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-sm font-medium text-ledger-green">
+          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur">
             {pendientes.length + pendingRollovers.length + duplicadosConMatch.length} por atender
           </span>
         </div>

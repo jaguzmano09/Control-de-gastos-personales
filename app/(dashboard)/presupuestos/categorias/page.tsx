@@ -31,7 +31,7 @@ export default async function PresupuestoCategoriasPage({
   const budgetByCategory = new Map((budgets ?? []).map((b) => [b.category_id, b]))
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <header className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_12px_35px_rgba(23,35,31,0.07)]">
         <div className="bg-gradient-to-br from-ledger-green via-[#347957] to-[#1f5239] px-5 py-6 text-white sm:px-7 sm:py-8">
         <div>
@@ -54,7 +54,7 @@ export default async function PresupuestoCategoriasPage({
         </div>
       </div>
 
-      <div className="mt-7 grid gap-4 lg:grid-cols-2">
+      <div className="mt-7 grid gap-5 lg:grid-cols-2">
         {(categories ?? []).map((category) => {
           const budget = budgetByCategory.get(category.id)
           const assigned = Number(budget?.amount ?? 0)
@@ -72,8 +72,8 @@ export default async function PresupuestoCategoriasPage({
           const isOverThreshold = !isOverBudget && threshold !== undefined && totalBudget > 0 && (spent / totalBudget) * 100 >= threshold
 
           return (
-            <div key={category.id} className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_8px_24px_rgba(23,35,31,0.05)]">
-              <div className="flex items-start justify-between gap-4 border-b border-black/5 bg-gradient-to-br from-white via-white to-ledger-green/5 p-5">
+            <div key={category.id} className="surface-card overflow-hidden">
+              <div className="flex items-start justify-between gap-4 border-b border-ledger-line/70 bg-gradient-to-br from-white via-white to-ledger-green/5 p-5">
                 <div>
                   <p className="text-base font-semibold text-ledger-text">{category.name}</p>
                   <p className="mt-1 text-xs text-ledger-muted">{totalBudget > 0 ? `${percent.toFixed(0)}% utilizado` : 'Sin presupuesto asignado'}</p>
@@ -90,13 +90,13 @@ export default async function PresupuestoCategoriasPage({
                   Movimiento: {formatCOP(movement)}
                   </span>
                 </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/5">
+                <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-ledger-line/60">
                   <div
                     className={`h-full rounded-full ${isOverBudget ? 'bg-red-700' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`}
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                <div className="mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
                 <Metric label="Presupuesto" value={assigned} />
                 <Metric label="Sobrante" value={rollover} />
                 <Metric label="Ahorro ingresado" value={ahorroIngreso} positive />

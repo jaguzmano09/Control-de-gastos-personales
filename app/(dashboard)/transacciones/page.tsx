@@ -46,7 +46,7 @@ const STATUS_LABEL: Record<string, string> = {
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Ahorro', 'Inversion']
 
 const selectClass =
-  'mt-1 rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+  'mt-1 min-h-11 rounded-xl border border-ledger-line bg-white px-3 text-sm text-ledger-text outline-none transition hover:border-ledger-green/40 focus:border-ledger-green focus:ring-4 focus:ring-ledger-green/10'
 
 function getMonthRange(period: string) {
   const [year, month] = period.split('-')
@@ -152,20 +152,21 @@ export default async function TransaccionesPage({
   const transactions = (rawTransactions ?? []) as unknown as Transaction[]
 
   return (
-    <div className="max-w-5xl">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-black/10 pb-6">
+    <div className="max-w-6xl">
+      <header className="relative overflow-hidden rounded-[1.75rem] border border-ledger-green/15 bg-gradient-to-br from-[#163c2a] via-ledger-green to-[#4a9568] px-5 py-7 text-white shadow-[0_18px_42px_rgba(20,37,29,0.12)] sm:px-8 sm:py-9">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Registro financiero</p>
-          <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Transacciones</h1>
-          <p className="mt-1 text-sm text-ledger-muted">Consulta, filtra y administra todos tus movimientos.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">Registro financiero</p>
+          <h1 className="mt-2 font-serif text-3xl tracking-tight text-white sm:text-4xl">Transacciones</h1>
+          <p className="mt-2 max-w-xl text-sm text-white/75">Consulta, filtra y administra todos tus movimientos desde un solo lugar.</p>
         </div>
-
-        <a href="/transacciones/nueva" className="btn btn-primary">Nueva transacción</a>
+        <div className="mt-6 sm:absolute sm:right-8 sm:top-8 sm:mt-0">
+          <a href="/transacciones/nueva" className="btn border border-white/20 bg-white text-ledger-green shadow-lg hover:bg-white/90">Nueva transacción</a>
+        </div>
       </header>
 
       <form
         method="get"
-        className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-black/10 bg-white p-5 shadow-sm"
+        className="mt-6 flex flex-wrap items-end gap-4 rounded-2xl border border-ledger-line bg-white/90 p-5 shadow-[0_10px_28px_rgba(20,37,29,0.05)]"
       >
         <div>
           <label className="block text-xs text-ledger-muted">
@@ -289,10 +290,18 @@ export default async function TransaccionesPage({
         </a>
       </form>
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-ledger-line bg-white shadow-[0_10px_28px_rgba(20,37,29,0.05)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ledger-line/70 px-5 py-4">
+          <div>
+            <p className="section-label">Actividad registrada</p>
+            <p className="mt-1 text-sm text-ledger-muted">{transactions.length} movimientos encontrados</p>
+          </div>
+          <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-semibold text-ledger-green">Vista detallada</span>
+        </div>
+        <div className="overflow-x-auto">
+        <table className="data-table">
           <thead>
-            <tr className="border-b border-black/10 text-left text-ledger-muted">
+            <tr>
               <th className="py-2 pr-4">Fecha</th>
               <th className="py-2 pr-4">Tipo</th>
               <th className="py-2 pr-4">Categoría</th>
@@ -310,10 +319,7 @@ export default async function TransaccionesPage({
 
           <tbody>
             {transactions.map((t) => (
-              <tr
-                key={t.id}
-                className="border-b border-black/5"
-              >
+              <tr key={t.id}>
                 <td className="py-2 pr-4 text-ledger-text">
                   {new Date(
                     t.occurred_at + 'T00:00:00'
@@ -383,6 +389,7 @@ export default async function TransaccionesPage({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

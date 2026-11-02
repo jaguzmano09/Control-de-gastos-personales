@@ -76,6 +76,7 @@ export default async function DashboardHomePage({
         || accountSummary.ahorro !== 0
         || accountSummary.inversion > 0
         || accountSummary.transferencia > 0
+        || accountSummary.rollover > 0
       : false
   })
   const accountsWithoutMovement = (accounts ?? []).filter((account) => !accountsWithMovement.some((item) => item.id === account.id))
@@ -90,6 +91,10 @@ export default async function DashboardHomePage({
     },
     { total: 0, spent: 0 },
   )
+  const categoryBudgetsWithActivity = (categoryBudgets ?? []).filter((budget) => {
+    const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
+    return movement !== 0 || Number(budget.rollover_amount) > 0
+  })
   const categoryHighlights = (categoryBudgets ?? []).map((budget) => {
     const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
     const total = Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)
@@ -165,12 +170,14 @@ export default async function DashboardHomePage({
 
   return (
     <div className="space-y-8">
-      <header className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_12px_35px_rgba(23,35,31,0.07)]">
-        <div className="bg-gradient-to-br from-ledger-green via-[#347957] to-[#1f5239] px-5 py-6 text-white sm:px-7 sm:py-8">
+      <header className="relative overflow-hidden rounded-[2rem] border border-ledger-green/20 bg-white shadow-[0_20px_50px_rgba(20,37,29,0.10)]">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#163c2a] via-ledger-green to-[#4a9568] px-5 py-7 text-white sm:px-8 sm:py-10">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border border-white/10 bg-white/[0.03]" />
+        <div className="pointer-events-none absolute -bottom-36 right-24 h-64 w-64 rounded-full border border-white/10" />
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Panel financiero</p>
-            <h1 className="mt-2 font-serif text-3xl text-white sm:text-4xl">Resumen del mes</h1>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Panel financiero</p>
+            <h1 className="mt-3 max-w-xl font-serif text-4xl leading-none tracking-tight text-white sm:text-5xl">Tu dinero,<br /><span className="text-white/75">bajo control.</span></h1>
             <p className="mt-1 capitalize text-sm text-white/75">
               {new Date(monthStart + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
             </p>
@@ -183,8 +190,11 @@ export default async function DashboardHomePage({
           )}
         </div>
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-4 bg-white px-5 py-4 sm:px-7">
-          <p className="text-sm text-ledger-muted">Consulta el movimiento y el estado de tus finanzas.</p>
+        <div className="flex flex-wrap items-end justify-between gap-4 bg-white px-5 py-4 sm:px-8">
+          <div>
+            <p className="text-sm font-medium text-ledger-text">Resumen del periodo</p>
+            <p className="mt-0.5 text-xs text-ledger-muted">Consulta el movimiento y el estado de tus finanzas.</p>
+          </div>
           <form method="get" className="flex flex-wrap items-end gap-2">
             <div className="min-w-40">
               <label className="block text-xs text-ledger-muted">Cambiar periodo</label>
@@ -209,7 +219,7 @@ export default async function DashboardHomePage({
             <a
               key={action.href}
               href={action.href}
-              className="group rounded-2xl border border-black/10 bg-white p-5 transition hover:-translate-y-1 hover:border-ledger-green/40 hover:shadow-[0_10px_25px_rgba(23,35,31,0.08)] focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
+              className="group surface-card p-5 focus:outline-none focus:ring-2 focus:ring-ledger-green/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -229,12 +239,12 @@ export default async function DashboardHomePage({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_10px_30px_rgba(23,35,31,0.06)]">
+      <section className="overflow-hidden rounded-[2rem] border border-black/[0.07] bg-white shadow-[0_18px_45px_rgba(20,37,29,0.08)]">
         <div className="grid lg:grid-cols-[1.15fr_2fr]">
-          <div className="relative overflow-hidden bg-ledger-green p-5 text-white sm:p-7">
+          <div className="relative overflow-hidden bg-gradient-to-br from-ledger-green to-[#183f2c] p-6 text-white sm:p-8">
             <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full border border-white/10" aria-hidden="true" />
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-white/70">Balance del periodo</p>
-            <p className="mt-3 break-words text-3xl font-semibold tracking-tight sm:text-4xl">{formatCOP(summary.balance)}</p>
+            <p className="mt-4 break-words text-4xl font-semibold tracking-tight sm:text-5xl">{formatCOP(summary.balance)}</p>
             <p className="mt-2 text-sm text-white/75">Ingresos, gastos, ahorro y sobrantes incluidos.</p>
           </div>
           <div className="grid grid-cols-2 gap-px bg-black/5 sm:grid-cols-4">
@@ -295,7 +305,7 @@ export default async function DashboardHomePage({
             </a>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
-          {(categoryBudgets ?? []).map((budget) => {
+          {categoryBudgetsWithActivity.map((budget) => {
             const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
             const gastoNormal = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
             const ahorroIngreso = summary.ahorroIngresoByCategory.get(budget.category_id) ?? 0
@@ -316,7 +326,7 @@ export default async function DashboardHomePage({
             )
           })}
           </div>
-          {(categoryBudgets ?? []).length === 0 && (
+          {categoryBudgetsWithActivity.length === 0 && (
             <div className="rounded-2xl border border-dashed border-black/15 bg-white px-5 py-8 text-center">
               <p className="text-sm font-medium text-ledger-text">Aún no has asignado presupuesto por categoría.</p>
               <p className="mt-1 text-sm text-ledger-muted">Configura tus categorías para comenzar a controlar el mes.</p>
@@ -519,7 +529,7 @@ export default async function DashboardHomePage({
                       {(walletsByAccount.get(account.id) ?? [])
                         .filter((wallet) => {
                           const budget = (walletBudgets ?? []).find((item) => item.wallet_id === wallet.id)
-                          return summary.walletIdsWithMovement.has(wallet.id) || Number(budget?.total_budget ?? 0) > 0
+                          return summary.walletIdsWithMovement.has(wallet.id) || Number(budget?.total_budget ?? 0) > 0 || Number(budget?.rollover_amount ?? 0) > 0
                         })
                         .map((wallet) => {
                           const budget = (walletBudgets ?? []).find((item) => item.wallet_id === wallet.id)
@@ -585,9 +595,9 @@ export default async function DashboardHomePage({
 
 function SummaryStat({ label, value, emphasize = false }: { label: string; value: number; emphasize?: boolean }) {
   return (
-    <div className="rounded-sm border border-black/10 bg-white px-4 py-3">
-      <p className="text-xs text-ledger-muted">{label}</p>
-      <p className={`mt-1 text-lg ${emphasize ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
+    <div className="bg-white px-4 py-4 sm:px-5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-ledger-muted">{label}</p>
+      <p className={`mt-2 text-lg font-semibold tracking-tight ${emphasize ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
     </div>
   )
 }
@@ -610,12 +620,12 @@ function BudgetCard({ label, sublabel, spent, total, available, alertThreshold, 
   const remaining = available ?? total - spent
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-ledger-green/25 hover:shadow-[0_8px_20px_rgba(23,35,31,0.07)] sm:p-5">
+    <div className="surface-card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${isOverBudget ? 'bg-red-600' : isOverThreshold ? 'bg-amber-500' : 'bg-ledger-green'}`} aria-hidden="true" />
-            <p className="text-sm font-semibold text-ledger-text">{label}</p>
+            <p className="text-sm font-semibold leading-5 text-ledger-text">{label}</p>
           </div>
           {sublabel && <p className="mt-1 text-xs text-ledger-muted">Cuenta: {sublabel}</p>}
           <p className="mt-1 text-xs text-ledger-muted">{percent.toFixed(0)}% utilizado</p>
@@ -637,7 +647,7 @@ function BudgetCard({ label, sublabel, spent, total, available, alertThreshold, 
         <span className="text-ledger-muted">Utilizado <strong className="text-ledger-text">{formatCOP(spent)}</strong></span>
         <span className="text-ledger-muted">Total <strong className="text-ledger-text">{formatCOP(total)}</strong></span>
       </div>
-      {children && <div className="mt-4 grid grid-cols-2 gap-2 border-t border-black/5 pt-4 sm:grid-cols-4">{children}</div>}
+      {children && <div className="mt-4 grid grid-cols-2 gap-2 border-t border-black/5 pt-4 xl:grid-cols-4">{children}</div>}
       {isOverBudget && <p className="mt-3 text-xs text-red-700">Presupuesto superado.</p>}
       {isOverThreshold && !isOverBudget && <p className="mt-3 text-xs text-amber-700">Alcanzaste el umbral del {alertThreshold}%.</p>}
     </div>
@@ -646,9 +656,9 @@ function BudgetCard({ label, sublabel, spent, total, available, alertThreshold, 
 
 function BudgetMetric({ label, value, positive = false }: { label: string; value: number; positive?: boolean }) {
   return (
-    <div className="rounded-sm bg-black/[0.03] px-2 py-1.5 text-xs">
-      <p className="text-ledger-muted">{label}</p>
-      <p className={`mt-0.5 ${positive ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
+    <div className="min-w-0 rounded-xl border border-black/[0.05] bg-ledger-paper/70 px-2.5 py-2 text-xs">
+      <p className="whitespace-nowrap text-[10px] leading-4 text-ledger-muted sm:text-[11px]">{label}</p>
+      <p className={`mt-1 break-words font-medium ${positive ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
     </div>
   )
 }

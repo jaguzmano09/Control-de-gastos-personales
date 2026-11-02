@@ -29,13 +29,76 @@ export async function GET(request: NextRequest) {
   const currentMonth = currentMonthStart()
   const previousMonth = previousMonthOf(currentMonth)
 
-  const { data: previousBudgets, error: budgetsError } = await supabase
-    .from('wallet_budgets')
-    .select('id, user_id, wallet_id, account_id, total_budget, rollover_amount')
-    .eq('period_month', previousMonth)
+  const [
+    { data: previousBudgetsData, error: budgetsError },
+    { data: accounts, error: accountsError },
+    { data: wallets, error: walletsError },
+  ] = await Promise.all([
+    supabase
+      .from('wallet_budgets')
+      .select('id, user_id, wallet_id, account_id, total_budget, rollover_amount')
+      .eq('period_month', previousMonth),
+    supabase
+      .from('accounts')
+      .select('id, user_id, has_wallets')
+      .eq('is_active', true),
+    supabase
+      .from('wallets')
+      .select('id, user_id, account_id')
+      .eq('is_active', true),
+  ])
 
   if (budgetsError) {
     return NextResponse.json({ error: budgetsError.message }, { status: 500 })
+  }
+  if (accountsError) {
+    return NextResponse.json({ error: accountsError.message }, { status: 500 })
+  }
+  if (walletsError) {
+    return NextResponse.json({ error: walletsError.message }, { status: 500 })
+  }
+
+  type RolloverBudget = {
+    id: string
+    user_id: string
+    wallet_id: string | null
+    account_id: string | null
+    total_budget: number | null
+    rollover_amount: number
+  }
+  const previousBudgets = [...(previousBudgetsData ?? [])] as RolloverBudget[]
+  const existingBudgetKeys = new Set(
+    previousBudgets.map((budget) => `${budget.user_id}:${budget.wallet_id ?? `account:${budget.account_id}`}`),
+  )
+  const destinations = [
+    ...(accounts ?? [])
+      .filter((account) => !account.has_wallets)
+      .map((account) => ({ user_id: account.user_id, wallet_id: null, account_id: account.id })),
+    ...(wallets ?? []).map((wallet) => ({ user_id: wallet.user_id, wallet_id: wallet.id, account_id: null })),
+  ]
+
+  for (const destination of destinations) {
+    const key = `${destination.user_id}:${destination.wallet_id ?? `account:${destination.account_id}`}`
+    if (existingBudgetKeys.has(key)) continue
+
+    const { data: createdBudget, error: createBudgetError } = await supabase
+      .from('wallet_budgets')
+      .insert({
+        user_id: destination.user_id,
+        wallet_id: destination.wallet_id,
+        account_id: destination.account_id,
+        period_month: previousMonth,
+        assigned_amount: 0,
+        rollover_amount: 0,
+      })
+      .select('id, user_id, wallet_id, account_id, total_budget, rollover_amount')
+      .single()
+
+    if (createBudgetError) {
+      return NextResponse.json({ error: createBudgetError.message }, { status: 500 })
+    }
+    previousBudgets.push(createdBudget as RolloverBudget)
+    existingBudgetKeys.add(key)
   }
 
   const results: Array<{
@@ -48,14 +111,12 @@ export async function GET(request: NextRequest) {
     yield_amount: number
   }> = []
   const categoryRollovers = new Map<string, number>()
-
   for (const budget of previousBudgets ?? []) {
     let spentQuery = supabase
       .from('transactions')
-      .select('amount, category_id')
+      .select('amount, category_id, type, savings_operation')
       .eq('user_id', budget.user_id)
       .eq('month', previousMonth)
-      .eq('type', 'Gasto')
       .eq('status', 'confirmada')
 
     spentQuery = budget.wallet_id
@@ -67,7 +128,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: spentError.message }, { status: 500 })
     }
 
-    const spent = (spentRows ?? []).reduce((sum, row) => sum + Number(row.amount), 0)
+    const spent = (spentRows ?? [])
+      .filter((row) => row.type === 'Gasto')
+      .reduce((sum, row) => sum + Number(row.amount), 0)
+    const savingsNet = (spentRows ?? [])
+      .filter((row) => row.type === 'Ahorro')
+      .reduce((sum, row) => sum + (row.savings_operation === 'ingreso' ? Number(row.amount) : -Number(row.amount)), 0)
     const { data: yieldConfig, error: yieldConfigError } = await supabase
       .from('yield_configs')
       .select('id, start_date, is_active')
@@ -122,9 +188,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const leftover = Math.max(Number(budget.total_budget) - spent + yieldAmount, 0)
+    const leftover = Math.max(Number(budget.total_budget) - spent + savingsNet + yieldAmount, 0)
     const categoryIdsInSpent = Array.from(new Set(
-      (spentRows ?? []).filter((row) => row.category_id).map((row) => row.category_id as string)
+      (spentRows ?? [])
+        .filter((row) => (row.type === 'Gasto' || row.type === 'Ahorro') && row.category_id)
+        .map((row) => row.category_id as string)
     ))
 
     const { data: previousCategoryBudgets, error: categoryBudgetsError } = await supabase
@@ -137,7 +205,6 @@ export async function GET(request: NextRequest) {
     if (categoryBudgetsError) {
       return NextResponse.json({ error: categoryBudgetsError.message }, { status: 500 })
     }
-
     const matchingCategoryIds = Array.from(new Set((previousCategoryBudgets ?? []).map((row) => row.category_id)))
     const categoryId = matchingCategoryIds.length === 1 ? matchingCategoryIds[0] : null
 
@@ -149,7 +216,7 @@ export async function GET(request: NextRequest) {
 
     currentQuery = budget.wallet_id
       ? currentQuery.eq('wallet_id', budget.wallet_id)
-      : currentQuery.eq('account_id', budget.account_id!)
+      : currentQuery.eq('account_id', budget.account_id!).is('wallet_id', null)
 
     const { data: existingCurrent, error: currentError } = await currentQuery.maybeSingle()
     if (currentError) {
@@ -172,27 +239,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: budgetError.message }, { status: 500 })
     }
 
-    const { error: reviewError } = await supabase
-      .from('budget_rollover_reviews')
-      .upsert({
-        user_id: budget.user_id,
-        source_budget_id: budget.id,
-        source_period_month: previousMonth,
-        target_period_month: currentMonth,
-        wallet_id: budget.wallet_id,
-        account_id: budget.account_id,
-        amount: leftover,
-        category_id: categoryId,
-        status: categoryId ? 'assigned' : 'pending',
-      }, { onConflict: 'source_budget_id,target_period_month' })
+    if (leftover > 0) {
+      const { error: reviewError } = await supabase
+        .from('budget_rollover_reviews')
+        .upsert({
+          user_id: budget.user_id,
+          source_budget_id: budget.id,
+          source_period_month: previousMonth,
+          target_period_month: currentMonth,
+          wallet_id: budget.wallet_id,
+          account_id: budget.account_id,
+          amount: leftover,
+          category_id: categoryId,
+          status: categoryId ? 'assigned' : 'pending',
+        }, { onConflict: 'source_budget_id,target_period_month' })
 
-    if (reviewError) {
-      return NextResponse.json({ error: reviewError.message }, { status: 500 })
-    }
+      if (reviewError) {
+        return NextResponse.json({ error: reviewError.message }, { status: 500 })
+      }
+      if (categoryId) {
+        const key = `${budget.user_id}:${categoryId}`
+        categoryRollovers.set(key, (categoryRollovers.get(key) ?? 0) + leftover)
+      }
+    } else {
+      const { error: zeroReviewError } = await supabase
+        .from('budget_rollover_reviews')
+        .delete()
+        .eq('source_budget_id', budget.id)
+        .eq('target_period_month', currentMonth)
+        .eq('status', 'pending')
 
-    if (categoryId) {
-      const key = `${budget.user_id}:${categoryId}`
-      categoryRollovers.set(key, (categoryRollovers.get(key) ?? 0) + leftover)
+      if (zeroReviewError) {
+        return NextResponse.json({ error: zeroReviewError.message }, { status: 500 })
+      }
     }
 
     results.push({
@@ -238,6 +317,7 @@ export async function GET(request: NextRequest) {
     if (categoryBudgetError) {
       return NextResponse.json({ error: categoryBudgetError.message }, { status: 500 })
     }
+
   }
 
   const categoryIds = Array.from(new Set(results.flatMap((result) => result.category_id ? [result.category_id] : [])))

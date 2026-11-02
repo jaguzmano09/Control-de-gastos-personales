@@ -61,7 +61,7 @@ export default async function PresupuestoBolsillosPage({
   ]
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-5xl">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-ledger-green">Control por destino</p>
@@ -71,7 +71,7 @@ export default async function PresupuestoBolsillosPage({
         <MonthSelector yearMonth={yearMonth} basePath="/presupuestos/bolsillos" />
       </div>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-2">
+      <div className="mt-8 grid gap-5 md:grid-cols-2">
         {targets.map((target) => {
           const budget = target.wallet_id ? budgetByWallet.get(target.wallet_id) : budgetByAccount.get(target.account_id!)
           const total = Number(budget?.total_budget ?? 0)
@@ -86,11 +86,11 @@ export default async function PresupuestoBolsillosPage({
           const isOverThreshold = !isOverBudget && threshold !== undefined && total > 0 && (spent / total) * 100 >= threshold
 
           return (
-            <div key={target.key} className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
-              <div className="border-b border-black/5 bg-gradient-to-br from-ledger-green/10 via-white to-white p-5">
+            <div key={target.key} className="surface-card overflow-hidden">
+              <div className="border-b border-black/[0.05] bg-gradient-to-br from-ledger-green/[0.08] via-white to-white p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-base font-semibold text-ledger-text">{target.label}</p>
+                    <p className="text-base font-semibold leading-5 text-ledger-text">{target.label}</p>
                     {target.sublabel && <p className="mt-1 text-xs text-ledger-muted">Cuenta: {target.sublabel}</p>}
                   </div>
                   <div className="text-right">
@@ -101,8 +101,8 @@ export default async function PresupuestoBolsillosPage({
                   </div>
                 </div>
               </div>
-              <div className="p-5">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="p-5 sm:p-6">
+                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                   <Metric label="Presupuesto" value={total} />
                   <Metric label="Gastado" value={spent} negative={spent > 0} />
                   <Metric label="Rendimientos" value={yieldAmount} positive />
@@ -146,8 +146,8 @@ export default async function PresupuestoBolsillosPage({
 
 function Metric({ label, value, positive = false, negative = false }: { label: string; value: number; positive?: boolean; negative?: boolean }) {
   return (
-    <div className="rounded-xl bg-black/[0.03] px-3 py-2">
-      <p className="text-[11px] text-ledger-muted">{label}</p>
+    <div className="rounded-xl border border-black/[0.05] bg-ledger-paper/70 px-3 py-2.5">
+      <p className="whitespace-nowrap text-[10px] text-ledger-muted sm:text-[11px]">{label}</p>
       <p className={`mt-1 text-sm font-medium ${positive ? 'text-ledger-green' : negative ? 'text-red-700' : 'text-ledger-text'}`}>
         {formatCOP(value)}
       </p>

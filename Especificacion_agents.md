@@ -250,8 +250,20 @@ corresponda, y lo escribe en el período actual.
 - No crea transacciones artificiales.
 - Conserva separados los montos asignados y trasladados.
 - Es idempotente: ejecutarlo dos veces no debe duplicar el sobrante.
+- Solo se generan revisiones para sobrantes mayores que cero; los sobrantes de
+  cero no aparecen en la bandeja de revisión.
+- Se procesa cada destino presupuestado, tanto cuentas sin bolsillos (por
+  ejemplo efectivo o Dale) como cada bolsillo activo.
+- Los movimientos de ahorro confirmados se incluyen en el cálculo del
+  sobrante: los ingresos de ahorro suman y los retiros de ahorro restan.
+- El sobrante de cada categoría se calcula directamente con su presupuesto y
+  sus movimientos confirmados del mes anterior, incluidos los movimientos de
+  ahorro; no depende de que exista un único gasto asociado a la cuenta.
 - Los rollovers de categorías y bolsillos se registran en
   `budget_rollover_reviews`.
+- La categoría se identifica a partir de los movimientos confirmados del
+  destino; el sobrante sigue siendo uno de la cuenta o bolsillo y se asigna
+  desde esa revisión.
 - La bandeja de revisión permite asignar o revisar los rollovers pendientes.
 
 ---

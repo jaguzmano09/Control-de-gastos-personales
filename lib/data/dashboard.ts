@@ -106,6 +106,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     accountSummary.rollover += Number(budget.rollover_amount)
     if (budget.wallet_id) {
       balanceByWallet.set(budget.wallet_id, (balanceByWallet.get(budget.wallet_id) ?? 0) + Number(budget.rollover_amount))
+      if (Number(budget.rollover_amount) > 0) walletIdsWithMovement.add(budget.wallet_id)
     }
     rolloverTotal += Number(budget.rollover_amount)
     accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow

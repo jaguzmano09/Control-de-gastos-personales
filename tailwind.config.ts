@@ -12,6 +12,8 @@ const config: Config = {
 				"ledger-ink": "#0F1A2B",
 				"ledger-paper": "#F7F5F0",
 				"ledger-green": "#2F6F4E",
+				"ledger-green-dark": "#1D5138",
+				"ledger-line": "#DCE7DF",
 				"ledger-text": "#1B1F23",
 				"ledger-muted": "#6B7280",
 			},

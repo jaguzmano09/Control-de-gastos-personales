@@ -19,6 +19,7 @@ export async function assignRolloverCategory(formData: FormData) {
     .eq('user_id', user.id)
     .single()
   if (reviewError) throw reviewError
+  if (Number(review.amount) <= 0) throw new Error('El sobrante debe ser mayor que cero')
 
   const { data: currentBudget, error: budgetError } = await supabase
     .from('category_budgets')
