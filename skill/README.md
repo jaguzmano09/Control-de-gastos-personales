@@ -1,12 +1,13 @@
-# Skills del proyecto
+# Project skills
 
-Las skills están agrupadas por responsabilidad para mantener el espacio de trabajo ordenado:
+Skills are grouped by responsibility to keep the workspace organized:
 
-- `ui/`: diseño visual, accesibilidad y componentes Tailwind.
-- `architecture/`: patrones de Next.js App Router.
-- `design-system/`: tokens y sistema de diseño.
-- `brand/`: identidad visual y branding.
-- `brand/ip-as-logo/`: directrices para crear y mantener la mascota/logo de la marca.
-- `creative/`: diseño gráfico, banners y presentaciones.
-Esta carpeta es la única fuente de skills del proyecto. Las skills instaladas
-se integran en las categorías anteriores para evitar copias duplicadas.
+- `ui/`: visual design, accessibility, and Tailwind components.
+- `architecture/`: Next.js App Router patterns.
+- `design-system/`: design tokens and system definitions.
+- `brand/`: visual identity and branding.
+- `brand/ip-as-logo/`: guidance for creating and maintaining the brand mascot/logo.
+- `creative/`: graphic design, banners, and presentations.
+
+This directory is the project's single source of skills. Installed skills are
+integrated into the categories above to avoid duplicate copies.

@@ -1,1 +1,1 @@
-Componentes de barras de progreso y tarjetas de presupuesto.
+Progress bar and budget card components.

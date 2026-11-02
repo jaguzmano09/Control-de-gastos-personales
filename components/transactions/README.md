@@ -1,1 +1,1 @@
-Componentes para tabla, fila y formulario de transacciones.
+Transaction table, row, and form components.

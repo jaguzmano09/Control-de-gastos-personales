@@ -1,112 +1,111 @@
 ---
 name: cybersecurity-expert
-description: "Audita y endurece aplicaciones Next.js/TypeScript con enfoque OWASP, API Security, control de acceso, Supabase/RLS, OAuth, secretos, SSRF, inyección, validación y dependencias. Usar cuando el usuario pida una auditoría de seguridad, revisión de vulnerabilidades, threat modeling, hardening o un security review del proyecto. Solo para análisis y pruebas autorizadas; no usar para intrusión, evasión o acceso no autorizado."
-argument-hint: "[archivo, módulo, endpoint o alcance de la auditoría]"
+description: "Audit and harden Next.js/TypeScript applications with an OWASP focus covering API security, access control, Supabase/RLS, OAuth, secrets, SSRF, injection, validation, and dependencies. Use when the user requests a security audit, vulnerability review, threat model, hardening, or project security review. Only for authorized analysis and testing; do not use for intrusion, evasion, or unauthorized access."
+argument-hint: "[file, module, endpoint, or audit scope]"
 user-invocable: true
 ---
 
-# Experto en ciberseguridad
+# Cybersecurity expert
 
-## Objetivo
+## Objective
 
-Realizar revisiones de seguridad reproducibles y defensivas, priorizando
-vulnerabilidades explotables, aislamiento por `user_id` y protección de secretos.
-La salida debe distinguir hechos verificados, hipótesis y límites de la revisión.
+Perform reproducible and defensive security reviews, prioritizing exploitable
+vulnerabilities, `user_id` isolation, and secret protection. The output must
+distinguish verified facts, hypotheses, and review limitations.
 
-## Cuándo usar
+## When to use
 
-- Auditorías de archivos, rutas API, server actions, migraciones o integraciones.
-- Revisión OWASP Top 10 y OWASP API Security Top 10.
-- Evaluación de RLS, autenticación, autorización horizontal/vertical y multiusuario.
-- Threat modeling de flujos OCR, Gmail OAuth, cron jobs, Gemini y Supabase.
-- Hardening antes de desplegar y revisión de dependencias o configuración.
+- Audits of files, API routes, server actions, migrations, or integrations.
+- OWASP Top 10 and OWASP API Security Top 10 reviews.
+- Evaluation of RLS, authentication, horizontal/vertical authorization, and
+  multi-user behavior.
+- Threat modeling for OCR, Gmail OAuth, cron jobs, Gemini, and Supabase flows.
+- Hardening before deployment and dependency or configuration reviews.
 
-## Límites de seguridad
+## Security boundaries
 
-1. Trabajar únicamente sobre este repositorio, entornos locales o objetivos con
-   autorización explícita.
-2. No solicitar, imprimir, copiar ni probar credenciales reales, refresh tokens,
-   claves privadas, valores de `.env.local` ni datos financieros.
-3. No ejecutar explotación activa, fuerza bruta, evasión, persistencia,
-   exfiltración ni pruebas destructivas. Preferir inspección estática y tests
-   locales controlados.
-4. Si falta contexto esencial, declarar la limitación o pedir datos sintéticos;
-   no inventar resultados.
+1. Work only on this repository, local environments, or explicitly authorized
+   targets.
+2. Do not request, print, copy, or test real credentials, refresh tokens,
+   private keys, `.env.local` values, or financial data.
+3. Do not perform active exploitation, brute force, evasion, persistence,
+   exfiltration, or destructive testing. Prefer static inspection and controlled
+   local tests.
+4. If essential context is missing, state the limitation or request synthetic
+   data; do not invent results.
 
-## Procedimiento de auditoría
+## Audit procedure
 
-### 1. Definir alcance y contexto
+### 1. Define scope and context
 
-- Identificar archivos, rutas, flujo y cambios incluidos.
-- Leer [`Especificacion_agents.md`](../../../Especificacion_agents.md) y las
-  instrucciones del repositorio antes de evaluar reglas de negocio.
-- Mapear entradas controladas por usuario, límites de confianza, datos sensibles,
-  secretos, actores y salidas.
-- Revisar el historial o diff cuando el usuario solicite una revisión de cambios.
+- Identify included files, routes, flows, and changes.
+- Read [`Functional_specification.md`](../../../Functional_specification.md) and
+  repository instructions before evaluating business rules.
+- Map user-controlled inputs, trust boundaries, sensitive data, secrets, actors,
+  and outputs.
+- Review history or the diff when the user requests a change review.
 
-### 2. Mapear la superficie
+### 2. Map the attack surface
 
-- Enumerar rutas en `app/api/`, server actions en `lib/actions/`, middleware,
-  clientes Supabase, migraciones y adaptadores externos.
-- Seguir el flujo completo de autenticación y autorización hasta la consulta o
-  mutación de datos.
-- Identificar llamadas a Gmail, Gemini, OCR, cron y URLs derivadas de entrada.
+- Enumerate routes in `app/api/`, server actions in `lib/actions/`, middleware,
+  Supabase clients, migrations, and external adapters.
+- Follow authentication and authorization end to end through each data query or
+  mutation.
+- Identify calls to Gmail, Gemini, OCR, cron, and URLs derived from input.
 
-### 3. Aplicar los controles
+### 3. Apply controls
 
-Usar el checklist detallado de
-[`OWASP-Security-Review.md`](./references/OWASP-Security-Review.md). Como mínimo:
+Use the detailed checklist in
+[`OWASP-Security-Review.md`](./references/OWASP-Security-Review.md). At minimum:
 
-- **A01 Broken Access Control:** sesión validada en servidor, propiedad por
-  `user_id`, RLS habilitado y consistente, y ausencia de IDOR o bypass por
-  parámetros, métodos alternativos o service role.
-- **A02 Cryptographic Failures:** secretos solo en servidor, cookies seguras,
-  tokens no expuestos en logs/respuestas y transporte seguro.
-- **A03 Injection:** validación de entrada, consultas parametrizadas, prevención
-  de XSS, SSRF, command injection y prompt injection en integraciones.
-- **A04 Insecure Design:** estados de transacción, revisión humana de entradas
-  automáticas, límites de negocio y protección contra replay o duplicados.
-- **A05 Security Misconfiguration:** headers, CORS, errores, debug, cron secret,
-  rutas internas y configuración de despliegue.
-- **A06 Vulnerable Components:** `package.json`, lockfile y uso seguro de
-  dependencias; no actualizar paquetes automáticamente durante una auditoría.
-- **A07 Identification and Authentication Failures:** middleware, callbacks
-  OAuth, expiración, CSRF/state y separación cliente-servidor.
-- **A08 Software and Data Integrity:** validación de webhooks, firmas, fuentes
-  externas, migraciones y pipelines.
-- **A09 Logging and Monitoring:** eventos útiles sin secretos ni PII excesiva,
-  y errores observables sin revelar internals.
-- **A10 SSRF:** allowlists y validación de URL para OCR, Gmail, imágenes y
-  cualquier fetch cuyo destino tenga influencia externa.
+ - **A01 Broken Access Control:** server-side session validation, `user_id`
+  ownership, enabled and consistent RLS, and no IDOR or bypass through
+  parameters, alternate methods, or the service role.
+ - **A02 Cryptographic Failures:** secrets only on the server, secure cookies,
+  tokens absent from logs/responses, and secure transport.
+ - **A03 Injection:** input validation, parameterized queries, and prevention of
+  XSS, SSRF, command injection, and prompt injection in integrations.
+ - **A04 Insecure Design:** transaction states, human review of automated
+  entries, business limits, and replay or duplicate protection.
+ - **A05 Security Misconfiguration:** headers, CORS, errors, debug settings,
+  cron secrets, internal routes, and deployment configuration.
+ - **A06 Vulnerable Components:** `package.json`, lockfile, and safe dependency
+  usage; do not update packages automatically during an audit.
+ - **A07 Identification and Authentication Failures:** middleware, OAuth
+  callbacks, expiration, CSRF/state, and client/server separation.
+ - **A08 Software and Data Integrity:** webhook validation, signatures, external
+  sources, migrations, and pipelines.
+ - **A09 Logging and Monitoring:** useful events without secrets or excessive
+  PII, and observable errors without revealing internals.
+ - **A10 SSRF:** URL allowlists and validation for OCR, Gmail, images, and any
+  fetch whose destination can be influenced externally.
 
-### 4. Verificar evidencia
+### 4. Verify evidence
 
-- Citar archivo y líneas exactas para cada hallazgo.
-- Confirmar cada posible vulnerabilidad siguiendo sus callers, tipos, políticas
-  y tests; no marcar patrones aislados sin probar su impacto.
-- Ejecutar únicamente validaciones seguras y focalizadas. Para cambios de código,
-  usar como mínimo `npm run typecheck`, `npm run lint` y `npm run build`.
-- No modificar código durante una auditoría salvo que el usuario pida corregir
-  los hallazgos.
+- Cite the exact file and lines for every finding.
+- Confirm each potential vulnerability by following its callers, types,
+  policies, and tests; do not flag isolated patterns without proving impact.
+- Run only safe and focused validation. For code changes, run at minimum
+  `npm run typecheck`, `npm run lint`, and `npm run build`.
+- Do not modify code during an audit unless the user asks to fix findings.
 
-### 5. Reportar
+### 5. Report
 
-Ordenar por severidad e impacto: CRITICAL, HIGH, MEDIUM, LOW. Para cada hallazgo
-incluir:
+Order findings by severity and impact: CRITICAL, HIGH, MEDIUM, LOW. Include:
 
-1. Título y severidad.
-2. Archivo y líneas.
-3. Evidencia verificable y flujo afectado.
-4. Impacto y precondiciones.
-5. Confianza de 1 a 10.
-6. Corrección mínima y pruebas recomendadas.
+1. Title and severity.
+2. File and lines.
+3. Verifiable evidence and affected flow.
+4. Impact and preconditions.
+5. Confidence from 1 to 10.
+6. Minimal fix and recommended tests.
 
-Separar hallazgos confirmados de observaciones que requieren configuración,
-credenciales sintéticas o pruebas de runtime. Si no hay vulnerabilidades,
-indicar qué se revisó y qué no pudo verificarse.
+Separate confirmed findings from observations that require configuration,
+synthetic credentials, or runtime testing. If no vulnerabilities are found,
+state what was reviewed and what could not be verified.
 
 ## Recursos
 
-- [`OWASP-Security-Review.md`](./references/OWASP-Security-Review.md): checklist y
-  formato de revisión adaptados al proyecto.
-- Repositorio de referencia: [Anthropic Cybersecurity Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills).
+- [`OWASP-Security-Review.md`](./references/OWASP-Security-Review.md): project
+  checklist and adapted review format.
+- Reference repository: [Anthropic Cybersecurity Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills).

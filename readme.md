@@ -638,7 +638,7 @@ Control-de-gastos-personales/
 ├── .github/
 │   └── copilot-instructions.md # Contexto compartido para agentes
 │
-├── Especificacion_agents.md # Especificación funcional y de datos
+├── Functional_specification.md # Functional and data specification
 │
 ├── middleware.ts           # Authentication/session middleware
 │

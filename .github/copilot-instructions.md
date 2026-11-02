@@ -1,81 +1,78 @@
-# Contexto del proyecto para agentes
+# Project context for agents
 
-## Propósito
+## Purpose
 
-**Control de Gastos Personales** es una PWA de finanzas personales para registrar
-ingresos, gastos, transferencias, ahorros e inversiones. La aplicación está
-orientada actualmente a un usuario, pero el modelo de datos y las políticas RLS
-deben mantener aislamiento completo por `user_id` para permitir multiusuario en el
-futuro.
+**Control de Gastos Personales** is a personal finance PWA for recording income,
+expenses, transfers, savings, and investments. The application currently targets
+one user, but the data model and RLS policies must preserve complete isolation
+by `user_id` to support multiple users in the future.
 
-La especificación funcional detallada está en
-[`Especificacion_agents.md`](../Especificacion_agents.md). Consultarla antes de
-modificar el modelo de datos, los estados de transacción o los flujos de
-presupuesto.
+The detailed functional specification is in
+[`Functional_specification.md`](../Functional_specification.md). Read it before
+changing the data model, transaction states, or budget workflows.
 
-## Stack y estructura
+## Stack and structure
 
-- Next.js 14 con App Router, React 18 y TypeScript.
-- Tailwind CSS para estilos.
-- Supabase para PostgreSQL, autenticación y Row Level Security.
-- Vercel para despliegue y cron jobs.
-- Gemini para extracción/clasificación asistida.
-- Tesseract.js y un servicio PaddleOCR opcional para OCR.
-- La UI vive en `app/` y los componentes reutilizables en `components/`.
-- Las acciones de servidor y adaptadores están en `lib/`.
-- Las migraciones están en `supabase/migrations/`.
-- Las definiciones generadas de Supabase están en
-  `src/types/database.types.ts`; no editar ese archivo manualmente si el cambio
-  debe provenir del esquema.
+- Next.js 14 with App Router, React 18, and TypeScript.
+- Tailwind CSS for the interface.
+- Supabase for PostgreSQL, authentication, and Row Level Security.
+- Vercel for deployment and cron jobs.
+- Gemini for assisted extraction and classification.
+- Tesseract.js and an optional PaddleOCR service for OCR.
+- The UI lives in `app/` and reusable components live in `components/`.
+- Server actions and adapters live in `lib/`.
+- Migrations live in `supabase/migrations/`.
+- Generated Supabase definitions live in `src/types/database.types.ts`; do not
+  edit this file manually when the change should come from the schema.
 
-## Flujos funcionales importantes
+## Important functional workflows
 
-- Solo las transacciones con estado `confirmada` deben afectar balances,
-  dashboards y presupuestos.
-- Las entradas OCR y Gmail llegan normalmente como `pendiente_revision`.
-- Los duplicados se conservan con estado `duplicado` para revisión; una entrada
-  descartada usa `descartada`.
-- La confirmación y descarte pasan por `lib/actions/review.ts`; no implementar
-  actualizaciones directas que salten las validaciones existentes.
-- Los presupuestos de categorías y bolsillos se calculan para un mes. El
-  presupuesto de bolsillo separa `assigned_amount` y `rollover_amount`.
-- El rollover se revisa desde la bandeja de revisión y no debe crear
-  transacciones fantasma.
-- Los rendimientos se calculan con la lógica de `lib/yield-calculation.ts` y
-  las configuraciones de `yield_configs`/`yield_rates`.
-- La integración de correo usa OAuth de Gmail. Los refresh tokens y las claves
-  privadas solo pueden usarse en servidor.
+- Only transactions with `confirmada` status may affect balances, dashboards,
+  and budgets.
+- OCR and Gmail entries normally arrive with `pendiente_revision` status.
+- Duplicates remain with `duplicado` status for review; a discarded entry uses
+  `descartada`.
+- Confirmation and dismissal go through `lib/actions/review.ts`; do not add
+  direct updates that bypass the existing validations.
+- Category and wallet budgets are calculated monthly. Wallet budgets separate
+  `assigned_amount` from `rollover_amount`.
+- Rollover is reviewed from the review queue and must not create phantom
+  transactions.
+- Yield is calculated with the logic in `lib/yield-calculation.ts` and the
+  `yield_configs`/`yield_rates` settings.
+- Email integration uses Gmail OAuth. Refresh tokens and private keys may only
+  be used on the server.
 
-## Convenciones de implementación
+## Implementation conventions
 
-- Usa los clientes existentes de Supabase:
-  `lib/supabase/client.ts` para cliente y `lib/supabase/server.ts` para servidor.
-- Las páginas protegidas están bajo `app/(dashboard)/`; el middleware mantiene
-  la sesión.
-- Las operaciones que cambian datos deben reutilizar las server actions de
-  `lib/actions/`, validar la sesión y revalidar las rutas afectadas.
-- Mantén los mensajes y etiquetas de la interfaz en español y respeta los
-  patrones visuales existentes en Tailwind.
-- Para cambios de base de datos, crea una migración nueva, actualiza los tipos
-  generados cuando corresponda y verifica las políticas RLS.
-- No expongas `SUPABASE_SERVICE_ROLE_KEY`, secretos OAuth ni `GEMINI_API_KEY` al
-  cliente. Nunca incluyas valores de `.env.local` en commits o documentación.
+- Use the existing Supabase clients: `lib/supabase/client.ts` for client code
+  and `lib/supabase/server.ts` for server code.
+- Protected pages live under `app/(dashboard)/`; middleware maintains the
+  session.
+- Data-changing operations must reuse server actions from `lib/actions/`,
+  validate the session, and revalidate affected routes.
+- Keep interface messages and labels in Spanish while following the existing
+  Tailwind visual patterns.
+- For database changes, create a new migration, update generated types when
+  applicable, and verify RLS policies.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, OAuth secrets, or `GEMINI_API_KEY`
+  to the client. Never include `.env.local` values in commits or documentation.
 
-## Variables de entorno
+## Environment variables
 
-Las variables usadas por la aplicación son:
+The application uses these variables:
 
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `PADDLEOCR_URL`,
 `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
-`GOOGLE_OAUTH_REDIRECT_URI`, `NEXT_PUBLIC_SITE_URL` y `CRON_SECRET`.
+`GOOGLE_OAUTH_REDIRECT_URI`, `NEXT_PUBLIC_SITE_URL`, and `CRON_SECRET`.
 
-Usa `.env.local` para desarrollo. Las variables privadas deben configurarse
-también en Vercel cuando se despliegue.
+Use `.env.local` for development. Private variables must also be configured in
+Vercel for deployment.
 
-## Validación
+## Validation
 
-Después de cambios de código, ejecuta como mínimo:
+After code changes, run at minimum:
 
 ```bash
 npm run typecheck
@@ -83,12 +80,12 @@ npm run lint
 npm run build
 ```
 
-Para cambios en cálculos, prioriza también las pruebas existentes, por ejemplo
-`lib/yield-calculation.test.ts`. No ejecutes migraciones destructivas ni cambies
-datos reales sin confirmación explícita.
+For calculation changes, also prioritize existing tests such as
+`lib/yield-calculation.test.ts`. Do not run destructive migrations or change
+real data without explicit confirmation.
 
-## Documentación
+## Documentation
 
-Al añadir una capacidad visible al usuario, actualiza `readme.md`. Al cambiar
-decisiones funcionales, seguridad, esquema o flujos de negocio, actualiza
-`Especificacion_agents.md` o enlaza la documentación específica correspondiente.
+When adding a user-visible capability, update `readme.md`. When changing
+functional, security, schema, or business-flow decisions, update
+`Functional_specification.md` or link the relevant specific documentation.

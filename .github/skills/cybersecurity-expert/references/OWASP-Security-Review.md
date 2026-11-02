@@ -1,93 +1,98 @@
-# Revisión OWASP del proyecto
+# OWASP Project Review
 
-Este checklist adapta prácticas de revisión OWASP y API Security al stack local.
-Es una guía de análisis defensivo, no una autorización para probar sistemas
-externos.
+This checklist adapts OWASP and API Security review practices to the local
+stack. It is a defensive analysis guide, not authorization to test external
+systems.
 
-## Contexto específico
+## Project-specific context
 
-Revisar siempre:
+Always review:
 
-- `app/api/**`, `middleware.ts` y `lib/actions/**`.
-- `lib/supabase/client.ts` y `lib/supabase/server.ts`.
-- `supabase/migrations/**`, especialmente políticas RLS y funciones SQL.
-- Flujos de `review.ts`, Gmail OAuth, OCR, Gemini y cron.
-- Variables privadas: `SUPABASE_SERVICE_ROLE_KEY`, secretos OAuth,
-  `GEMINI_API_KEY` y `CRON_SECRET`.
+- `app/api/**`, `middleware.ts`, and `lib/actions/**`.
+- `lib/supabase/client.ts` and `lib/supabase/server.ts`.
+- `supabase/migrations/**`, especially RLS policies and SQL functions.
+- `review.ts`, Gmail OAuth, OCR, Gemini, and cron flows.
+- Private variables: `SUPABASE_SERVICE_ROLE_KEY`, OAuth secrets,
+  `GEMINI_API_KEY`, and `CRON_SECRET`.
 
 ## Checklist
 
-### Identidad y acceso
+### Identity and access
 
-- Cada endpoint y server action valida la sesión en servidor.
-- Las consultas filtran por el usuario autenticado o dependen de RLS verificable.
-- `account_id`, `wallet_id`, `category_id`, `transaction_id` y otros IDs se
-  validan por pertenencia al mismo `user_id`.
-- No se usa el cliente service role en código cliente ni para saltarse controles.
-- Las rutas de cron y webhooks requieren un secreto o firma y no confían solo en
-  un header controlable por el cliente.
-- OAuth valida `state`, redirect URI, expiración y asociación con el usuario.
+- Every endpoint and server action validates the server-side session.
+- Queries filter by the authenticated user or rely on verifiable RLS.
+- `account_id`, `wallet_id`, `category_id`, `transaction_id`, and other IDs are
+  validated as belonging to the same `user_id`.
+- The service-role client is not used in client code or to bypass controls.
+- Cron and webhook routes require a secret or signature and do not trust only a
+  client-controlled header.
+- OAuth validates `state`, redirect URI, expiration, and user association.
 
-### Entradas y salidas
+### Inputs and outputs
 
-- Los esquemas validan tipo, longitud, rangos, enumeraciones y tamaño de cargas.
-- Las consultas Supabase no interpolan SQL ni construyen filtros inseguros.
-- Datos OCR, Gmail y Gemini se tratan como no confiables.
-- El texto mostrado en la UI se escapa según el contexto; no se usa HTML crudo
-  sin sanitización.
-- URLs externas se validan con allowlist, protocolo permitido y límites de
-  redirección para evitar SSRF.
-- Las respuestas no incluyen tokens, secretos, trazas, datos de otros usuarios
-  ni campos internos innecesarios.
+- Schemas validate type, length, ranges, enumerations, and payload size.
+- Supabase queries do not interpolate SQL or build unsafe filters.
+- OCR, Gmail, and Gemini data is treated as untrusted.
+- Text displayed in the UI is escaped for its context; raw HTML is not used
+  without sanitization.
+- External URLs use an allowlist, permitted protocols, and redirect limits to
+  prevent SSRF.
+- Responses do not include tokens, secrets, traces, other users' data, or
+  unnecessary internal fields.
 
-### Lógica financiera
+### Financial logic
 
-- Solo `confirmada` afecta balances, dashboards y presupuestos.
-- Las entradas automáticas permanecen revisables y no se confirman por defecto.
-- La confirmación y descarte pasan por `lib/actions/review.ts`.
-- Transferencias, ahorros, duplicados, rollover y estados inválidos no pueden
-  crear saldos o transacciones fantasma.
-- Se consideran replay, duplicación, concurrencia, límites monetarios y
-  consistencia entre cuenta y bolsillo.
+- Only `confirmada` affects balances, dashboards, and budgets.
+- Automated entries remain reviewable and are not confirmed by default.
+- Confirmation and dismissal go through `lib/actions/review.ts`.
+- Transfers, savings, duplicates, rollover, and invalid states cannot create
+  phantom balances or transactions.
+- Review replay, duplication, concurrency, monetary limits, and account/wallet
+  consistency.
 
-### Configuración y dependencias
+### Configuration and dependencies
 
-- No hay secretos en código, logs, respuestas, commits o documentación.
-- Cookies tienen `HttpOnly`, `Secure`, `SameSite` y alcance apropiados.
-- Errores de producción no revelan internals; logs no contienen PII innecesaria.
-- CORS, headers, métodos HTTP y cache no permiten acceso cross-origin indebido.
-- Se revisan `package.json` y lockfile con el gestor disponible, sin aplicar
-  actualizaciones no solicitadas.
+- Secrets are absent from code, logs, responses, commits, and documentation.
+- Cookies have appropriate `HttpOnly`, `Secure`, `SameSite`, and scope settings.
+- Production errors do not reveal internals; logs do not contain unnecessary
+  PII.
+- CORS, headers, HTTP methods, and caching do not allow improper cross-origin
+  access.
+- Review `package.json` and the lockfile with the available package manager
+  without applying unrequested updates.
 
-## Criterio de severidad
+## Severity criteria
 
-- **CRITICAL:** compromiso probable de cuentas, secretos o datos de múltiples
-  usuarios, o ejecución remota con impacto amplio.
-- **HIGH:** acceso no autorizado a datos/acciones sensibles, bypass de RLS,
-  OAuth comprometible o inyección con impacto material.
-- **MEDIUM:** exposición limitada, controles incompletos o explotación que exige
-  precondiciones relevantes.
-- **LOW:** defensa en profundidad, información menor o mejora de observabilidad.
+- **CRITICAL:** likely compromise of accounts, secrets, or multiple users' data,
+  or remote execution with broad impact.
+- **HIGH:** unauthorized access to sensitive data/actions, RLS bypass,
+  compromisable OAuth, or injection with material impact.
+- **MEDIUM:** limited exposure, incomplete controls, or exploitation requiring
+  meaningful preconditions.
+- **LOW:** defense in depth, minor information exposure, or observability
+  improvement.
 
-## Formato de salida
+## Output format
 
 ```text
-## [SEVERITY] Título
-- Archivo: ruta:línea
-- Confianza: n/10
-- Evidencia: comportamiento concreto observado
-- Impacto: qué puede lograr un atacante autorizado a probar el sistema
-- Corrección: cambio mínimo recomendado
-- Validación: prueba segura que demostraría la corrección
+## [SEVERITY] Title
+- File: path:line
+- Confidence: n/10
+- Evidence: concrete behavior observed
+- Impact: what an authorized tester could achieve
+- Fix: minimal recommended change
+- Validation: safe test that would demonstrate the fix
 ```
 
-No presentar una ausencia de evidencia como prueba de seguridad. Declarar las
-áreas que requieren configuración de despliegue, credenciales sintéticas o
-pruebas de integración.
+## Limitations
 
-## Fuente y adaptación
+Document areas that require deployment configuration, synthetic credentials, or
+integration tests. Never infer production behavior from static code alone when
+runtime configuration is unavailable.
 
-La estructura de procedimientos se inspiró en
-[Anthropic Cybersecurity Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills),
-en particular sus guías de revisión de API, control de acceso y funciones
-serverless. El contenido aquí está reducido y adaptado a este repositorio.
+## Source and adaptation
+
+The procedure structure was inspired by the
+[OWASP Application Security Verification Standard](https://owasp.org/www-project-application-security-verification-standard/)
+and its API security, access-control, and serverless guidance. The content is
+condensed and adapted to this repository.

@@ -1,1 +1,1 @@
-Componentes de la bandeja de revisión y confianza de IA.
+Review queue and AI confidence components.
