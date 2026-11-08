@@ -16,9 +16,10 @@ const NAV_ITEMS = [
   { href: '/correo', label: 'Correo' },
 ]
 
-export function SidebarMenu({ userEmail }: { userEmail?: string }) {
+export function SidebarMenu({ userEmail, isAdmin = false }: { userEmail?: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const navItems = isAdmin ? [...NAV_ITEMS, { href: '/admin', label: 'Administración' }] : NAV_ITEMS
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-black/[0.07] bg-white/85 shadow-[0_4px_20px_rgba(20,37,29,0.06)] backdrop-blur-xl">
@@ -43,8 +44,8 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
           </span>
         </span>
         <div className="ml-auto hidden items-center gap-2 sm:flex">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" aria-hidden="true" />
-          <span className="text-xs font-semibold text-ledger-muted">Todo en orden</span>
+          <span className="h-2 w-2 rounded-full bg-ledger-green shadow-[0_0_0_4px_rgba(47,111,78,0.12)]" aria-hidden="true" />
+          <span className="text-xs font-semibold text-ledger-muted">Espacio personal</span>
         </div>
       </div>
 
@@ -63,7 +64,7 @@ export function SidebarMenu({ userEmail }: { userEmail?: string }) {
             <div className="mt-2 h-1 w-10 rounded-full bg-ledger-green" />
 
             <div className="mt-7 flex flex-col gap-1.5">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
                 return (
                 <a

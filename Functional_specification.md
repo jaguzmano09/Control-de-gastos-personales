@@ -333,6 +333,25 @@ Mandatory rules:
 - Verify RLS policies and cross-ownership checks when relating accounts,
   wallets, lists, budgets, and transactions.
 
+### 10.1 Public beta, consent, and administration
+
+The public-beta foundation uses versioned `document_versions` and
+`user_document_acceptances` records. A new account must accept the active Terms
+and Privacy versions before it is created; a relevant document update requires a
+renewed acceptance before enabling affected functionality. Acceptance metadata is
+not a substitute for the durable, RLS-protected acceptance record.
+
+`user_profiles` stores an application role (`user` or `admin`). An administrator
+remains an ordinary financial user in their own space; the role must never bypass
+RLS for other users' financial records. Its purpose is limited to product-health
+and adoption metrics.
+
+`product_events` must contain only allowlisted, non-financial product events
+(e.g., onboarding completion or OCR/Gmail outcomes). Do not write transaction
+amounts, descriptions, receipt content, tokens, or bank data to telemetry.
+Administrative metrics must be exposed solely through a server-side,
+role-checked aggregate query.
+
 ---
 
 ## 11. Environment variables

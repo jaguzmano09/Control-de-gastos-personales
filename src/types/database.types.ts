@@ -262,6 +262,36 @@ export type Database = {
           },
         ]
       }
+      document_versions: {
+        Row: {
+          created_at: string
+          document_key: string
+          id: string
+          is_active: boolean
+          public_path: string
+          published_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          document_key: string
+          id?: string
+          is_active?: boolean
+          public_path: string
+          published_at?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          document_key?: string
+          id?: string
+          is_active?: boolean
+          public_path?: string
+          published_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       duplicate_review_log: {
         Row: {
           id: string
@@ -447,6 +477,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          occurred_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          occurred_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          occurred_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       shopping_list_items: {
         Row: {
@@ -768,6 +822,62 @@ export type Database = {
           },
         ]
       }
+      user_document_acceptances: {
+        Row: {
+          acceptance_source: string
+          accepted_at: string
+          created_at: string
+          document_version_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          acceptance_source?: string
+          accepted_at?: string
+          created_at?: string
+          document_version_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          acceptance_source?: string
+          accepted_at?: string
+          created_at?: string
+          document_version_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_document_acceptances_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wallet_budgets: {
         Row: {
           account_id: string | null
@@ -951,6 +1061,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_current_documents: { Args: never; Returns: undefined }
+      admin_product_event_metrics: {
+        Args: { p_since?: string }
+        Returns: {
+          event_count: number
+          event_name: string
+          unique_users: number
+        }[]
+      }
       complete_shopping_list: {
         Args: { p_list_id: string; p_observed_on?: string }
         Returns: undefined
@@ -967,6 +1086,10 @@ export type Database = {
           p_wallet_id: string
         }
         Returns: string
+      }
+      record_product_event: {
+        Args: { p_event_name: string }
+        Returns: undefined
       }
       reopen_shopping_list: { Args: { p_list_id: string }; Returns: undefined }
     }
