@@ -52,7 +52,8 @@ export function ShoppingLists({
   itemSuccess?: string
   itemSuccessListId?: string
 }) {
-  const [open, setOpen] = useState<string | null>(lists[0]?.id ?? null)
+  const [isSectionOpen, setIsSectionOpen] = useState(false)
+  const [open, setOpen] = useState<string | null>(null)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [checkedOverrides, setCheckedOverrides] = useState<Record<string, boolean>>({})
   const [dirtyItems, setDirtyItems] = useState<Record<string, boolean>>({})
@@ -89,8 +90,28 @@ export function ShoppingLists({
     setDirtyItems((current) => ({ ...current, [item.id]: dirty }))
   }
 
+  function toggleSection() {
+    if (isSectionOpen) setOpen(null)
+    setIsSectionOpen((current) => !current)
+  }
+
   return (
-    <div className="mt-8 space-y-5">
+    <section className="panel mt-8 overflow-hidden">
+      <button
+        type="button"
+        onClick={toggleSection}
+        aria-expanded={isSectionOpen}
+        className="flex w-full items-center justify-between p-4 text-left"
+      >
+        <span>
+          <span className="font-serif text-2xl text-ledger-text">Listas de mercado actuales</span>
+          <span className="mt-1 block text-sm text-ledger-muted">Abre esta sección para elegir y gestionar una lista.</span>
+        </span>
+        <span className="text-ledger-muted" aria-hidden="true">{isSectionOpen ? '−' : '+'}</span>
+      </button>
+
+      {isSectionOpen && (
+        <div className="space-y-5 border-t border-black/10 bg-white/40 p-4 sm:p-6">
       {lists.map((list) => {
         const estimated = list.shopping_list_items.reduce((sum, i) => sum + (i.estimated_unit_price ?? 0) * i.quantity, 0)
         const checked = list.shopping_list_items.filter((i) => isItemChecked(i))
@@ -209,8 +230,10 @@ export function ShoppingLists({
           </section>
         )
       })}
-      {!lists.length && <p className="panel p-8 text-sm text-ledger-muted">Todavía no tienes listas. Crea la primera arriba.</p>}
-      <datalist id="shopping-item-suggestions">{itemSuggestions.map((name) => <option key={name} value={name} />)}</datalist>
-    </div>
+          {!lists.length && <p className="rounded-xl border border-black/10 bg-white/70 p-8 text-sm text-ledger-muted">Todavía no tienes listas. Crea la primera arriba.</p>}
+          <datalist id="shopping-item-suggestions">{itemSuggestions.map((name) => <option key={name} value={name} />)}</datalist>
+        </div>
+      )}
+    </section>
   )
 }

@@ -165,7 +165,11 @@ tokens remain server-side.
 
 The `/mercado` section supports stores, shopping lists, items, completion and
 purchase registration. Purchase prices can be retained as history to make
-future grocery planning easier.
+future grocery planning easier. The collapsible price-memory section includes
+a store selector that only lists stores with registered price history, so prior
+prices can be reviewed per store when needed. Current shopping lists are also
+contained in a collapsible section, and opening one list automatically closes
+any other open list to keep the workspace focused.
 
 ---
 
