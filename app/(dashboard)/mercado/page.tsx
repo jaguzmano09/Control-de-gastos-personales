@@ -14,6 +14,7 @@ type Item = {
   actual_unit_price: number | null
   is_checked: boolean
   position: number
+  group_name: string | null
 }
 type List = {
   id: string
@@ -21,6 +22,7 @@ type List = {
   store_id: string | null
   status: string
   completed_at: string | null
+  created_at: string
   shopping_list_items: Item[]
 }
 type PriceMemory = { id: string; name: string; name_key: string; store_id: string | null; unit: string; unit_price: number; observed_on: string }
@@ -53,10 +55,10 @@ export default async function MercadoPage({
   const [{ data: storesData }, { data: listsData }, { data: historyData }, { data: itemNames }] = await Promise.all([
     supabase.from('stores').select('id, name').order('name'),
     supabase.from('shopping_lists')
-      .select('id, name, store_id, status, completed_at, shopping_list_items(*)')
+      .select('id, name, store_id, status, completed_at, created_at, shopping_list_items(*)')
       .order('created_at', { ascending: false }),
     supabase.from('price_history').select('id, name, name_key, store_id, unit, unit_price, observed_on').order('observed_on', { ascending: false }).limit(200),
-    supabase.from('shopping_list_items').select('name, name_key').order('name'),
+    supabase.from('shopping_list_items').select('name, name_key, shopping_lists!inner(status, completed_at)').eq('shopping_lists.status', 'completada').order('name'),
   ])
   const stores = (storesData ?? []) as Store[]
   const lists = (listsData ?? []) as unknown as List[]

@@ -8,7 +8,7 @@ import {
   deleteShoppingListItem,
   duplicateShoppingList,
   reopenShoppingList,
-  registerShoppingPurchase,
+  createShoppingPurchaseDraft,
   updateShoppingList,
   updateShoppingListItem,
   toggleShoppingListItem,
@@ -25,6 +25,7 @@ type Item = {
   actual_unit_price: number | null
   is_checked: boolean
   position: number
+  group_name?: string | null
 }
 type List = {
   id: string
@@ -32,6 +33,7 @@ type List = {
   store_id: string | null
   status: string
   completed_at: string | null
+  created_at: string
   shopping_list_items: Item[]
 }
 
@@ -58,6 +60,16 @@ export function ShoppingLists({
   const [checkedOverrides, setCheckedOverrides] = useState<Record<string, boolean>>({})
   const [dirtyItems, setDirtyItems] = useState<Record<string, boolean>>({})
   const [isPending, startTransition] = useTransition()
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('todas')
+  const [storeFilter, setStoreFilter] = useState('todas')
+  const [dateFilter, setDateFilter] = useState('')
+  const [selectedForPurchase, setSelectedForPurchase] = useState<Set<string>>(new Set())
+  const filteredLists = lists.filter((list) => {
+    const matchesName = list.name.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es')) || list.shopping_list_items.some((item) => item.name.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es')))
+    const filterDate = list.status === 'completada' ? list.completed_at : list.created_at
+    return matchesName && (statusFilter === 'todas' || list.status === statusFilter) && (storeFilter === 'todas' || list.store_id === storeFilter) && (!dateFilter || filterDate?.slice(0, 10) === dateFilter)
+  })
 
   function isItemChecked(item: Item) {
     return checkedOverrides[item.id] ?? item.is_checked
@@ -112,22 +124,30 @@ export function ShoppingLists({
 
       {isSectionOpen && (
         <div className="space-y-5 border-t border-black/10 bg-white/40 p-4 sm:p-6">
-      {lists.map((list) => {
+          <div className="grid gap-2 sm:grid-cols-4">
+            <input value={query} onChange={(event) => setQuery(event.target.value)} className="input" placeholder="Buscar lista o artículo" aria-label="Buscar listas o artículos" />
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="input" aria-label="Filtrar por estado"><option value="todas">Todos los estados</option><option value="activa">Activas</option><option value="completada">Completadas</option></select>
+            <select value={storeFilter} onChange={(event) => setStoreFilter(event.target.value)} className="input" aria-label="Filtrar por tienda"><option value="todas">Todas las tiendas</option>{stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}</select>
+            <input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="input" aria-label="Filtrar por fecha: creación para activas y finalización para completadas" />
+          </div>
+          {selectedForPurchase.size > 0 && <form action={createShoppingPurchaseDraft} className="rounded-xl border border-ledger-green/20 bg-ledger-green/5 p-3"><p className="text-sm text-ledger-muted">Se incluirán solo artículos marcados que tengan precio real. Las listas no se completarán automáticamente.</p>{Array.from(selectedForPurchase).map((id) => <input key={id} type="hidden" name="list_id" value={id} />)}<button className="btn btn-primary mt-2 w-full sm:w-auto">Preparar compra consolidada</button></form>}
+      {filteredLists.map((list) => {
         const estimated = list.shopping_list_items.reduce((sum, i) => sum + (i.estimated_unit_price ?? 0) * i.quantity, 0)
         const checked = list.shopping_list_items.filter((i) => isItemChecked(i))
-        const marked = checked.reduce((sum, i) => sum + (i.actual_unit_price ?? i.estimated_unit_price ?? 0) * i.quantity, 0)
+        const realTotal = checked.reduce((sum, i) => sum + (i.actual_unit_price ?? 0) * i.quantity, 0)
+        const estimateForUnpriced = checked.reduce((sum, i) => sum + (i.actual_unit_price == null ? (i.estimated_unit_price ?? 0) * i.quantity : 0), 0)
         const store = stores.find((s) => s.id === list.store_id)?.name
         const isOpen = open === list.id
 
         return (
           <section key={list.id} className="panel overflow-hidden">
-            <button type="button" onClick={() => setOpen(isOpen ? null : list.id)} className="flex w-full items-center justify-between p-4 text-left">
-              <span>
-                <span className="font-serif text-xl">{list.name}</span>
-                <span className="ml-3 text-xs text-ledger-muted">{store ?? 'Sin tienda'} · {list.status}</span>
-              </span>
-              <span className="text-ledger-muted">{isOpen ? '−' : '+'}</span>
-            </button>
+            <div className="flex items-center gap-2 p-4">
+              <input type="checkbox" checked={selectedForPurchase.has(list.id)} onChange={() => setSelectedForPurchase((current) => { const next = new Set(current); next.has(list.id) ? next.delete(list.id) : next.add(list.id); return next })} aria-label={`Incluir ${list.name} en compra consolidada`} />
+              <button type="button" onClick={() => setOpen(isOpen ? null : list.id)} aria-expanded={isOpen} className="flex min-w-0 flex-1 items-center justify-between text-left">
+                <span><span className="font-serif text-xl">{list.name}</span><span className="ml-3 text-xs text-ledger-muted">{store ?? 'Sin tienda'} · {list.status}</span></span>
+                <span className="text-ledger-muted" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+              </button>
+            </div>
             {isOpen && (
               <div className="space-y-6 border-t border-black/10 bg-white/40 p-4 sm:p-6">
                 <div className="flex flex-col gap-3 rounded-xl border border-black/5 bg-ledger-paper/60 p-4 sm:flex-row sm:items-end">
@@ -157,12 +177,12 @@ export function ShoppingLists({
                     <strong className="mt-1 block text-lg">{money(estimated)}</strong>
                   </div>
                   <div className="rounded-xl border border-ledger-green/10 bg-ledger-green/5 p-3 text-center">
-                    <p className="text-xs uppercase tracking-wide text-ledger-muted">Marcado</p>
-                    <strong className="mt-1 block text-lg">{money(marked)}</strong>
+                    <p className="text-xs uppercase tracking-wide text-ledger-muted">Total real</p>
+                    <strong className="mt-1 block text-lg">{money(realTotal)}</strong>
                   </div>
                   <div className="rounded-xl border border-black/5 bg-ledger-paper/60 p-3 text-center">
-                    <p className="text-xs uppercase tracking-wide text-ledger-muted">Diferencia</p>
-                    <strong className="mt-1 block text-lg">{money(marked - estimated)}</strong>
+                    <p className="text-xs uppercase tracking-wide text-ledger-muted">Estimación pendiente</p>
+                    <strong className="mt-1 block text-lg">{money(estimateForUnpriced)}</strong>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -187,6 +207,7 @@ export function ShoppingLists({
                       </div>
                       {expanded && <div className="mt-3 border-t border-black/5 pt-3">
                         <label className="block text-xs font-medium text-ledger-muted">Artículo<input name="name" list="shopping-item-suggestions" defaultValue={item.name} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full text-base" /></label>
+                        <label className="mt-3 block text-xs text-ledger-muted">Grupo libre <input name="group_name" defaultValue={item.group_name ?? ''} placeholder="Ej. Despensa" className="input mt-1 w-full" /></label>
                         <div className="mt-3 grid grid-cols-2 gap-2">
                         <label className="text-xs text-ledger-muted">Cantidad<input name="quantity" type="number" min="0.001" step="0.001" defaultValue={item.quantity} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full" /></label>
                         <label className="text-xs text-ledger-muted">Unidad<select name="unit" defaultValue={item.unit} onChange={(event) => updateDirtyState(item, event.currentTarget.form)} className="input mt-1 w-full">{units.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
@@ -222,7 +243,7 @@ export function ShoppingLists({
                 </form>}
                 <div className="grid gap-2 border-t border-black/10 pt-5 sm:flex sm:flex-wrap">
                   {list.status === 'activa' ? <form action={completeShoppingList}><input type="hidden" name="id" value={list.id} /><input type="hidden" name="observed_on" value={new Date().toLocaleDateString('en-CA')} /><button className="btn btn-primary w-full sm:w-auto">Completar lista</button></form> : <form action={reopenShoppingList}><input type="hidden" name="id" value={list.id} /><button className="btn btn-secondary w-full sm:w-auto">Reabrir lista</button></form>}
-                  <form action={registerShoppingPurchase}><input type="hidden" name="id" value={list.id} /><button className="btn btn-secondary w-full sm:w-auto">Registrar compra</button></form>
+                  <button type="button" onClick={() => setSelectedForPurchase((current) => new Set(current).add(list.id))} className="btn btn-secondary w-full sm:w-auto">Incluir en compra consolidada</button>
                   <form action={duplicateShoppingList}><input type="hidden" name="id" value={list.id} /><button className="btn btn-secondary w-full sm:w-auto">Duplicar sin marcar</button></form>
                 </div>
               </div>

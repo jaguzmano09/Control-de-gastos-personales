@@ -453,6 +453,7 @@ export type Database = {
           actual_unit_price: number | null
           created_at: string
           estimated_unit_price: number | null
+          group_name: string | null
           id: string
           is_checked: boolean
           list_id: string
@@ -469,6 +470,7 @@ export type Database = {
           actual_unit_price?: number | null
           created_at?: string
           estimated_unit_price?: number | null
+          group_name?: string | null
           id?: string
           is_checked?: boolean
           list_id: string
@@ -485,6 +487,7 @@ export type Database = {
           actual_unit_price?: number | null
           created_at?: string
           estimated_unit_price?: number | null
+          group_name?: string | null
           id?: string
           is_checked?: boolean
           list_id?: string
@@ -544,6 +547,102 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_purchase_draft_lines: {
+        Row: {
+          actual_unit_price: number
+          created_at: string
+          draft_id: string
+          id: string
+          item_id: string
+          list_id: string
+          name: string
+          quantity: number
+          unit: string
+        }
+        Insert: {
+          actual_unit_price: number
+          created_at?: string
+          draft_id: string
+          id?: string
+          item_id: string
+          list_id: string
+          name: string
+          quantity: number
+          unit: string
+        }
+        Update: {
+          actual_unit_price?: number
+          created_at?: string
+          draft_id?: string
+          id?: string
+          item_id?: string
+          list_id?: string
+          name?: string
+          quantity?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_purchase_draft_lines_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_purchase_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_purchase_draft_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_purchase_draft_lines_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_purchase_drafts: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          status?: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_purchase_drafts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -856,12 +955,29 @@ export type Database = {
         Args: { p_list_id: string; p_observed_on?: string }
         Returns: undefined
       }
+      confirm_shopping_purchase: {
+        Args: {
+          p_account_id: string
+          p_category_id: string
+          p_description: string
+          p_draft_id: string
+          p_is_necessary: boolean
+          p_occurred_at: string
+          p_submission_id: string
+          p_wallet_id: string
+        }
+        Returns: string
+      }
       reopen_shopping_list: { Args: { p_list_id: string }; Returns: undefined }
     }
     Enums: {
       rule_match_type: "contains" | "exact" | "regex"
       transaction_source: "manual" | "ocr" | "email_webhook" | "migration"
-      transaction_status: "pendiente_revision" | "confirmada" | "duplicado" | "descartada"
+      transaction_status:
+        | "pendiente_revision"
+        | "confirmada"
+        | "duplicado"
+        | "descartada"
       transaction_type:
         | "Ingreso"
         | "Gasto"
@@ -997,7 +1113,12 @@ export const Constants = {
     Enums: {
       rule_match_type: ["contains", "exact", "regex"],
       transaction_source: ["manual", "ocr", "email_webhook", "migration"],
-      transaction_status: ["pendiente_revision", "confirmada", "duplicado", "descartada"],
+      transaction_status: [
+        "pendiente_revision",
+        "confirmada",
+        "duplicado",
+        "descartada",
+      ],
       transaction_type: [
         "Ingreso",
         "Gasto",

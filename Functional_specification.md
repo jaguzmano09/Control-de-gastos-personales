@@ -297,7 +297,22 @@ records. Reopening a list removes history records created exclusively by that
 list.
 
 Operations must use `lib/actions/shopping-lists.ts` and respect ownership
-validation for the list, item, and store.
+validation for the list, item, and store. Suggestions use only the latest own
+observed actual price for the exact normalized product, unit, and store; they
+remain editable and never use external price APIs. Real checked totals are the
+primary summary and estimates are secondary.
+
+Lists support name/status/store search and date semantics: active lists use
+`created_at`, completed lists use `completed_at`. Frequent-product suggestions
+come only from completed-list items. Price memory displays product/store/unit
+trends against the previous observation.
+
+A purchase handoff creates durable `shopping_purchase_drafts` and line records
+from checked items that have actual prices, including items from multiple lists.
+The atomic confirmation function rechecks ownership, checked state, and actual
+prices before writing one confirmed expense transaction. It never completes a
+list automatically; estimates and unpriced lines are excluded from financial
+amounts.
 
 ---
 

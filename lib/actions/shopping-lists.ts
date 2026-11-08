@@ -129,14 +129,29 @@ export async function addShoppingListItem(formData: FormData) {
     .limit(1)
     .maybeSingle()
 
+  const nameKey = normalizeName(name)
+  const { data: list } = await supabase.from('shopping_lists').select('store_id').eq('id', listId).single()
+  let latestPriceQuery = supabase
+    .from('price_history')
+    .select('unit_price')
+    .eq('user_id', user.id)
+    .eq('name_key', nameKey)
+    .eq('unit', unit)
+    .order('observed_on', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1)
+  latestPriceQuery = list?.store_id ? latestPriceQuery.eq('store_id', list.store_id) : latestPriceQuery.is('store_id', null)
+  const { data: latestPrice } = await latestPriceQuery.maybeSingle()
+
   const { error } = await supabase.from('shopping_list_items').insert({
     user_id: user.id,
     list_id: listId,
     name,
-    name_key: normalizeName(name),
+    name_key: nameKey,
     quantity,
     unit,
-    estimated_unit_price: estimated ? Number(estimated) : null,
+    // Only the user's latest exact product + unit + store price is suggested. It remains editable.
+    estimated_unit_price: estimated ? Number(estimated) : latestPrice?.unit_price ?? null,
     position: (lastItem?.position ?? -1) + 1,
   })
   if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
@@ -165,6 +180,7 @@ export async function updateShoppingListItem(formData: FormData) {
     estimated_unit_price: estimated ? Number(estimated) : null,
     actual_unit_price: actual ? Number(actual) : null,
     is_checked: isChecked,
+    group_name: requiredText(formData, 'group_name') || null,
   }).eq('id', id)
   if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
   revalidatePath(SHOPPING_PATH)
@@ -272,33 +288,31 @@ export async function reopenShoppingList(formData: FormData) {
   redirect(SHOPPING_PATH)
 }
 
-export async function registerShoppingPurchase(formData: FormData) {
-  const { supabase } = await getUser()
-  const listId = requiredText(formData, 'id')
-  const { data: list, error } = await supabase
-    .from('shopping_lists')
-    .select('name')
-    .eq('id', listId)
-    .single()
-  if (error || !list) redirect(`${SHOPPING_PATH}?error=No se encontró la lista`)
+export async function createShoppingPurchaseDraft(formData: FormData) {
+  const { supabase, user } = await getUser()
+  const requestedListIds = formData.getAll('list_id').map(String).filter(Boolean)
+  if (!requestedListIds.length) redirect(`${SHOPPING_PATH}?error=Selecciona al menos una lista`)
 
-  const { data: items } = await supabase
+  // Only checked lines with an actual price are eligible; estimates never become financial data.
+  const { data: items, error: itemsError } = await supabase
     .from('shopping_list_items')
-    .select('name, quantity, actual_unit_price, estimated_unit_price, is_checked')
-    .eq('list_id', listId)
+    .select('id, list_id, name, quantity, unit, actual_unit_price, shopping_lists!inner(name)')
+    .in('list_id', requestedListIds)
     .eq('is_checked', true)
+    .not('actual_unit_price', 'is', null)
+  if (itemsError || !items?.length) redirect(`${SHOPPING_PATH}?error=No hay artículos marcados con precio real`)
 
-  const total = (items ?? []).reduce(
-    (sum, item) => sum + (item.actual_unit_price ?? item.estimated_unit_price ?? 0) * item.quantity,
-    0,
-  )
-  if (total <= 0) redirect(`${SHOPPING_PATH}?error=Marca artículos y registra al menos un precio antes de registrar la compra`)
+  const listNames = Array.from(new Set(items.map((item) => (item.shopping_lists as unknown as { name: string }).name)))
+  const { data: draft, error: draftError } = await supabase.from('shopping_purchase_drafts').insert({
+    user_id: user.id,
+    description: `Compra de mercado: ${listNames.join(', ')}`,
+  }).select('id').single()
+  if (draftError || !draft) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(draftError?.message ?? 'No se pudo crear el borrador')}`)
 
-  const description = `Compra de mercado: ${list.name}`
-  const params = new URLSearchParams({
-    description,
-    amount: String(Math.round(total)),
-    occurred_at: new Date().toLocaleDateString('en-CA'),
-  })
-  redirect(`/transacciones/nueva?${params.toString()}`)
+  const { error: linesError } = await supabase.from('shopping_purchase_draft_lines').insert(items.map((item) => ({
+    draft_id: draft.id, item_id: item.id, list_id: item.list_id, name: item.name,
+    quantity: item.quantity, unit: item.unit, actual_unit_price: item.actual_unit_price,
+  })))
+  if (linesError) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(linesError.message)}`)
+  redirect(`/transacciones/nueva?purchase_draft_id=${draft.id}`)
 }

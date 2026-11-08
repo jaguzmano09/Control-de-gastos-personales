@@ -19,12 +19,14 @@ export function NuevaTransaccionForm({
   wallets,
   error,
   initialValues,
+  purchaseDraftId,
 }: {
   categories: Category[]
   accounts: Account[]
   wallets: Wallet[]
   error?: string
   initialValues?: { occurredAt?: string; description?: string; amount?: string }
+  purchaseDraftId?: string
 }) {
   const [step, setStep] = useState<'form' | 'confirm'>('form')
   const [submissionId] = useState(() => crypto.randomUUID())
@@ -156,6 +158,7 @@ export function NuevaTransaccionForm({
           <input type="hidden" name="occurred_at" value={occurredAt} />
           <input type="hidden" name="type" value={type} />
           <input type="hidden" name="submission_id" value={submissionId} />
+          {purchaseDraftId && <input type="hidden" name="purchase_draft_id" value={purchaseDraftId} />}
           <input type="hidden" name="savings_operation" value={type === 'Ahorro' ? savingsOperation : ''} />
           <input type="hidden" name="category_id" value={categoryId} />
           <input type="hidden" name="account_id" value={accountId} />

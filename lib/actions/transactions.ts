@@ -22,6 +22,7 @@ export async function createManualTransaction(formData: FormData) {
   const amount = Number(formData.get('amount'))
   const isNecessaryRaw = formData.get('is_necessary') as string | null
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
+  const purchaseDraftId = (formData.get('purchase_draft_id') as string) || null
 
   if (!occurred_at || !type || !account_id || !amount || amount <= 0 || (type === 'Ahorro' && !savings_operation)) {
     redirect('/transacciones/nueva?error=' + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
@@ -29,6 +30,24 @@ export async function createManualTransaction(formData: FormData) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  if (purchaseDraftId) {
+    const { error } = await supabase.rpc('confirm_shopping_purchase', {
+      p_draft_id: purchaseDraftId,
+      p_occurred_at: occurred_at,
+      p_category_id: category_id || null,
+      p_account_id: account_id,
+      p_wallet_id: wallet_id || null,
+      p_description: description || null,
+      p_is_necessary: is_necessary,
+      p_submission_id: submission_id,
+    })
+    if (error) redirect('/transacciones/nueva?purchase_draft_id=' + purchaseDraftId + '&error=' + encodeURIComponent(error.message))
+    revalidatePath('/transacciones')
+    revalidatePath('/')
+    revalidatePath('/mercado')
+    redirect('/transacciones')
+  }
 
   const { error } = await supabase.from('transactions').insert({
     user_id: user!.id,
