@@ -113,7 +113,7 @@ export default async function CuentasPage({
                   <p className="mt-1 text-xs text-ledger-muted">
                     {account.has_wallets ? 'El saldo se organiza por bolsillos' : 'El saldo pertenece directamente a esta cuenta'}
                   </p>
-                  {!account.has_wallets && <LocationSummary status={statusByTarget.get(`account:${account.id}`)} periodMonth={periodMonth} />}
+                  {!account.has_wallets && <LocationSummary status={statusByTarget.get(`account:${account.id}`)} periodMonth={periodMonth} isActive={account.is_active} />}
                 </div>
               </div>
               <form action={toggleAccountActive}>
@@ -160,7 +160,7 @@ export default async function CuentasPage({
                           config={config}
                           rates={config ? ratesByConfig.get(config.id) ?? [] : []}
                         />
-                        <LocationSummary status={statusByTarget.get(`wallet:${wallet.id}`)} periodMonth={periodMonth} />
+                        <LocationSummary status={statusByTarget.get(`wallet:${wallet.id}`)} periodMonth={periodMonth} isActive={wallet.is_active} />
                       </li>
                     )
                   })}
@@ -212,35 +212,55 @@ export default async function CuentasPage({
   )
 }
 
-function LocationSummary({ status, periodMonth }: { status?: ExpenseLocationStatus; periodMonth: string }) {
+function LocationSummary({ status, periodMonth, isActive }: { status?: ExpenseLocationStatus; periodMonth: string; isActive: boolean }) {
   const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
     .format(new Date(`${periodMonth}T00:00:00Z`))
   const assigned = status ? status.assigned_amount + status.rollover_amount : 0
   const budgetLabel = status?.category_id && status.budget_assigned
-    ? assigned > 0 ? formatCOP(assigned) : `Financiado por transferencias (${formatCOP(status.transfer_in)})`
-    : 'Sin presupuesto categorizado'
+    ? assigned > 0 ? formatCOP(assigned) : `Transferencias (${formatCOP(status.transfer_in)})`
+    : 'Sin asignar'
+  const state = !isActive
+    ? { label: 'Inactiva', classes: 'bg-black/5 text-ledger-muted' }
+    : !status?.category_id
+      ? { label: 'Sin categoría', classes: 'bg-amber-100 text-amber-900' }
+      : !status.budget_assigned
+        ? { label: 'Sin presupuesto', classes: 'bg-amber-100 text-amber-900' }
+        : status.available_amount < 0
+          ? { label: 'Sobre presupuesto', classes: 'bg-red-100 text-red-800' }
+          : { label: 'Lista para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
 
   return (
-    <dl className="mt-3 grid gap-1 text-xs text-ledger-muted sm:grid-cols-2">
-      <div>
-        <dt className="inline font-medium text-ledger-text">Categoría: </dt>
-        <dd className="inline">{status?.category_name ?? 'Sin asignar'}</dd>
+    <section aria-label={`Estado de ${status?.location_name ?? 'la cuenta o bolsillo'}`} className="mt-4 max-w-2xl overflow-hidden rounded-xl border border-black/[0.07] bg-[#f8faf8]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ledger-muted">Categoría asignada</p>
+          <p className="mt-0.5 truncate text-sm font-semibold text-ledger-text">{status?.category_name ?? 'Sin asignar'}</p>
+        </div>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${state.classes}`}>{state.label}</span>
       </div>
-      <div>
-        <dt className="inline font-medium text-ledger-text">Presupuesto {periodLabel}: </dt>
-        <dd className="inline">{budgetLabel}</dd>
-      </div>
-      {status && status.transfer_in > 0 && <div>
-        <dt className="inline font-medium text-ledger-text">Transferencias recibidas: </dt>
-        <dd className="inline">{formatCOP(status.transfer_in)}</dd>
-      </div>}
-      {status && <div>
-        <dt className="inline font-medium text-ledger-text">Disponible antes de rendimientos: </dt>
-        <dd className={status.available_amount < 0 ? 'inline text-red-700' : 'inline'}>{formatCOP(status.available_amount)}</dd>
-      </div>}
-      {!status?.category_id && <p className="sm:col-span-2">La categoría se asigna al registrar un ingreso o una transferencia.</p>}
-      {status?.category_id && !status.budget_assigned && <p className="sm:col-span-2">Asigna presupuesto registrando un ingreso o recibiendo una transferencia en este destino.</p>}
-    </dl>
+
+      <dl className="grid grid-cols-2 divide-x divide-y divide-black/[0.06] sm:grid-cols-4 sm:divide-y-0">
+        <div className="min-w-0 px-4 py-3">
+          <dt className="text-[10px] font-medium text-ledger-muted">Presupuesto · {periodLabel}</dt>
+          <dd className="mt-1 truncate text-sm font-semibold tabular-nums text-ledger-text">{budgetLabel}</dd>
+        </div>
+        <div className="min-w-0 px-4 py-3">
+          <dt className="text-[10px] font-medium text-ledger-muted">Transferencias recibidas</dt>
+          <dd className="mt-1 truncate text-sm font-semibold tabular-nums text-ledger-text">{formatCOP(status?.transfer_in ?? 0)}</dd>
+        </div>
+        <div className="min-w-0 px-4 py-3">
+          <dt className="text-[10px] font-medium text-ledger-muted">Gastado este mes</dt>
+          <dd className="mt-1 truncate text-sm font-semibold tabular-nums text-ledger-text">{formatCOP(status?.spent ?? 0)}</dd>
+        </div>
+        <div className="min-w-0 px-4 py-3">
+          <dt className="text-[10px] font-medium text-ledger-muted">Disponible</dt>
+          <dd className={`mt-1 truncate text-sm font-semibold tabular-nums ${status && status.available_amount < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status?.available_amount ?? 0)}</dd>
+        </div>
+      </dl>
+
+      {!status?.category_id && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">La categoría y el presupuesto se asignan al registrar un ingreso o una transferencia.</p>}
+      {status?.category_id && !status.budget_assigned && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Asigna el presupuesto con un ingreso o recibe una transferencia en este destino.</p>}
+    </section>
   )
 }
 

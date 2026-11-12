@@ -97,7 +97,6 @@ export function EditTransaccionForm({
   const destinationCategoryId = destinationWallet
     ? destinationWallet.category_id ?? ''
     : destinationAccount?.has_wallets ? '' : destinationAccount?.category_id ?? ''
-  const destinationCategoryName = categories.find((category) => category.id === destinationCategoryId)?.name
   const selectedLocationStatus = sourceWallet
     ? statusByTarget.get(`wallet:${sourceWallet.id}`)
     : selectedAccount?.has_wallets ? undefined : statusByTarget.get(`account:${accountId}`)

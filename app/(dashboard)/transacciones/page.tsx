@@ -122,7 +122,7 @@ export default async function TransaccionesPage({
   let query = supabase
     .from('transactions')
     .select(
-      'id, occurred_at, type, description, amount, status, destination_account_id, destination_wallet_id, destination_category_id, categories(name), accounts(name), wallets(name)'
+      'id, occurred_at, type, description, amount, status, destination_account_id, destination_wallet_id, destination_category_id, categories:categories!transactions_category_id_fkey(name), accounts:accounts!transactions_account_id_fkey(name), wallets:wallets!transactions_wallet_id_fkey(name)'
     )
     .order('occurred_at', { ascending: false })
     .limit(300)
@@ -158,7 +158,7 @@ export default async function TransaccionesPage({
     query = query.eq('status', filters.status as TransactionStatus)
   }
 
-  const { data: rawTransactions } = await query
+  const { data: rawTransactions, error: transactionsError } = await query
 
   const transactions = (rawTransactions ?? []) as unknown as Transaction[]
   const accountNameById = new Map(accounts.map((account) => [account.id, account.name]))
@@ -304,11 +304,15 @@ export default async function TransaccionesPage({
         </Link>
       </form>
 
+      {transactionsError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        No pudimos cargar los movimientos. Revisa los filtros o vuelve a intentarlo en unos segundos.
+      </p>}
+
       <div className="mt-6 overflow-hidden rounded-2xl border border-ledger-line bg-white shadow-[0_10px_28px_rgba(20,37,29,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ledger-line/70 px-5 py-4">
           <div>
             <p className="section-label">Actividad registrada</p>
-            <p className="mt-1 text-sm text-ledger-muted">{transactions.length} movimientos encontrados</p>
+            <p className="mt-1 text-sm text-ledger-muted">{transactionsError ? 'No se pudo consultar la actividad' : `${transactions.length} movimientos encontrados`}</p>
           </div>
           <span className="rounded-full bg-ledger-green/10 px-3 py-1 text-xs font-semibold text-ledger-green">Vista detallada</span>
         </div>
@@ -332,6 +336,12 @@ export default async function TransaccionesPage({
           </thead>
 
           <tbody>
+            {!transactionsError && transactions.length === 0 && <tr>
+              <td colSpan={8} className="px-5 py-12 text-center">
+                <p className="text-sm font-medium text-ledger-text">No hay movimientos para estos filtros</p>
+                <p className="mt-1 text-xs text-ledger-muted">Prueba con otro mes, año o combinación de filtros.</p>
+              </td>
+            </tr>}
             {transactions.map((t) => (
               <tr key={t.id}>
                 <td className="py-2 pr-4 text-ledger-text">
