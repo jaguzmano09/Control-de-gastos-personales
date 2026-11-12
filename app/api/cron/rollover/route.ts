@@ -156,16 +156,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: yieldRatesError.message }, { status: 500 })
       }
 
-      const { data: yieldTransactions, error: yieldTransactionsError } = await supabase
+      let yieldTransactionsQuery = supabase
         .from('transactions')
         .select('occurred_at, amount, type, savings_operation, wallet_id, account_id')
         .eq('user_id', budget.user_id)
         .gte('occurred_at', previousMonth)
         .lt('occurred_at', currentMonth)
         .eq('status', 'confirmada')
-        .or(budget.wallet_id
-          ? `wallet_id.eq.${budget.wallet_id}`
-          : `account_id.eq.${budget.account_id},wallet_id.is.null`)
+      yieldTransactionsQuery = budget.wallet_id
+        ? yieldTransactionsQuery.eq('wallet_id', budget.wallet_id)
+        : yieldTransactionsQuery.eq('account_id', budget.account_id!).is('wallet_id', null)
+      const { data: yieldTransactions, error: yieldTransactionsError } = await yieldTransactionsQuery
       if (yieldTransactionsError) {
         return NextResponse.json({ error: yieldTransactionsError.message }, { status: 500 })
       }
