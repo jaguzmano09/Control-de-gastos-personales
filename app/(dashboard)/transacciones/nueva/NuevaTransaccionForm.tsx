@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createManualTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
 import type { ExpenseLocationStatus } from '@/lib/data/expense-location-status'
@@ -20,7 +20,7 @@ export function NuevaTransaccionForm({
   wallets,
   error,
   initialValues,
-  initialPeriodMonth,
+  currentPeriodMonth,
   locationStatuses: initialLocationStatuses,
   purchaseDraftId,
 }: {
@@ -29,7 +29,7 @@ export function NuevaTransaccionForm({
   wallets: Wallet[]
   error?: string
   initialValues?: { occurredAt?: string; description?: string; amount?: string }
-  initialPeriodMonth: string
+  currentPeriodMonth: string
   locationStatuses: ExpenseLocationStatus[]
   purchaseDraftId?: string
 }) {
@@ -55,30 +55,8 @@ export function NuevaTransaccionForm({
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
   const [isNecessary, setIsNecessary] = useState('')
   const [locationStatuses, setLocationStatuses] = useState(initialLocationStatuses)
-  const [statusPeriodMonth, setStatusPeriodMonth] = useState(initialPeriodMonth)
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false)
   const [statusLoadFailed, setStatusLoadFailed] = useState(false)
-
-  const occurredPeriodMonth = occurredAt ? `${occurredAt.slice(0, 7)}-01` : ''
-  useEffect(() => {
-    if (!occurredPeriodMonth || occurredPeriodMonth === statusPeriodMonth) return
-    let active = true
-    setIsLoadingStatuses(true)
-    setStatusLoadFailed(false)
-    refreshExpenseLocationStatuses(occurredPeriodMonth)
-      .then((statuses) => {
-        if (!active) return
-        setLocationStatuses(statuses)
-        setStatusPeriodMonth(occurredPeriodMonth)
-      })
-      .catch(() => {
-        if (active) setStatusLoadFailed(true)
-      })
-      .finally(() => {
-        if (active) setIsLoadingStatuses(false)
-      })
-    return () => { active = false }
-  }, [occurredPeriodMonth, statusPeriodMonth])
 
   const statusByTarget = useMemo(
     () => new Map(locationStatuses.map((status) => [`${status.location_type}:${status.location_id}`, status])),
@@ -108,6 +86,9 @@ export function NuevaTransaccionForm({
   const selectedLocationStatus = sourceWallet
     ? statusByTarget.get(`wallet:${sourceWallet.id}`)
     : selectedAccount?.has_wallets ? undefined : statusByTarget.get(`account:${accountId}`)
+  const selectedDestinationLocationStatus = destinationWallet
+    ? statusByTarget.get(`wallet:${destinationWallet.id}`)
+    : destinationAccount?.has_wallets ? undefined : statusByTarget.get(`account:${destinationAccountId}`)
   const sourceCategoryForSubmission = type === 'Gasto'
     ? assignedSourceCategoryId
     : type === 'Transferencia' || type === 'Ingreso' ? assignedSourceCategoryId || categoryId : categoryId
@@ -122,25 +103,12 @@ export function NuevaTransaccionForm({
                 : ''
   const canContinueExpense = type !== 'Gasto' || (!expenseBlockReason && !isLoadingStatuses)
 
-  function optionDetails(status?: ExpenseLocationStatus) {
-    if (!status) return 'Sin categoría o presupuesto'
-    const category = status.category_name ? `Categoría: ${status.category_name}` : 'Sin categoría'
-    const budget = status.category_id && status.budget_assigned
-      ? status.assigned_amount + status.rollover_amount > 0
-        ? `Presupuesto: ${formatCOP(status.assigned_amount + status.rollover_amount)}`
-        : `Financiado por transferencias: ${formatCOP(status.transfer_in)}`
-      : 'Sin presupuesto este mes'
-    return `${category} · ${budget} · Disponible: ${formatCOP(status.available_amount)}`
-  }
-
   async function retryLocationStatuses() {
-    if (!occurredPeriodMonth) return
     setIsLoadingStatuses(true)
     setStatusLoadFailed(false)
     try {
-      const statuses = await refreshExpenseLocationStatuses(occurredPeriodMonth)
+      const statuses = await refreshExpenseLocationStatuses(currentPeriodMonth)
       setLocationStatuses(statuses)
-      setStatusPeriodMonth(occurredPeriodMonth)
     } catch {
       setStatusLoadFailed(true)
     } finally {
@@ -185,10 +153,7 @@ export function NuevaTransaccionForm({
           <div>
             <label className="block text-sm text-ledger-text">Cuenta</label>
             <select value={accountId} onChange={(e) => { setAccountId(e.target.value); setWalletId(''); setCategoryId('') }} required className={inputClass}>
-              {accounts.map((account) => {
-                const status = statusByTarget.get(`account:${account.id}`)
-                return <option key={account.id} value={account.id}>{account.name}{account.has_wallets ? ' · Tiene bolsillos' : ` · ${optionDetails(status)}`}</option>
-              })}
+              {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
             </select>
           </div>
 
@@ -197,10 +162,13 @@ export function NuevaTransaccionForm({
               <label className="block text-sm text-ledger-text">Bolsillo</label>
               <select value={walletId} onChange={(e) => { setWalletId(e.target.value); setCategoryId('') }} required className={inputClass}>
                 <option value="">— Elige uno —</option>
-                {walletsForAccount.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name} · {optionDetails(statusByTarget.get(`wallet:${wallet.id}`))}</option>)}
+                {walletsForAccount.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}
               </select>
+              <p className="mt-1.5 text-xs leading-5 text-ledger-muted">Cada bolsillo tiene su propia categoría y presupuesto. Selecciona uno para ver su estado actual.</p>
             </div>
           )}
+
+          {selectedLocationStatus && <LocationStatusSummary status={selectedLocationStatus} currentPeriodMonth={currentPeriodMonth} transactionType={type} role="source" showDateNote isLoading={isLoadingStatuses} hasError={statusLoadFailed} />}
 
           <div>
             <label className="block text-sm text-ledger-text">{type === 'Transferencia' ? 'Categoría de origen' : 'Categoría'}</label>
@@ -216,7 +184,6 @@ export function NuevaTransaccionForm({
 
           {type === 'Ingreso' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida se asignará a la cuenta o bolsillo al guardar este ingreso.</p>}
           {type === 'Transferencia' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al origen al confirmar.</p>}
-          {type === 'Gasto' && selectedLocationStatus && <LocationStatusSummary status={selectedLocationStatus} occurredAt={occurredAt} isLoading={isLoadingStatuses} hasError={statusLoadFailed} />}
           {type === 'Gasto' && expenseBlockReason && <div role="alert" className="rounded-sm border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             <p>{expenseBlockReason}</p>
             {statusLoadFailed && <button type="button" onClick={retryLocationStatuses} className="mt-2 font-medium underline underline-offset-2">Reintentar consulta</button>}
@@ -226,7 +193,7 @@ export function NuevaTransaccionForm({
             <div>
               <label className="block text-sm text-ledger-text">Cuenta de destino</label>
               <select value={destinationAccountId} onChange={(e) => { setDestinationAccountId(e.target.value); setDestinationWalletId(''); setDestinationCategoryChoice('') }} required className={inputClass}>
-                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}{account.has_wallets ? ' · Tiene bolsillos' : ''}</option>)}
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
               </select>
             </div>
             {destinationAccount?.has_wallets && <div>
@@ -244,6 +211,7 @@ export function NuevaTransaccionForm({
               </select>
             </div>
             {!assignedDestinationCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al destino al confirmar.</p>}
+            {selectedDestinationLocationStatus && <LocationStatusSummary status={selectedDestinationLocationStatus} currentPeriodMonth={currentPeriodMonth} transactionType={type} role="destination" isLoading={isLoadingStatuses} hasError={statusLoadFailed} />}
           </>}
 
           <div>
@@ -337,10 +305,17 @@ function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 }
 
-function LocationStatusSummary({ status, occurredAt, isLoading, hasError }: { status: ExpenseLocationStatus; occurredAt: string; isLoading: boolean; hasError: boolean }) {
-  const periodLabel = occurredAt
-    ? new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${occurredAt.slice(0, 7)}-01T00:00:00Z`))
-    : 'este mes'
+function LocationStatusSummary({ status, currentPeriodMonth, transactionType, role, showDateNote = false, isLoading, hasError }: {
+  status: ExpenseLocationStatus
+  currentPeriodMonth: string
+  transactionType: typeof TYPES[number]
+  role: 'source' | 'destination'
+  showDateNote?: boolean
+  isLoading: boolean
+  hasError: boolean
+}) {
+  const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(`${currentPeriodMonth}T00:00:00Z`))
   const assigned = status.assigned_amount + status.rollover_amount
   const budgetLabel = !status.category_id || !status.budget_assigned
     ? 'Sin asignar'
@@ -355,12 +330,13 @@ function LocationStatusSummary({ status, occurredAt, isLoading, hasError }: { st
           ? { label: 'Sin presupuesto', classes: 'bg-amber-100 text-amber-900' }
           : status.available_amount < 0
             ? { label: 'Sobre presupuesto', classes: 'bg-red-100 text-red-800' }
-            : { label: 'Lista para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
+            : { label: 'Disponible para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
 
   return (
-    <section aria-label={`Estado mensual de ${status.location_name}`} aria-busy={isLoading} className="overflow-hidden rounded-xl border border-black/[0.07] bg-[#f8faf8]">
+    <section aria-label={`Estado actual de ${status.location_name}`} aria-busy={isLoading} className="overflow-hidden rounded-xl border border-black/[0.07] bg-[#f8faf8]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] px-4 py-3">
         <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ledger-muted">Estado actual · {periodLabel}</p>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ledger-muted">{status.location_name}</p>
           <p className="mt-0.5 truncate text-sm font-semibold text-ledger-text">{status.category_name ?? 'Sin categoría asignada'}</p>
         </div>
@@ -372,13 +348,14 @@ function LocationStatusSummary({ status, occurredAt, isLoading, hasError }: { st
           {hasError ? 'No pudimos consultar el presupuesto de este periodo.' : `Consultando el presupuesto de ${periodLabel}…`}
         </p>
       ) : <dl className="grid grid-cols-2 divide-x divide-y divide-black/[0.06] sm:grid-cols-4 sm:divide-y-0 [&>div]:min-w-0 [&>div]:px-4 [&>div]:py-3 [&>div>dt]:block [&>div>dt]:text-[10px] [&>div>dd]:mt-1 [&>div>dd]:block [&>div>dd]:text-sm [&>div>dd]:font-semibold [&>div>dd]:tabular-nums">
-      <div><dt className="inline text-ledger-muted">Presupuesto {periodLabel}: </dt><dd className="inline font-medium text-ledger-text">{budgetLabel}</dd></div>
+      <div><dt className="inline text-ledger-muted">Presupuesto: </dt><dd className="inline font-medium text-ledger-text">{budgetLabel}</dd></div>
       {status.transfer_in > 0 && <div><dt className="inline text-ledger-muted">Transferencias recibidas: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.transfer_in)}</dd></div>}
       <div><dt className="inline text-ledger-muted">Gastado: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.spent)}</dd></div>
       <div><dt className="inline text-ledger-muted">Disponible antes de rendimientos: </dt><dd className={`inline font-medium ${status.available_amount < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status.available_amount)}</dd></div>
       </dl>}
-      {!isLoading && !hasError && !status.category_id && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Registra un ingreso o una transferencia para asignar la categoría y habilitar su presupuesto.</p>}
-      {!isLoading && !hasError && status.category_id && !status.budget_assigned && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Registra un ingreso o recibe una transferencia en este destino para asignar el presupuesto.</p>}
+      {!isLoading && !hasError && !status.category_id && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">{transactionType === 'Ingreso' && role === 'source' ? 'La categoría que seleccionaste se asignará al registrar este ingreso.' : transactionType === 'Transferencia' ? `La categoría de ${role === 'source' ? 'origen' : 'destino'} se asignará al confirmar la transferencia.` : 'Registra un ingreso o una transferencia para asignar la categoría y habilitar su presupuesto.'}</p>}
+      {!isLoading && !hasError && status.category_id && !status.budget_assigned && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">{transactionType === 'Ingreso' ? 'Este ingreso asignará presupuesto a la ubicación al confirmar.' : transactionType === 'Transferencia' && role === 'destination' ? 'Esta transferencia asignará fondos a este destino al confirmar.' : 'Registra un ingreso o recibe una transferencia en este destino para asignar el presupuesto.'}</p>}
+      {showDateNote && !isLoading && !hasError && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Este resumen muestra el estado actual; la fecha seleccionada solo identifica el movimiento.</p>}
     </section>
   )
 }

@@ -10,15 +10,16 @@ export default async function NuevaTransaccionPage({
 }) {
   const { error, occurred_at, description, amount, purchase_draft_id } = await searchParams
   const supabase = await createClient()
-  const defaultOccurredAt = occurred_at || todayInBogota()
-  const initialPeriodMonth = yearMonthToDate(defaultOccurredAt.slice(0, 7))
+  const today = todayInBogota()
+  const defaultOccurredAt = occurred_at || today
+  const currentPeriodMonth = yearMonthToDate(today.slice(0, 7))
 
   const [{ data: categories }, { data: accounts }, { data: wallets }, { data: draft }, locationStatuses] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
     supabase.from('accounts').select('id, name, category_id, has_wallets').eq('is_active', true).order('name'),
     supabase.from('wallets').select('id, name, account_id, category_id').eq('is_active', true).order('name'),
     purchase_draft_id ? supabase.from('shopping_purchase_drafts').select('id, description, status, shopping_purchase_draft_lines(quantity, actual_unit_price)').eq('id', purchase_draft_id).maybeSingle() : Promise.resolve({ data: null }),
-    getExpenseLocationStatuses(supabase, initialPeriodMonth),
+    getExpenseLocationStatuses(supabase, currentPeriodMonth),
   ])
   const draftTotal = (draft?.shopping_purchase_draft_lines ?? []).reduce((total: number, line: { quantity: number; actual_unit_price: number }) => total + line.quantity * line.actual_unit_price, 0)
 
@@ -39,7 +40,7 @@ export default async function NuevaTransaccionPage({
         accounts={accounts ?? []}
         wallets={wallets ?? []}
         error={error}
-        initialPeriodMonth={initialPeriodMonth}
+        currentPeriodMonth={currentPeriodMonth}
         locationStatuses={locationStatuses}
         purchaseDraftId={purchase_draft_id}
         initialValues={{ occurredAt: defaultOccurredAt, description: draft?.description ?? description, amount: draft ? String(draftTotal) : amount }}
