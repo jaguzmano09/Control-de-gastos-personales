@@ -1,6 +1,6 @@
 ﻿# Public-readiness roadmap
 
-Status: Working v3 — P0 deliverables prepared for review; first P1 foundation fixes locally verified.
+Status: Working v3 — P0 decisions are partially recorded; P1 privacy fixes and CI are active and verified, while schema reconciliation and isolated-user verification remain open.
 Prepared from the 2026-11-11 repository assessment.
 Execution began after the owner's instruction to start development. This document records scope and evidence; it does not by itself authorize deployments, destructive migration execution, or changes to real financial data.
 
@@ -23,7 +23,7 @@ The owner accepted the overall roadmap direction and added these requirements:
 3. The owner's account must retain all ordinary personal-account capabilities and also have an administrative area for product and operational metrics.
 4. Privacy is a first-class priority because the platform handles personal financial information. Apply it throughout discovery, architecture, design, analytics, support, and release.
 
-These are accepted planning requirements, not evidence of implemented features. The owner's account has not been promoted or otherwise changed by this document update. Public positioning, final identity, metric definitions, and administrative provisioning details still need specification.
+These are accepted planning requirements, not evidence of implemented features. The owner account has now been provisioned as admin through the trusted process in [ADMIN_ACCESS.md](ADMIN_ACCESS.md). Public positioning, final identity, and metric definitions still need specification.
 
 The administrative boundary is deliberate: an elevated product role does not grant routine access to another person's transactions, balances, receipts, email contents, or integration credentials. The owner's personal financial workspace remains isolated under the same ownership rules as any ordinary account.
 
@@ -61,12 +61,12 @@ Objective: decide who this is for and what success looks like before fixing the 
 
 - [x] P0.1 — Owner confirmed personal finances in Colombia, COP, and America/Bogota. Evidence: PRODUCT_BRIEF.md decision D01.
 - [x] P0.2 — Owner selected recording and organizing movements as the primary benefit. Evidence: PRODUCT_BRIEF.md decision D02.
-- [ ] P0.3 — Decide the first-beta feature set: essential, optional, deferred. Review manual entry, budgets, wallets, review, savings/yield, shopping, OCR, and Gmail individually.
-- [ ] P0.4 — Agree on financial definitions: opening balance, actual balance, budget allocation, available budget, transfer, savings inflow/withdrawal, investment, estimated yield, and paid interest.
-- [ ] P0.5 — Decide what to preserve from the current identity and workflow. Capture naming constraints and the owner's preferred tone.
-- [ ] P0.6 — Identify operating constraints: maintenance capacity, support ownership, acceptable provider costs, and whether beta access is invited or open. Monetization remains a separate decision, not an assumed implementation requirement.
-- [ ] P0.7 — Define three connected journeys: a visitor discovering the public homepage, a member managing personal finances, and the owner inspecting product metrics. Specify the value and next action for each without mixing private and public surfaces.
-- [ ] P0.8 — Record privacy commitments and an initial data inventory: collection purpose, minimum necessary fields, provider access, retention, deletion, and permitted administrative visibility. Define the product questions metrics should answer before collecting events.
+- [ ] P0.3 — Decide the first-beta feature set: essential, optional, deferred. Progress: D03 accepts progressive Gmail/OCR availability; feature-by-feature essential/optional/deferred classifications remain open.
+- [ ] P0.4 — Agree on financial definitions: opening balance, actual balance, budget allocation, available budget, transfer, savings inflow/withdrawal, investment, estimated yield, and paid interest. A draft model proposal exists but has not been owner-approved.
+- [ ] P0.5 — Decide what to preserve from the current identity and workflow. Progress: the owner requires a distinctive identity and appealing homepage; name, tone, and detailed brand constraints remain open.
+- [ ] P0.6 — Identify operating constraints: maintenance capacity, support ownership, acceptable provider costs, and whether beta access is invited or open. Progress: this is a solo personal project; support, provider budget, and beta access model remain open. Monetization remains a separate decision, not an assumed implementation requirement.
+- [ ] P0.7 — Define three connected journeys: a visitor discovering the public homepage, a member managing personal finances, and the owner inspecting product metrics. Progress: homepage attraction, personal finance, and admin metrics are accepted concerns; the connected journeys and next actions are not yet specified.
+- [ ] P0.8 — Record privacy commitments and an initial data inventory: collection purpose, minimum necessary fields, provider access, retention, deletion, and permitted administrative visibility. Progress: the privacy map and threat model exist; provider disclosure/retention, backup expiry, deletion/export, and cohort limits remain unresolved.
 
 ### Deliverables and exit criteria
 
@@ -91,7 +91,7 @@ Objective: establish a safe environment in which fixes can be implemented and de
 - [x] P1.7 — Make cron authentication fail closed when configuration is absent and review privileged-route errors. Both cron endpoints reject missing configuration with 503 and invalid credentials with 401; bearer comparison uses a shared timing-safe helper. Rollover and Gmail sync return generic server errors, and rollover success returns aggregate counts without account IDs or amounts. Gmail OAuth callback logs only a fixed message; OCR provider failures remain generic. Verification: typecheck, lint, production build, 19 foundation HTTP scenarios, and GitHub Actions runs 8 and 9 pass.
 - [x] P1.8 — Correct public routing for manifest, service-worker script, and offline document. GET/HEAD access, content types, and protection of private/asset-prefix routes verified against the local production build. Evidence: FOUNDATION_PROGRESS.md and 19 HTTP scenarios.
 - [ ] P1.9 — Specify and verify server-managed administrative permissions and a trusted provisioning/revocation process. The owner account was verified as the sole Auth user and promoted through the privileged database process. Hosted metadata confirms the admin RPC is `SECURITY DEFINER` with an empty `search_path`, callable by authenticated users only, and profile RLS is enabled. `docs/ADMIN_ACCESS.md` defines provisioning and revocation. Non-production cross-role checks remain pending under P1.3/P1.4.
-- [ ] P1.10 — Threat-model the personal workspace, admin area, telemetry, logs, caches, exports, and provider connections. The initial review is recorded in [SECURITY_THREAT_MODEL.md](SECURITY_THREAT_MODEL.md); five historical OCR payloads were scrubbed without changing transaction columns, new OCR rows retain only the engine, Gemini keys no longer appear in URLs, and privileged cron output is minimized. Remaining blockers include backup expiry, provider privacy/retention review, telemetry cohort suppression, OCR rate limits, deletion/export, deployed cache headers, and non-production isolation. Administrative access to financial records is not present in the reviewed page or aggregate RPC.
+- [ ] P1.10 — Threat-model the personal workspace, admin area, telemetry, logs, caches, exports, and provider connections. The initial review is recorded in [SECURITY_THREAT_MODEL.md](SECURITY_THREAT_MODEL.md); five historical OCR payloads were scrubbed without changing transaction columns, new OCR rows retain only the engine, Gemini keys no longer appear in URLs, and privileged cron output is minimized. Gmail now fetches bodies only after exact sender allowlisting, although its OAuth scope remains broad. Remaining blockers include backup expiry, provider privacy/retention review, telemetry cohort suppression, OCR rate limits, deletion/export, deployed cache headers, and non-production isolation. Administrative access to financial records is not present in the reviewed page or aggregate RPC.
 
 ### Deliverables and exit criteria
 

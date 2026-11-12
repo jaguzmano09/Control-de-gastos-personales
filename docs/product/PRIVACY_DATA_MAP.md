@@ -1,6 +1,6 @@
 ﻿# Privacy commitments and initial data inventory
 
-Status: Initial P0.8 design inventory. Local-source evidence only; deployed grants, provider settings, retention, and backup policies remain to be verified in P1/P7.
+Status: Initial P0.8 design inventory. Source and selected hosted grants/RPC metadata have been reviewed; provider settings, retention, and backup policies remain to be verified before release.
 
 ## Confirmed privacy boundary
 
@@ -19,7 +19,7 @@ Use synthetic examples in public previews, design files, tests, and screenshots.
 | Budgets/rollover/yield | category_budgets, wallet_budgets, budget_rollover_reviews, yield_configs/rates | Owning member | Distinguish financial records from derived estimates; define deletion/recalculation lifecycle |
 | Shopping/price history | stores, lists/items, price_history, purchase drafts/lines | Owning member | Purchases and locations can reveal habits; define incomplete-draft/history lifecycle |
 | Receipt input | Image processed by Sharp, optional Paddle/Gemini, or Tesseract path | Member and configured processors for requested extraction | Existing design does not persist receipt images as permanent financial records; verify infrastructure/provider handling and minimize extracted raw data |
-| Gmail connection/messages | Gmail OAuth and sync; tokens in gmail_connections, extraction through Gemini | Server-only tokens; member's own connection status; configured providers | Verify secret protection/grants, optional access, disconnection/revocation and token cleanup; provider behavior not yet audited |
+| Gmail connection/messages | Gmail OAuth and sync; tokens in gmail_connections, extraction through Gemini | Server-only tokens; member's own connection status; only allowlisted sender bodies are downloaded/processed after header inspection | OAuth scope remains mailbox-wide `gmail.readonly`; verify provider retention, explain header access, implement disconnection/revocation and token cleanup |
 | Document acceptance | document_versions and user_document_acceptances | Public active documents, own acceptance, narrowly authorized operations | Define necessary retention and update handling; do not promise immediate removal where a justified record must be retained |
 | Product events | Allowlisted product_events with user_id/occurrence time; aggregate RPC | Role-checked, suitably grouped metrics | Current rows contain identifiers: do not call them anonymous. Define deduplication, retention and minimum reporting groups before segmentation |
 | Logs/support | Errors, diagnostics, future private support | Restricted operational access | No financial payloads, receipt/email content, credentials, or query-string dumps; private reporting and deletion handling required |
@@ -33,7 +33,7 @@ This inventory records categories and field names, not actual records or secret 
 - Gemini may receive receipt images, OCR text, or bank-message text according to the active path.
 - PaddleOCR may receive receipt input when configured; its hosting/access/retention are not established by the code.
 - Tesseract is a local processing path but does not make other configured processing paths local.
-- Gmail access is optional; sender filtering does not narrow the OAuth scope itself.
+- Gmail access is optional; history responses are field-masked to message IDs, then the app reads only `From` headers before sender filtering. Message bodies are fetched and sent to Gemini only for allowlisted senders. The OAuth grant itself remains mailbox-wide `gmail.readonly`.
 - Hosting logs, network failures, URL parameters, caches, and backups can carry data even when the UI hides it.
 
 List the processors and purposes accurately before exposing integrations publicly. Provider terms/settings and applicable obligations require verification; this is not a compliance certification.

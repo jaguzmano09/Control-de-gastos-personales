@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { refreshAccessToken, listHistory, getMessage, extractSenderAndText, normalizeSenderAddress } from '@/lib/gmail/client'
+import { refreshAccessToken, listHistory, getMessageMetadata, getMessage, extractSender, extractSenderAndText, normalizeSenderAddress } from '@/lib/gmail/client'
 import { extractTransactionFromText } from '@/lib/gemini/client'
 import { hasValidCronAuthorization } from '@/lib/security/cron-auth'
 
@@ -71,12 +71,16 @@ async function syncUserGmail(
   let created = 0
 
   for (const messageId of Array.from(messageIds)) {
+    // Fetch only the From header until the message is matched against the
+    // member's allowlist. Never download a non-allowlisted message body.
+    const metadata = await getMessageMetadata(access_token, messageId)
+    const senderAddress = normalizeSenderAddress(extractSender(metadata))
+    const matchedAddress = senderAddress && accountByAddress.has(senderAddress) ? senderAddress : null
+    if (!matchedAddress) continue
+
     const message = await getMessage(access_token, messageId)
     const { from, text } = extractSenderAndText(message)
-
-    const senderAddress = normalizeSenderAddress(from)
-    const matchedAddress = senderAddress && accountByAddress.has(senderAddress) ? senderAddress : null
-    if (!matchedAddress || !text) continue
+    if (normalizeSenderAddress(from) !== matchedAddress || !text) continue
 
     const { data: existing, error: existingError } = await supabase
       .from('transactions')

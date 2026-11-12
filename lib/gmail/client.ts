@@ -65,7 +65,12 @@ export async function getProfile(accessToken: string) {
 }
 
 export async function listHistory(accessToken: string, startHistoryId: string) {
-  const res = await fetch(`${GMAIL_API_BASE}/history?startHistoryId=${startHistoryId}&historyTypes=messageAdded`, {
+  const params = new URLSearchParams({
+    startHistoryId,
+    historyTypes: 'messageAdded',
+    fields: 'history(id,messagesAdded(message(id))),historyId,nextPageToken',
+  })
+  const res = await fetch(`${GMAIL_API_BASE}/history?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!res.ok) throw new Error(`Error listando history: ${await res.text()}`)
@@ -80,9 +85,21 @@ export async function getMessage(accessToken: string, messageId: string) {
   return res.json()
 }
 
+export async function getMessageMetadata(accessToken: string, messageId: string) {
+  const params = new URLSearchParams({ format: 'metadata', metadataHeaders: 'From' })
+  const res = await fetch(`${GMAIL_API_BASE}/messages/${messageId}?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) throw new Error(`Error obteniendo metadatos del mensaje: ${res.status}`)
+  return res.json() as Promise<GmailMessage>
+}
+
+export function extractSender(message: GmailMessage): string {
+  return message.payload?.headers?.find((header) => header.name.toLowerCase() === 'from')?.value ?? ''
+}
+
 export function extractSenderAndText(message: GmailMessage): { from: string; text: string } {
-  const headers = message.payload?.headers ?? []
-  const from = headers.find((header) => header.name === 'From')?.value ?? ''
+  const from = extractSender(message)
 
   function findPlainText(parts: GmailMessagePart[]): string {
     for (const part of parts ?? []) {
