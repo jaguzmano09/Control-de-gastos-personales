@@ -9,15 +9,19 @@ The current calculations conflict with the owner-confirmed semantics below. P2 m
 | Concept | Confirmed meaning |
 |---|---|
 | Transfer | Move a specified amount from one tracked account to another (and, where applicable, between pockets). Source decreases and destination increases by the same amount; consolidated money does not change. Example: COP 20,000 + COP 15,000 becomes COP 15,000 + COP 20,000; total remains COP 35,000. |
-| Savings / piggy bank | A purpose-based place to accumulate money already owned, such as a trip fund. Contributions move/allocate existing funds into the goal; withdrawals release/move funds back for use. Neither is new income or spending. A later purchase is recorded as an expense. |
-| Effective annual yield | The configured EA rate represents daily growth for the configured account/pocket. Show accrued yield separately from confirmed cash unless the user has recorded an actual credit. Use the product's actual rate and terms; a market average is not the user's rate. |
-| Monthly budget rollover | Positive unspent budget from the previous month, assigned to a selected budget target. It increases that target's available budget, not financial-account cash or income. |
+| Savings / piggy bank | There is no separate savings transaction type. A purpose-named pocket is the piggy bank; contributions and withdrawals are internal transfers to/from that pocket. Neither creates income or spending. A later purchase is recorded as an expense from its source pocket. |
+| Category budget allocation | Confirmed income assigned to a category at a specific account or pocket funds that category/location budget. Every new income and expense needs a category; the account/pocket identifies where the allocated funds are held. |
+| Transfer allocation | Every transfer requires a source category and destination category. It moves the amount out of the source category/location allocation and into the destination category/location allocation, as well as moving account/pocket balance. It is not income or spending; consolidated balance and total allocated budget across locations remain unchanged. |
+| Available budget balance | Starts with confirmed income assigned to that category at that location, plus assigned positive rollover; expenses reduce it. A COP 300,000 funded allocation begins with COP 300,000 available. If it goes below zero, show the exact deficit. |
+| Category and pocket budget views | Category and pocket summaries are two aggregations of the same category/location allocations. They must not be added together as if they were separate funds. |
+| Effective annual yield | The configured EA rate represents daily growth calculated from the total funded available balance in the pocket, regardless of which income category funded it. Show accrued yield as estimated until an actual credit is recorded. Use the product's actual rate and terms; a market average is not the user's rate. |
+| Monthly budget rollover | Positive unspent budget from the previous month, assigned to a category/location target. It increases that target's available budget, not a second pool of money. |
 | Over-budget result | Show the exact negative remaining amount and make it reviewable. Do not silently clamp it to zero. Let the user record real expenses even when they exceed a plan; surface options to review or adjust the plan. |
 | Monthly balance language | Monthly movement totals and actual account balances are different measures. Label a period's net separately from the balance at a date to avoid implying that one selected month's activity is a cumulative balance. |
 
-Still to specify for implementation: whether savings goals are represented by existing wallets or a dedicated goal object; how legacy savings rows map to a source and destination; opening-balance date/history cutoff; product-specific yield day-count, posting and rounding details; and whether an overspend should affect the following month's plan. Do not infer these from old data.
+Still to specify for implementation: how legacy savings rows map to a source and destination; opening-balance date/history cutoff; product-specific yield day-count, posting and rounding details; and whether an overspend should affect the following month's allocation. Do not infer these from old data. Transfer entry must explicitly select both categories because accounts and pockets do not currently have a category.
 
-Recommended first implementation: represent a piggy bank as a purpose-named wallet inside the account holding the money. Contribute/withdraw using the same internal movement model as transfers, so wallet-level balances change while the account's consolidated cash remains unchanged. If the money is actually held at another institution/account, model that as a separate financial account and transfer it there. Dedicated goal targets, deadlines, or progress tracking can be added later without redefining the ledger.
+First implementation: represent a piggy bank as a purpose-named wallet inside an account that supports pockets. Contribute/withdraw using the same internal movement model as transfers, so pocket-level balances change while consolidated cash remains unchanged. If the money is actually held at another institution/account, model that as a separate financial account and transfer it there. Dedicated goal targets, deadlines, or progress tracking can be added later without redefining the ledger.
 
 ## Observed implementation issues
 
@@ -25,7 +29,9 @@ Read-only source review of `lib/data/dashboard.ts`, `lib/yield-calculation.ts`, 
 
 | Area | Current implementation | Why it conflicts with the confirmed semantics |
 |---|---|---|
-| Transfers | A `Transferencia` affects a statistic but has no destination and does not debit/credit either account or wallet. | The core transfer example cannot be represented. |
+| Transfers | A `Transferencia` affects a statistic but has no destination and does not debit/credit either account or wallet. | The core transfer example cannot be represented, nor can source and destination category/location allocations be reconciled. |
+| Category/location budgets | Confirmed income auto-updates `category_budgets` aggregated only by category and `wallet_budgets` aggregated only by location. There is no persisted category+location allocation row. | A category view and a pocket view can independently look plausible while losing which category's budget is actually held in which location. |
+| Categories | Manual forms allow category-less income/expense; the database schema also permits them. | Such movements cannot fund or consume the correct category/location budget. |
 | Savings | `Ahorro / ingreso` currently increases account, wallet, and consolidated balances; `retiro` decreases them and is grouped with category spending. | This treats an internal contribution as income and a release as spending, contrary to the piggy-bank semantics. |
 | Yield principal | Dashboard and rollover calculations use `wallet_budgets.rollover_amount` as the yield opening balance rather than the actual balance of the configured account/pocket. | Yield can be calculated from a budget remainder rather than the money earning interest. |
 | EA compounding | `calculateDailyYield` adds daily interest to `total` but does not add it to the balance used for the next day's interest. | The daily equivalent of EA is not compounded by this calculation; for a constant positive balance, it produces less than the configured EA over a year. |
@@ -34,7 +40,7 @@ Read-only source review of `lib/data/dashboard.ts`, `lib/yield-calculation.ts`, 
 | Balance period | `getMonthSummary` loads confirmed transactions for the selected month (and only through today for the current month); the overview also derives account figures from this period summary. | A period net can be mistaken for the current cumulative account balance. |
 | Budget display | Wallet-budget remaining values are clamped at zero; category movement also mixes savings operations with spending. | The UI hides how far spending exceeded the fixed plan and applies the wrong savings semantics. |
 
-These findings show the current calculations are **not consistent with the confirmed rules**. P2 should implement the agreed semantics while preserving a safe interpretation path for existing records.
+These findings show the current calculations are **not consistent with the confirmed rules**. P2 should implement a category/location budget allocation as the source of truth, derive category and pocket views from it, and preserve a safe interpretation path for existing records.
 
 ## Effective annual yield research
 
@@ -78,6 +84,7 @@ These are synthetic examples and proposed acceptance cases, not assertions that 
 |---|---|
 | Start cash at COP 100,000, then spend COP 20,000 | Recorded cash COP 80,000; spending COP 20,000; baseline is not period income |
 | Move COP 30,000 from account A to tracked account B | A decreases 30,000, B increases 30,000; consolidated balance unchanged; spending unchanged |
+| Transfer COP 30,000 from category/location A to category/location B | Source balance and allocation decrease 30,000; destination balance and allocation increase 30,000; consolidated balance, total allocation, income, and spending unchanged |
 | Mark COP 10,000 as savings without moving it | Purpose allocation changes; consolidated money unchanged |
 | Move that savings amount into a tracked savings wallet | Linked internal movement, not another external income |
 | Add a COP 50,000 category budget | Spending plan increases; financial balance unchanged |
@@ -88,11 +95,11 @@ These are synthetic examples and proposed acceptance cases, not assertions that 
 
 ## Decisions required before P2 changes
 
-1. Use purpose-named wallets as piggy banks for the first implementation unless product review identifies a need for a separate goals entity. Existing Ahorro ingreso/retiro records require interpretation and compatibility mapping; do not blindly reclassify them.
+1. Remove the savings transaction type from new-entry flows; use internal transfers into/out of purpose-named wallets. Existing Ahorro ingreso/retiro rows require interpretation and compatibility mapping; do not blindly reclassify or delete them.
 2. Agree on investment scope: contribution tracking only versus tracked investment assets/valuation. Do not invent market value from contributions.
 3. Implement owner-confirmed separation of estimated daily yield from confirmed cash and budget rollover; resolve product-specific day-count/posting details before claiming bank-level precision.
 4. Define opening-balance storage/effective date and history import cutoff.
-5. Define budget funding/rollover rules across category and wallet views. They describe the same underlying money and must not become independently additive funds.
+5. Define budget funding/rollover rules across category and wallet views. Transfers move allocation between their selected source and destination category/locations; the views describe the same underlying funds and must not become independently additive.
 6. Confirm decimal storage, rounding stage, and date-boundary rules. COP presentation may use whole pesos while existing amounts retain decimals; preserve precision until a policy is agreed.
 
 ## Calculation invariants for P2

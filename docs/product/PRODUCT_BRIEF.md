@@ -19,9 +19,10 @@ Source: owner feedback, roadmap v2, and repository assessment. This brief does n
 | D10 | The homepage, member, and admin journeys are accepted as proposed in this brief | Owner feedback on P0.7 |
 | D11 | No external providers are currently selected; provider integrations need a privacy and operations policy before adoption | Owner feedback on P0.8 |
 | D12 | Operate with free resources only for now; no paid provider or infrastructure is authorized | Owner feedback |
-| D13 | Transfers move money between tracked accounts; savings contributions/withdrawals move existing money into/out of a purpose-based piggy bank; neither creates income or spending | Owner's COP 20,000/COP 15,000 transfer example and savings explanation |
-| D14 | EA yield grows daily on the configured account/pocket; prior-month positive budget remainder is assigned to a budget and is not extra cash; monthly activity must be distinguished from current balance | Owner's yield, rollover, and monthly-view clarification |
-| D15 | Budgets remain fixed plans; show exact negative remaining amount when overspent and make it reviewable instead of clamping to zero | Owner accepted displaying the negative and reviewing alternatives |
+| D13 | Transfers move money between tracked accounts/pockets. There is no separate savings movement type; a purpose-named pocket is a piggy bank funded/emptied by transfers, which do not create income or spending | Owner's COP 20,000/COP 15,000 transfer example and clarification to remove the savings transaction type |
+| D14 | Account/pocket balance tracks money currently held; income, expenses, and transfers update it. Category budget is a separate monthly allocation funded by categorized income and positive prior-month rollover. EA yield uses the pocket's current balance, not a budget cap. | Owner's definitions of pocket balance, budget, yield, and rollover |
+| D15 | Show the exact negative available amount when expenses exceed assigned funds and make it reviewable instead of clamping to zero; do not hide or reject a real expense | Owner accepted displaying the negative and reviewing alternatives |
+| D16 | Every new income and expense requires a category; category budget records income assigned to that category at a specific account or pocket. Every transfer also requires a source category and a destination category. It debits the source category/location allocation and credits the destination category/location allocation alongside the account/pocket balances. It does not create income or spending, and the consolidated total remains unchanged. | Owner feedback on required categories, location-scoped budgets, and transfer behavior |
 
 ## Product definition
 
