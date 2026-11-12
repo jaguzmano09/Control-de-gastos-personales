@@ -88,8 +88,8 @@ async function withServer(secret, verify) {
     for (const route of ['/api/gmail/sync', '/api/cron/rollover']) {
       for (const headers of [{}, { authorization: 'Bearer undefined' }]) {
         const response = await request(route, { headers });
-        assert.equal(response.status, 500, 'Missing configuration must fail before job execution');
-        assert.deepEqual(await response.json(), { error: 'CRON_SECRET no configurado' });
+        assert.equal(response.status, 503, 'Missing configuration must fail before job execution');
+        assert.deepEqual(await response.json(), { error: 'Cron authentication unavailable' });
         results.push({ check: 'Missing-secret rejection: ' + route, status: 'passed' });
       }
     }

@@ -41,7 +41,10 @@ async function callGemini(parts: object[], signal?: AbortSignal): Promise<Extrac
 
   const request = {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': process.env.GEMINI_API_KEY,
+    },
     body: JSON.stringify({
       contents: [{ parts }],
       generationConfig: { responseMimeType: 'application/json' },
@@ -55,7 +58,7 @@ async function callGemini(parts: object[], signal?: AbortSignal): Promise<Extrac
     signal?.addEventListener('abort', abort, { once: true })
     let res: Response
     try {
-      res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
+      res = await fetch(GEMINI_URL, {
         ...request,
         signal: controller.signal,
       })
@@ -89,9 +92,8 @@ async function callGemini(parts: object[], signal?: AbortSignal): Promise<Extrac
       }
     }
 
-    const errorText = await res.text()
     if (![429, 500, 503, 504].includes(res.status)) {
-      throw new Error(`Gemini error: ${res.status} ${errorText}`)
+      throw new Error(`Gemini request failed with status ${res.status}`)
     }
 
     if (attempt < 2) {
@@ -99,7 +101,7 @@ async function callGemini(parts: object[], signal?: AbortSignal): Promise<Extrac
       const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** (attempt + 1) * 1000
       await new Promise((resolve) => setTimeout(resolve, delay))
     } else {
-      throw new Error(`Gemini error: ${res.status} ${errorText}`)
+      throw new Error(`Gemini request failed with status ${res.status}`)
     }
   }
 

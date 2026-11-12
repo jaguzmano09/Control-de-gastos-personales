@@ -1,6 +1,6 @@
 {
   "scope": "Local production build; public assets and rejected requests only; no authorized jobs or data writes",
-  "checkedAt": "2026-11-12T00:24:04.504Z",
+  "checkedAt": "2026-11-12T01:54:38.849Z",
   "serverCleanup": "Both owned verification servers exited",
   "checks": [
     {

@@ -72,7 +72,6 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let partialExtraction: Partial<Extracted> | undefined
   let extractionEngine: string | undefined
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
-  const extractionErrors: string[] = []
   const categoryNames = (categories ?? []).map((category) => category.name)
   const processingDeadline = Date.now() + MAX_OCR_PROCESSING_MS
   const hasTimeRemaining = () => Date.now() < processingDeadline
@@ -125,7 +124,6 @@ export async function createTransactionFromReceipt(formData: FormData) {
           extractionEngine = `gemini-vision-${variant.label}`
         }
       } catch (error) {
-        extractionErrors.push(`gemini-vision-${variant.label}: ${error instanceof Error ? error.message : 'error desconocido'}`)
         if (error instanceof Error && /(?:401|403|404|GEMINI_API_KEY)/i.test(error.message)) break
       }
     }
@@ -152,8 +150,8 @@ export async function createTransactionFromReceipt(formData: FormData) {
               partialExtraction = geminiResult
               extractionEngine = 'gemini-vision-ocr'
             }
-          } catch (error) {
-            extractionErrors.push(`gemini-vision-ocr: ${error instanceof Error ? error.message : 'error desconocido'}`)
+          } catch {
+            // Continue with the local OCR parse path without persisting provider diagnostics.
           }
         }
 
@@ -168,8 +166,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
           }
         }
       } catch (error) {
-        const tesseractError = error instanceof Error ? error : new Error('Error desconocido de Tesseract')
-        extractionErrors.push(`tesseract-local: ${tesseractError.message}`)
+        const tesseractError = error instanceof Error ? error : new Error('Unknown Tesseract error')
         if (/Tesseract timeout/i.test(tesseractError.message)) await discardTesseractWorker()
       }
     }
@@ -217,13 +214,10 @@ export async function createTransactionFromReceipt(formData: FormData) {
     ai_confidence: rule ? 1 : extractionConfidence,
     raw_data: {
       engine: extractionEngine,
-      extracted,
-      ocr: ocrResult,
-      extraction_errors: extractionErrors,
     },
   })
 
-  if (error) redirect('/transacciones/ocr?error=' + encodeURIComponent(error.message))
+  if (error) redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudo guardar el movimiento extraído. Inténtalo de nuevo.'))
 
   if (rule) {
     await supabase
