@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          category_id: string | null
           created_at: string
           has_wallets: boolean
           id: string
@@ -25,6 +26,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           has_wallets?: boolean
           id?: string
@@ -34,6 +36,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           has_wallets?: boolean
           id?: string
@@ -947,6 +950,7 @@ export type Database = {
       wallets: {
         Row: {
           account_id: string
+          category_id: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -956,6 +960,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          category_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -965,6 +970,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          category_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean

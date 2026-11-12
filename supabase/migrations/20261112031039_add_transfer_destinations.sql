@@ -39,7 +39,7 @@ begin
     end if;
   end if;
 
-  if new.type in ('Gasto', 'Ingreso', 'Transferencia') and new.category_id is null then
+  if new.status = 'confirmada' and new.type in ('Gasto', 'Ingreso', 'Transferencia') and new.category_id is null then
     raise exception 'A category is required for this transaction';
   end if;
 

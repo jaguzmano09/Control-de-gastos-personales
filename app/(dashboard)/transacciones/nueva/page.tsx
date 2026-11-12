@@ -11,8 +11,8 @@ export default async function NuevaTransaccionPage({
 
   const [{ data: categories }, { data: accounts }, { data: wallets }, { data: draft }] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
-    supabase.from('accounts').select('id, name, has_wallets').eq('is_active', true).order('name'),
-    supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
+    supabase.from('accounts').select('id, name, category_id, has_wallets').eq('is_active', true).order('name'),
+    supabase.from('wallets').select('id, name, account_id, category_id').eq('is_active', true).order('name'),
     purchase_draft_id ? supabase.from('shopping_purchase_drafts').select('id, description, status, shopping_purchase_draft_lines(quantity, actual_unit_price)').eq('id', purchase_draft_id).maybeSingle() : Promise.resolve({ data: null }),
   ])
   const draftTotal = (draft?.shopping_purchase_draft_lines ?? []).reduce((total: number, line: { quantity: number; actual_unit_price: number }) => total + line.quantity * line.actual_unit_price, 0)

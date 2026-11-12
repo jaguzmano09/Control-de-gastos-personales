@@ -16,8 +16,8 @@ export default async function TransaccionDetallePage({
   const [{ data: transaction }, { data: categories }, { data: accounts }, { data: wallets }] = await Promise.all([
     supabase.from('transactions').select('*').eq('id', id).maybeSingle(),
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
-    supabase.from('accounts').select('id, name, has_wallets').eq('is_active', true).order('name'),
-    supabase.from('wallets').select('id, name, account_id').eq('is_active', true).order('name'),
+    supabase.from('accounts').select('id, name, category_id, has_wallets').eq('is_active', true).order('name'),
+    supabase.from('wallets').select('id, name, account_id, category_id').eq('is_active', true).order('name'),
   ])
 
   if (!transaction) notFound()

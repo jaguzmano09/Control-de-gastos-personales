@@ -10,13 +10,40 @@ export async function createAccount(formData: FormData) {
   if (!user) throw new Error('No autenticado')
 
   const name = (formData.get('name') as string)?.trim()
+  const category_id = (formData.get('category_id') as string)?.trim()
   const has_wallets = formData.get('has_wallets') === 'true'
-  if (!name) throw new Error('El nombre es obligatorio')
+  if (!name || !category_id) throw new Error('El nombre y la categoría son obligatorios')
 
-  const { error } = await supabase.from('accounts').insert({ user_id: user.id, name, has_wallets })
+  const { error } = await supabase.from('accounts').insert({ user_id: user.id, name, category_id, has_wallets })
   if (error) throw error
 
   revalidatePath('/cuentas')
+}
+
+export async function updateAccountCategory(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+  const id = (formData.get('id') as string)?.trim()
+  const category_id = (formData.get('category_id') as string)?.trim()
+  if (!id || !category_id) throw new Error('Selecciona una categoría')
+  const { error } = await supabase.from('accounts').update({ category_id }).eq('id', id).eq('user_id', user.id)
+  if (error) throw error
+  revalidatePath('/cuentas')
+  revalidatePath('/transacciones/nueva')
+}
+
+export async function updateWalletCategory(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+  const id = (formData.get('id') as string)?.trim()
+  const category_id = (formData.get('category_id') as string) || null
+  if (!id) throw new Error('Falta el bolsillo')
+  const { error } = await supabase.from('wallets').update({ category_id }).eq('id', id).eq('user_id', user.id)
+  if (error) throw error
+  revalidatePath('/cuentas')
+  revalidatePath('/transacciones/nueva')
 }
 
 export async function toggleAccountActive(formData: FormData) {
@@ -35,9 +62,10 @@ export async function createWallet(formData: FormData) {
 
   const account_id = formData.get('account_id') as string
   const name = (formData.get('name') as string)?.trim()
+  const category_id = (formData.get('category_id') as string) || null
   if (!name) throw new Error('El nombre es obligatorio')
 
-  const { error } = await supabase.from('wallets').insert({ user_id: user.id, account_id, name })
+  const { error } = await supabase.from('wallets').insert({ user_id: user.id, account_id, name, category_id })
   if (error) throw error
 
   // Mantiene consistente el flag informativo has_wallets de la cuenta padre.
