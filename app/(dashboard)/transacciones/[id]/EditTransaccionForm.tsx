@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { updateTransaction, deleteTransaction } from '@/lib/actions/transactions'
 
-const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Ahorro', 'Inversion'] as const
+const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-3 py-2 text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
@@ -19,6 +19,9 @@ type Transaction = {
   category_id: string | null
   account_id: string
   wallet_id: string | null
+  destination_account_id: string | null
+  destination_wallet_id: string | null
+  destination_category_id: string | null
   description: string | null
   amount: number
   is_necessary: boolean | null
@@ -37,10 +40,18 @@ export function EditTransaccionForm({
 }) {
   const [accountId, setAccountId] = useState(transaction.account_id)
   const [type, setType] = useState(transaction.type)
+  const [destinationAccountId, setDestinationAccountId] = useState(transaction.destination_account_id ?? '')
+  const [destinationWalletId, setDestinationWalletId] = useState(transaction.destination_wallet_id ?? '')
+  const [destinationCategoryId, setDestinationCategoryId] = useState(transaction.destination_category_id ?? '')
   const selectedAccount = accounts.find((a) => a.id === accountId)
   const walletsForAccount = useMemo(
     () => wallets.filter((w) => w.account_id === accountId),
     [wallets, accountId]
+  )
+  const destinationAccount = accounts.find((account) => account.id === destinationAccountId)
+  const destinationWallets = useMemo(
+    () => wallets.filter((wallet) => wallet.account_id === destinationAccountId),
+    [wallets, destinationAccountId]
   )
 
   return (
@@ -63,6 +74,7 @@ export function EditTransaccionForm({
           <label className="block text-sm text-ledger-text">Tipo</label>
           <select name="type" value={type} onChange={(e) => setType(e.target.value)} required className={inputClass}>
             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {transaction.type === 'Ahorro' && <option value="Ahorro">Ahorro (histórico)</option>}
           </select>
         </div>
 
@@ -78,7 +90,7 @@ export function EditTransaccionForm({
 
         <div>
           <label className="block text-sm text-ledger-text">Categoría</label>
-          <select name="category_id" defaultValue={transaction.category_id ?? ''} className={inputClass}>
+          <select name="category_id" defaultValue={transaction.category_id ?? ''} required={type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia'} className={inputClass}>
             <option value="">— Sin categoría —</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -100,6 +112,30 @@ export function EditTransaccionForm({
             </select>
           </div>
         )}
+
+        {type === 'Transferencia' && <>
+          <div>
+            <label className="block text-sm text-ledger-text">Cuenta de destino</label>
+            <select name="destination_account_id" value={destinationAccountId} onChange={(event) => { setDestinationAccountId(event.target.value); setDestinationWalletId('') }} required className={inputClass}>
+              <option value="">— Selecciona una cuenta —</option>
+              {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+            </select>
+          </div>
+          {destinationAccount?.has_wallets && <div>
+            <label className="block text-sm text-ledger-text">Bolsillo de destino</label>
+            <select name="destination_wallet_id" value={destinationWalletId} onChange={(event) => setDestinationWalletId(event.target.value)} required className={inputClass}>
+              <option value="">— Elige uno —</option>
+              {destinationWallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}
+            </select>
+          </div>}
+          <div>
+            <label className="block text-sm text-ledger-text">Categoría de destino</label>
+            <select name="destination_category_id" value={destinationCategoryId} onChange={(event) => setDestinationCategoryId(event.target.value)} required className={inputClass}>
+              <option value="">— Selecciona una categoría —</option>
+              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </select>
+          </div>
+        </>}
 
         <div>
           <label className="block text-sm text-ledger-text">Descripción</label>

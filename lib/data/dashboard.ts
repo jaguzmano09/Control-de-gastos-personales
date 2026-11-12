@@ -13,6 +13,8 @@ type Totals = {
 
 type AccountSummary = Totals & {
   outflow: number
+  transferIn: number
+  transferOut: number
   rollover: number
   balance: number
   yield: number
@@ -45,7 +47,7 @@ function emptyTotals(): Totals {
 }
 
 function emptyAccountSummary(): AccountSummary {
-  return { ...emptyTotals(), outflow: 0, rollover: 0, balance: 0, yield: 0 }
+  return { ...emptyTotals(), outflow: 0, transferIn: 0, transferOut: 0, rollover: 0, balance: 0, yield: 0 }
 }
 
 export async function getMonthSummary(supabase: DashboardClient, monthStart: string) {
@@ -56,7 +58,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     : monthEnd
   const { data: transactions, error } = await supabase
     .from('transactions')
-    .select('type, savings_operation, amount, category_id, wallet_id, account_id, occurred_at')
+    .select('type, savings_operation, amount, category_id, wallet_id, account_id, destination_account_id, destination_wallet_id, destination_category_id, occurred_at')
     .gte('occurred_at', start)
     .lt('occurred_at', end)
     .eq('status', 'confirmada')
@@ -91,6 +93,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
   const ahorroIngresoByCategory = new Map<string, number>()
   const ahorroRetiroByCategory = new Map<string, number>()
   const gastoByWallet = new Map<string, number>()
+  const transferByWallet = new Map<string, number>()
   const balanceByWallet = new Map<string, number>()
   const walletIdsWithMovement = new Set<string>()
   const accountById = new Map<string, AccountSummary>()
@@ -109,7 +112,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
       if (Number(budget.rollover_amount) > 0) walletIdsWithMovement.add(budget.wallet_id)
     }
     rolloverTotal += Number(budget.rollover_amount)
-    accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
+    accountSummary.balance = accountSummary.ingreso + accountSummary.rollover + accountSummary.transferIn - accountSummary.outflow - accountSummary.transferOut
     accountById.set(accountId, accountSummary)
   }
 
@@ -139,7 +142,17 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
       case 'Transferencia': accountSummary.transferencia += amount; break
     }
 
-    accountSummary.balance = accountSummary.ingreso + accountSummary.rollover - accountSummary.outflow
+    if (t.type === 'Transferencia' && t.destination_account_id) {
+      accountSummary.transferOut += amount
+      const destinationSummary = t.destination_account_id === t.account_id
+        ? accountSummary
+        : accountById.get(t.destination_account_id) ?? emptyAccountSummary()
+      destinationSummary.transferIn += amount
+      destinationSummary.balance = destinationSummary.ingreso + destinationSummary.rollover + destinationSummary.transferIn - destinationSummary.outflow - destinationSummary.transferOut
+      accountById.set(t.destination_account_id, destinationSummary)
+    }
+
+    accountSummary.balance = accountSummary.ingreso + accountSummary.rollover + accountSummary.transferIn - accountSummary.outflow - accountSummary.transferOut
     accountById.set(t.account_id, accountSummary)
 
     if (t.category_id && (t.type === 'Gasto' || t.type === 'Ahorro')) {
@@ -157,6 +170,12 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
         gastoNormalByCategory.set(t.category_id, (gastoNormalByCategory.get(t.category_id) ?? 0) + amount)
       }
     }
+    if (t.type === 'Transferencia') {
+      if (t.category_id) gastoByCategory.set(t.category_id, (gastoByCategory.get(t.category_id) ?? 0) - amount)
+      if (t.destination_category_id) gastoByCategory.set(t.destination_category_id, (gastoByCategory.get(t.destination_category_id) ?? 0) + amount)
+      if (t.wallet_id) transferByWallet.set(t.wallet_id, (transferByWallet.get(t.wallet_id) ?? 0) - amount)
+      if (t.destination_wallet_id) transferByWallet.set(t.destination_wallet_id, (transferByWallet.get(t.destination_wallet_id) ?? 0) + amount)
+    }
     if (t.type === 'Gasto' && t.wallet_id) {
       gastoByWallet.set(t.wallet_id, (gastoByWallet.get(t.wallet_id) ?? 0) + amount)
     }
@@ -168,6 +187,10 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
           ? -amount
           : 0
       balanceByWallet.set(t.wallet_id, (balanceByWallet.get(t.wallet_id) ?? 0) + walletMovement)
+    }
+    if (t.type === 'Transferencia' && t.destination_wallet_id) {
+      walletIdsWithMovement.add(t.destination_wallet_id)
+      balanceByWallet.set(t.destination_wallet_id, (balanceByWallet.get(t.destination_wallet_id) ?? 0) + amount)
     }
   }
 
@@ -188,13 +211,20 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     const openingBalance = Number(budget?.rollover_amount ?? 0)
     const movements = (transactions ?? [])
       .filter((transaction) => config.wallet_id
-        ? transaction.wallet_id === config.wallet_id
-        : transaction.account_id === config.account_id && !transaction.wallet_id)
+        ? transaction.wallet_id === config.wallet_id || transaction.destination_wallet_id === config.wallet_id
+        : transaction.account_id === config.account_id && !transaction.wallet_id
+          || transaction.destination_account_id === config.account_id && !transaction.destination_wallet_id)
       .map((transaction) => ({
         date: transaction.occurred_at.slice(0, 10),
-        amount: transaction.type === 'Ingreso' || (transaction.type === 'Ahorro' && transaction.savings_operation === 'ingreso')
-          ? Number(transaction.amount)
-          : -Number(transaction.amount),
+        amount: transaction.type === 'Transferencia'
+          ? (config.wallet_id
+            ? transaction.destination_wallet_id === config.wallet_id
+            : transaction.destination_account_id === config.account_id && !transaction.destination_wallet_id)
+            ? Number(transaction.amount)
+            : -Number(transaction.amount)
+          : transaction.type === 'Ingreso' || (transaction.type === 'Ahorro' && transaction.savings_operation === 'ingreso')
+            ? Number(transaction.amount)
+            : -Number(transaction.amount),
       }))
     const calculated = calculateDailyYield({
       openingBalance,
@@ -225,7 +255,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
 
   const totalYield = [...Array.from(yieldByWallet.values()), ...Array.from(yieldByAccount.values())].reduce((sum, value) => sum + value, 0)
   const balance = totals.ingreso + totals.ahorro + rolloverTotal + totalYield - totals.gasto - totals.inversion
-  return { totals, rolloverTotal, totalYield, yieldByWallet, yieldByAccount, balance, balanceByWallet, walletIdsWithMovement, gastoByCategory, gastoNormalByCategory, ahorroIngresoByCategory, ahorroRetiroByCategory, gastoByWallet, accountById }
+  return { totals, rolloverTotal, totalYield, yieldByWallet, yieldByAccount, balance, balanceByWallet, walletIdsWithMovement, gastoByCategory, gastoNormalByCategory, ahorroIngresoByCategory, ahorroRetiroByCategory, gastoByWallet, transferByWallet, accountById }
 }
 
 export async function getPendingReviewCount(supabase: DashboardClient) {

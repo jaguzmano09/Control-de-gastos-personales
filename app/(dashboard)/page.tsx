@@ -77,6 +77,8 @@ export default async function DashboardHomePage({
         || accountSummary.ahorro !== 0
         || accountSummary.inversion > 0
         || accountSummary.transferencia > 0
+        || accountSummary.transferIn > 0
+        || accountSummary.transferOut > 0
         || accountSummary.rollover > 0
       : false
   })
@@ -84,10 +86,10 @@ export default async function DashboardHomePage({
   const categoryBudgetStats = (categoryBudgets ?? []).reduce(
     (totals, budget) => {
       const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
-      const total = Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)
+      const total = Number(budget.amount) + Number(budget.rollover_amount)
       return {
         total: totals.total + total,
-        spent: totals.spent + Math.max(0, -movement),
+        spent: totals.spent + (summary.gastoNormalByCategory.get(budget.category_id) ?? 0),
       }
     },
     { total: 0, spent: 0 },
@@ -98,13 +100,13 @@ export default async function DashboardHomePage({
   })
   const categoryHighlights = (categoryBudgets ?? []).map((budget) => {
     const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
-    const total = Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)
-    const spent = Math.max(0, -movement)
+    const total = Number(budget.amount) + Number(budget.rollover_amount)
+    const spent = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
     return {
       name: categoryNameById.get(budget.category_id) ?? 'Categoría',
       total,
       spent,
-      remaining: total - spent,
+      remaining: total + movement,
       percent: total > 0 ? (spent / total) * 100 : 0,
     }
   })
@@ -121,8 +123,8 @@ export default async function DashboardHomePage({
     const rollover = accountSummary?.rollover ?? 0
     const outflow = accountSummary?.outflow ?? 0
     const yieldAmount = accountSummary?.yield ?? 0
-    const available = income + rollover + yieldAmount
-    const balance = available - outflow
+    const available = income + rollover + (accountSummary?.transferIn ?? 0) + yieldAmount
+    const balance = available - outflow - (accountSummary?.transferOut ?? 0)
     return {
       name: account.name,
       balance,

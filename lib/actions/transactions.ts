@@ -18,13 +18,18 @@ export async function createManualTransaction(formData: FormData) {
   const category_id = (formData.get('category_id') as string) || null
   const account_id = formData.get('account_id') as string
   const wallet_id = (formData.get('wallet_id') as string) || null
+  const destination_account_id = (formData.get('destination_account_id') as string) || null
+  const destination_wallet_id = (formData.get('destination_wallet_id') as string) || null
+  const destination_category_id = (formData.get('destination_category_id') as string) || null
   const description = (formData.get('description') as string) || null
   const amount = Number(formData.get('amount'))
   const isNecessaryRaw = formData.get('is_necessary') as string | null
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
   const purchaseDraftId = (formData.get('purchase_draft_id') as string) || null
 
-  if (!occurred_at || !type || !account_id || !amount || amount <= 0 || (type === 'Ahorro' && !savings_operation)) {
+  if (!occurred_at || !type || !account_id || !amount || amount <= 0 || type === 'Ahorro'
+    || ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !category_id)
+    || (type === 'Transferencia' && (!destination_account_id || !destination_category_id))) {
     redirect('/transacciones/nueva?error=' + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
   }
 
@@ -57,6 +62,9 @@ export async function createManualTransaction(formData: FormData) {
     category_id,
     account_id,
     wallet_id,
+    destination_account_id,
+    destination_wallet_id,
+    destination_category_id,
     description,
     amount,
     is_necessary,
@@ -83,6 +91,9 @@ export async function createManualTransaction(formData: FormData) {
 export async function updateTransaction(formData: FormData) {
   const supabase = await createClient()
   const id = formData.get('id') as string
+  if (!id) redirect('/transacciones')
+  const { data: existingTransaction } = await supabase.from('transactions').select('type').eq('id', id).maybeSingle()
+  if (!existingTransaction) redirect('/transacciones')
 
   const occurred_at = formData.get('occurred_at') as string
   const type = formData.get('type') as TransactionType
@@ -90,18 +101,25 @@ export async function updateTransaction(formData: FormData) {
   const category_id = (formData.get('category_id') as string) || null
   const account_id = formData.get('account_id') as string
   const wallet_id = (formData.get('wallet_id') as string) || null
+  const destination_account_id = (formData.get('destination_account_id') as string) || null
+  const destination_wallet_id = (formData.get('destination_wallet_id') as string) || null
+  const destination_category_id = (formData.get('destination_category_id') as string) || null
   const description = (formData.get('description') as string) || null
   const amount = Number(formData.get('amount'))
   const isNecessaryRaw = formData.get('is_necessary') as string | null
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
 
-  if (!id || !occurred_at || !type || !account_id || !amount || amount <= 0 || (type === 'Ahorro' && !savings_operation)) {
+  if (!id || !occurred_at || !type || !account_id || !amount || amount <= 0
+    || (type === 'Ahorro' && existingTransaction.type !== 'Ahorro')
+    || (type === 'Ahorro' && !savings_operation)
+    || ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !category_id)
+    || (type === 'Transferencia' && (!destination_account_id || !destination_category_id))) {
     redirect(`/transacciones/${id}?error=` + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
   }
 
   const { error } = await supabase
     .from('transactions')
-    .update({ occurred_at, type, savings_operation, category_id, account_id, wallet_id, description, amount, is_necessary })
+    .update({ occurred_at, type, savings_operation: type === 'Ahorro' ? savings_operation : null, category_id, account_id, wallet_id, destination_account_id, destination_wallet_id, destination_category_id, description, amount, is_necessary })
     .eq('id', id)
 
   if (error) {

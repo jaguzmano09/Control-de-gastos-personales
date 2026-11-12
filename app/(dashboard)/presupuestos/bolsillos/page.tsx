@@ -18,6 +18,7 @@ type BudgetTarget = {
   wallet_id: string | null
   account_id: string | null
   spent: number
+  transferMovement: number
 }
 
 export default async function PresupuestoBolsillosPage({
@@ -49,6 +50,7 @@ export default async function PresupuestoBolsillosPage({
       wallet_id: w.id,
       account_id: null,
       spent: summary.gastoByWallet.get(w.id) ?? 0,
+      transferMovement: summary.transferByWallet.get(w.id) ?? 0,
     })),
     ...(flatAccounts ?? []).map((a) => ({
       key: `account-${a.id}`,
@@ -57,6 +59,7 @@ export default async function PresupuestoBolsillosPage({
       wallet_id: null,
       account_id: a.id,
       spent: summary.accountById.get(a.id)?.gasto ?? 0,
+      transferMovement: (summary.accountById.get(a.id)?.transferIn ?? 0) - (summary.accountById.get(a.id)?.transferOut ?? 0),
     })),
   ]
 
@@ -79,7 +82,7 @@ export default async function PresupuestoBolsillosPage({
           const yieldAmount = target.wallet_id
             ? summary.yieldByWallet.get(target.wallet_id) ?? 0
             : summary.yieldByAccount.get(target.account_id!) ?? 0
-          const currentBalance = Math.max(total - spent + yieldAmount, 0)
+          const currentBalance = total - spent + target.transferMovement + yieldAmount
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
           const isOverBudget = total > 0 && spent >= total
@@ -106,7 +109,7 @@ export default async function PresupuestoBolsillosPage({
                   <Metric label="Presupuesto" value={total} />
                   <Metric label="Gastado" value={spent} negative={spent > 0} />
                   <Metric label="Rendimientos" value={yieldAmount} positive />
-                  <Metric label="Disponible" value={Math.max(total - spent + yieldAmount, 0)} positive />
+                  <Metric label="Disponible" value={currentBalance} positive={currentBalance >= 0} negative={currentBalance < 0} />
                 </div>
                 <div className="mt-5 flex items-center justify-between text-xs">
                   <span className="text-ledger-muted">Uso del presupuesto</span>

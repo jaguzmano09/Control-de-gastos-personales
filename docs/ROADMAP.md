@@ -130,6 +130,8 @@ Objective: make every displayed amount follow the same agreed rules.
 - [ ] P2.7 — Guarantee complete aggregation at supported volumes; avoid silently calculating from capped result sets.
 - [ ] P2.8 — Prepare a compatibility/reconciliation plan for existing personal records before changing accounting semantics.
 
+Execution record: P2.2 is In progress. The manual create/edit flows now collect source and destination accounts/pockets plus both categories; server validation rejects incomplete transfers; the local migration adds destination fields and owner/location checks; period summaries and budget views account for both endpoints without treating transfers as income or spending. P2.3 is In progress: new manual entries no longer offer the Ahorro type, while legacy rows remain editable as historical records. TypeScript typecheck passes. The migration has not been applied to any hosted database because the production migration ledger has not been reconciled; no live schema or personal records were changed. Remaining evidence: local database migration/integration checks, verify balances and allocations across all views, and reconcile legacy transfer/savings records before release.
+
 ### Deliverables and exit criteria
 
 A business test matrix with exact expected amounts covering transfers, savings, multiple accounts, pending/duplicate/discarded exclusion, overspending, month boundaries, rate changes, repeated closing, failed writes, and concurrent assignment. The same scenario produces matching figures across all relevant views. Existing records have a reviewed migration or compatibility strategy.

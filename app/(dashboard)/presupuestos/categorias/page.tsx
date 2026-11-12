@@ -64,11 +64,11 @@ export default async function PresupuestoCategoriasPage({
           const gastoNormal = summary.gastoNormalByCategory.get(category.id) ?? 0
           const ahorroIngreso = summary.ahorroIngresoByCategory.get(category.id) ?? 0
           const ahorroRetiro = summary.ahorroRetiroByCategory.get(category.id) ?? 0
-          const spent = Math.max(0, -movement)
+          const spent = gastoNormal
           const remaining = totalBudget + movement
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = totalBudget > 0 ? Math.min((spent / totalBudget) * 100, 100) : 0
-          const isOverBudget = totalBudget > 0 && spent >= totalBudget
+          const isOverBudget = remaining < 0
           const isOverThreshold = !isOverBudget && threshold !== undefined && totalBudget > 0 && (spent / totalBudget) * 100 >= threshold
 
           return (

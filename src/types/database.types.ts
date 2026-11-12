@@ -739,6 +739,9 @@ export type Database = {
           category_id: string | null
           created_at: string
           description: string | null
+          destination_account_id: string | null
+          destination_category_id: string | null
+          destination_wallet_id: string | null
           external_reference: string | null
           id: string
           is_necessary: boolean | null
@@ -761,6 +764,9 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          destination_account_id?: string | null
+          destination_category_id?: string | null
+          destination_wallet_id?: string | null
           external_reference?: string | null
           id?: string
           is_necessary?: boolean | null
@@ -783,6 +789,9 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           description?: string | null
+          destination_account_id?: string | null
+          destination_category_id?: string | null
+          destination_wallet_id?: string | null
           external_reference?: string | null
           id?: string
           is_necessary?: boolean | null

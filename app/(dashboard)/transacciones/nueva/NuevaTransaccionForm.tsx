@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createManualTransaction } from '@/lib/actions/transactions'
 
-const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Ahorro', 'Inversion'] as const
+const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-3 py-2 text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
@@ -43,6 +43,9 @@ export function NuevaTransaccionForm({
   const [categoryId, setCategoryId] = useState('')
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
   const [walletId, setWalletId] = useState('')
+  const [destinationAccountId, setDestinationAccountId] = useState(accounts[1]?.id ?? accounts[0]?.id ?? '')
+  const [destinationWalletId, setDestinationWalletId] = useState('')
+  const [destinationCategoryId, setDestinationCategoryId] = useState('')
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
   const [isNecessary, setIsNecessary] = useState('')
@@ -55,9 +58,15 @@ export function NuevaTransaccionForm({
 
   const categoryName = categories.find((c) => c.id === categoryId)?.name
   const walletName = wallets.find((w) => w.id === walletId)?.name
+  const destinationAccount = accounts.find((a) => a.id === destinationAccountId)
+  const destinationWallets = useMemo(() => wallets.filter((w) => w.account_id === destinationAccountId), [wallets, destinationAccountId])
+  const destinationName = destinationAccount?.name
+  const destinationWalletName = wallets.find((w) => w.id === destinationWalletId)?.name
 
   function handleContinue() {
     if (!occurredAt || !accountId || !amount || Number(amount) <= 0) return
+    if ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !categoryId) return
+    if (type === 'Transferencia' && (!destinationAccountId || !destinationCategoryId)) return
     setStep('confirm')
   }
 
@@ -77,7 +86,7 @@ export function NuevaTransaccionForm({
             </select>
           </div>
 
-          {type === 'Ahorro' && (
+          {(type as string) === 'Ahorro' && (
             <div>
               <label className="block text-sm text-ledger-text">Operación de ahorro</label>
               <select value={savingsOperation} onChange={(e) => setSavingsOperation(e.target.value as typeof savingsOperation)} required className={inputClass}>
@@ -88,8 +97,8 @@ export function NuevaTransaccionForm({
           )}
 
           <div>
-            <label className="block text-sm text-ledger-text">Categoría</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inputClass}>
+            <label className="block text-sm text-ledger-text">{type === 'Transferencia' ? 'Categoría de origen' : 'Categoría'}</label>
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required={type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia'} className={inputClass}>
               <option value="">— Sin categoría —</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -111,6 +120,29 @@ export function NuevaTransaccionForm({
               </select>
             </div>
           )}
+
+          {type === 'Transferencia' && <>
+            <div>
+              <label className="block text-sm text-ledger-text">Cuenta de destino</label>
+              <select value={destinationAccountId} onChange={(e) => { setDestinationAccountId(e.target.value); setDestinationWalletId('') }} required className={inputClass}>
+                {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+            {destinationAccount?.has_wallets && <div>
+              <label className="block text-sm text-ledger-text">Bolsillo de destino</label>
+              <select value={destinationWalletId} onChange={(e) => setDestinationWalletId(e.target.value)} required className={inputClass}>
+                <option value="">— Elige uno —</option>
+                {destinationWallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </div>}
+            <div>
+              <label className="block text-sm text-ledger-text">Categoría de destino</label>
+              <select value={destinationCategoryId} onChange={(e) => setDestinationCategoryId(e.target.value)} required className={inputClass}>
+                <option value="">— Selecciona una categoría —</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          </>}
 
           <div>
             <label className="block text-sm text-ledger-text">Descripción</label>
@@ -144,10 +176,15 @@ export function NuevaTransaccionForm({
             <dl className="mt-3 space-y-1.5 text-sm">
               <Row label="Fecha" value={new Date(occurredAt + 'T00:00:00').toLocaleDateString('es-CO')} />
               <Row label="Tipo" value={type} />
-              {type === 'Ahorro' && <Row label="Operación" value={savingsOperation === 'ingreso' ? 'Ingreso para el ahorro' : 'Retiro o gasto del ahorro'} />}
-              <Row label="Categoría" value={categoryName ?? '— Sin categoría —'} />
+              {(type as string) === 'Ahorro' && <Row label="Operación" value={savingsOperation === 'ingreso' ? 'Ingreso para el ahorro' : 'Retiro o gasto del ahorro'} />}
+              <Row label={type === 'Transferencia' ? 'Categoría de origen' : 'Categoría'} value={categoryName ?? '—'} />
               <Row label="Cuenta" value={selectedAccount?.name ?? ''} />
               {walletName && <Row label="Bolsillo" value={walletName} />}
+              {type === 'Transferencia' && <>
+                <Row label="Destino" value={destinationName ?? ''} />
+                {destinationWalletName && <Row label="Bolsillo de destino" value={destinationWalletName} />}
+                <Row label="Categoría de destino" value={categories.find((category) => category.id === destinationCategoryId)?.name ?? ''} />
+              </>}
               <Row label="Descripción" value={description || '—'} />
               <Row label="Monto" value={Number(amount).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} />
               {isNecessary && <Row label="¿Necesario?" value={isNecessary === 'true' ? 'Sí' : 'No'} />}
@@ -159,10 +196,13 @@ export function NuevaTransaccionForm({
           <input type="hidden" name="type" value={type} />
           <input type="hidden" name="submission_id" value={submissionId} />
           {purchaseDraftId && <input type="hidden" name="purchase_draft_id" value={purchaseDraftId} />}
-          <input type="hidden" name="savings_operation" value={type === 'Ahorro' ? savingsOperation : ''} />
+          <input type="hidden" name="savings_operation" value={(type as string) === 'Ahorro' ? savingsOperation : ''} />
           <input type="hidden" name="category_id" value={categoryId} />
           <input type="hidden" name="account_id" value={accountId} />
           <input type="hidden" name="wallet_id" value={walletId} />
+          <input type="hidden" name="destination_account_id" value={type === 'Transferencia' ? destinationAccountId : ''} />
+          <input type="hidden" name="destination_wallet_id" value={type === 'Transferencia' ? destinationWalletId : ''} />
+          <input type="hidden" name="destination_category_id" value={type === 'Transferencia' ? destinationCategoryId : ''} />
           <input type="hidden" name="description" value={description} />
           <input type="hidden" name="amount" value={amount} />
           <input type="hidden" name="is_necessary" value={isNecessary} />

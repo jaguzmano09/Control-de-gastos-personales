@@ -22,6 +22,9 @@ interface Transaction {
   description: string | null
   amount: number
   status: string
+  destination_account_id: string | null
+  destination_wallet_id: string | null
+  destination_category_id: string | null
   categories: {
     name: string
   } | null
@@ -91,11 +94,14 @@ export default async function TransaccionesPage({
   const [
     { data: rawCategories },
     { data: rawAccounts },
+    { data: rawWallets },
   ] = await Promise.all([
     supabase
       .from('categories')
       .select('id, name')
       .order('name'),
+
+    supabase.from('wallets').select('id, name').eq('is_active', true),
 
     supabase
       .from('accounts')
@@ -116,7 +122,7 @@ export default async function TransaccionesPage({
   let query = supabase
     .from('transactions')
     .select(
-      'id, occurred_at, type, description, amount, status, categories(name), accounts(name), wallets(name)'
+      'id, occurred_at, type, description, amount, status, destination_account_id, destination_wallet_id, destination_category_id, categories(name), accounts(name), wallets(name)'
     )
     .order('occurred_at', { ascending: false })
     .limit(300)
@@ -155,6 +161,9 @@ export default async function TransaccionesPage({
   const { data: rawTransactions } = await query
 
   const transactions = (rawTransactions ?? []) as unknown as Transaction[]
+  const accountNameById = new Map(accounts.map((account) => [account.id, account.name]))
+  const walletNameById = new Map((rawWallets ?? []).map((wallet) => [wallet.id, wallet.name]))
+  const categoryNameById = new Map(categories.map((category) => [category.id, category.name]))
 
   return (
     <div className="max-w-6xl">
@@ -337,6 +346,7 @@ export default async function TransaccionesPage({
 
                 <td className="py-2 pr-4 text-ledger-text">
                   {t.categories?.name ?? '—'}
+                  {t.destination_category_id && <div className="text-xs text-ledger-muted">Destino: {categoryNameById.get(t.destination_category_id) ?? 'Categoría'}</div>}
                 </td>
 
                 <td className="py-2 pr-4 text-ledger-text">
@@ -345,6 +355,7 @@ export default async function TransaccionesPage({
                   {t.wallets?.name
                     ? ` · ${t.wallets.name}`
                     : ''}
+                  {t.destination_account_id && <div className="text-xs text-ledger-muted">→ {accountNameById.get(t.destination_account_id) ?? 'Cuenta'}{t.destination_wallet_id ? ` · ${walletNameById.get(t.destination_wallet_id) ?? 'Bolsillo'}` : ''}</div>}
                 </td>
 
                 <td className="py-2 pr-4 text-ledger-muted">
