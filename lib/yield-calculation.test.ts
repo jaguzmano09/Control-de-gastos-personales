@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 // Node's native TypeScript runner requires the explicit extension.
-// @ts-expect-error The application bundler resolves this module without the extension.
 import { calculateDailyYield } from './yield-calculation.ts'
 
 const rate = [{ eaPercent: 36.5, validFrom: '2026-01-01' }]

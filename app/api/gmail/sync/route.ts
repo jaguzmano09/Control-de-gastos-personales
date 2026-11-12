@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { refreshAccessToken, listHistory, getMessage, extractSenderAndText } from '@/lib/gmail/client'
+import { refreshAccessToken, listHistory, getMessage, extractSenderAndText, normalizeSenderAddress } from '@/lib/gmail/client'
 import { extractTransactionFromText } from '@/lib/gemini/client'
 
 export async function GET(request: NextRequest) {
@@ -22,18 +22,18 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const summary: Array<{ user_id: string; created: number; error?: string }> = []
+  const summary: Array<{ created: number; failed: boolean }> = []
 
   for (const conn of connections ?? []) {
     try {
       const created = await syncUserGmail(supabase, conn.user_id, conn.refresh_token, conn.gmail_history_id)
-      summary.push({ user_id: conn.user_id, created })
-    } catch (err) {
-      summary.push({ user_id: conn.user_id, created: 0, error: (err as Error).message })
+      summary.push({ created, failed: false })
+    } catch {
+      summary.push({ created: 0, failed: true })
     }
   }
 
-  return NextResponse.json({ ok: true, summary })
+  return NextResponse.json({ ok: true, users_processed: summary.length, users_failed: summary.filter((item) => item.failed).length, transactions_created: summary.reduce((sum, item) => sum + item.created, 0) })
 }
 
 async function syncUserGmail(
@@ -74,15 +74,17 @@ async function syncUserGmail(
     const message = await getMessage(access_token, messageId)
     const { from, text } = extractSenderAndText(message)
 
-    const matchedAddress = Array.from(accountByAddress.keys()).find((addr) => from.toLowerCase().includes(addr))
+    const senderAddress = normalizeSenderAddress(from)
+    const matchedAddress = senderAddress && accountByAddress.has(senderAddress) ? senderAddress : null
     if (!matchedAddress || !text) continue
 
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('transactions')
       .select('id')
       .eq('user_id', userId)
       .eq('external_reference', messageId)
       .maybeSingle()
+    if (existingError) throw existingError
 
     const extracted = await extractTransactionFromText(text, categoryNames)
     const category = categories?.find((c) => c.name === extracted.suggested_category)
@@ -102,7 +104,8 @@ async function syncUserGmail(
       raw_data: extracted,
     })
 
-    if (!insertError) created++
+    if (insertError) throw insertError
+    created++
   }
 
   await supabase.from('gmail_connections').update({ gmail_history_id: history.historyId ?? historyId }).eq('user_id', userId)

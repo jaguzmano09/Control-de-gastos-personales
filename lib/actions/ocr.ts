@@ -36,7 +36,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('Selecciona una imagen o toma una foto del comprobante.'))
   }
 
-  if (!file.type.startsWith('image/')) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('El archivo seleccionado no es una imagen válida.'))
   }
   if (file.size > 10 * 1024 * 1024) {

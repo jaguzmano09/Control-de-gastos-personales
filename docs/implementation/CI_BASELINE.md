@@ -19,7 +19,7 @@ behavior was changed.
 |---|---|
 | Lint | Passed with six existing warnings |
 | Typecheck | Passed |
-| Unit tests | 6/6 passed |
+| Unit tests | 8/8 passed, including exact Gmail sender matching |
 | Production build | Passed with placeholder public values, 27 pages |
 | Foundation HTTP | 19/19 passed |
 | Production dependency audit | Zero vulnerabilities reported by npm audit --omit=dev |

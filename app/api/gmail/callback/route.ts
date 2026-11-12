@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
   try {
     const tokens = await exchangeCodeForTokens(code)
     if (!tokens.refresh_token) {
-      return NextResponse.redirect(
+      return clearStateCookie(NextResponse.redirect(
         new URL('/correo?error=No+se+recibi%C3%B3+refresh_token%2C+revoca+el+acceso+en+Google+y+reintenta', request.url)
-      )
+      ))
     }
 
     const profile = await getProfile(tokens.access_token)

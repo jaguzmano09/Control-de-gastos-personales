@@ -7,12 +7,22 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-  const formData = await request.formData()
+  const contentLength = Number(request.headers.get('content-length'))
+  if (Number.isFinite(contentLength) && contentLength > 11 * 1024 * 1024) {
+    return NextResponse.json({ error: 'La imagen no puede superar los 10 MB.' }, { status: 413 })
+  }
+
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    return NextResponse.json({ error: 'La solicitud no contiene un formulario válido.' }, { status: 400 })
+  }
   const file = formData.get('file')
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: 'Debes enviar un archivo de imagen.' }, { status: 400 })
   }
-  if (!file.type.startsWith('image/')) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     return NextResponse.json({ error: 'El archivo debe ser una imagen.' }, { status: 400 })
   }
   if (file.size > 10 * 1024 * 1024) {
@@ -34,8 +44,8 @@ export async function POST(request: Request) {
       (categories ?? []).map((category) => category.name),
     )
     return NextResponse.json(result)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'No se pudo procesar el comprobante.'
-    return NextResponse.json({ error: message }, { status: 502 })
+  } catch {
+    console.error('Receipt OCR provider request failed')
+    return NextResponse.json({ error: 'No se pudo procesar el comprobante. Inténtalo de nuevo más tarde.' }, { status: 502 })
   }
 }

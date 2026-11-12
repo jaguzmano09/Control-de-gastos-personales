@@ -103,3 +103,10 @@ export function extractSenderAndText(message: GmailMessage): { from: string; tex
 
   return { from, text }
 }
+
+export function normalizeSenderAddress(fromHeader: string): string | null {
+  const bracketed = fromHeader.match(/<([^<>]+)>/)?.[1]
+  const candidate = (bracketed ?? fromHeader).trim().toLowerCase()
+  if (!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(candidate)) return null
+  return candidate
+}
