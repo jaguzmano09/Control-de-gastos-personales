@@ -1,8 +1,23 @@
 ﻿# Financial glossary and proposed model
 
-Status: Proposed for review under P0.4. This is a product accounting design, not financial advice or a migration. Existing calculation behavior remains unchanged by this document.
+Status: Owner requested an audit of current behavior before deciding whether to preserve it. This proposal is not yet approved. It is a product accounting design, not financial advice or a migration. Existing calculation behavior remains unchanged by this document.
 
 The current code/specification contain ambiguities around savings, transfers, rollover, and estimated yield. P2 must reconcile this proposal with existing personal records before modifying calculations.
+
+## Observed behavior requiring owner review
+
+Read-only source review of `lib/data/dashboard.ts`, `app/(dashboard)/page.tsx`, `lib/actions/transactions.ts`, and `app/api/cron/rollover/route.ts` found the following concrete behavior differences. These are implementation facts; whether each is a product error depends on the intended financial meaning. No calculation or stored personal data was changed during this review.
+
+| Area | Current implementation | Why it needs a decision/reconciliation |
+|---|---|---|
+| Transfers | A `Transferencia` affects the transfer statistic but does not debit/credit the account or wallet balance; transaction input stores one account/wallet and has no linked destination. | It cannot currently represent a balanced internal movement between two tracked locations. |
+| Savings | `Ahorro / ingreso` increases account, wallet, and consolidated balances; `Ahorro / retiro` decreases them and is grouped with category spending. | This treats savings operations as cash inflow/outflow. If they mean earmarking/releasing money already tracked, both effects misstate consolidated cash/spending. |
+| Estimated yield | Calculated yield is added to dashboard account/wallet/consolidated balances and is included when rollover is computed. | A projection is displayed as if it were recorded money unless the product explicitly intends a projected balance. |
+| Rollover | The rollover cron clamps leftover budget with `Math.max(..., 0)`. Dashboard balance then adds rollover amounts to money balances. | Overspending cannot carry a negative remainder, and a budget carryover may be counted as cash even though it is a plan allocation. |
+| Balance period | `getMonthSummary` loads confirmed transactions for the selected month (and only through today for the current month), then calls the result a balance. | A selected-month net is not necessarily a cumulative account balance unless an opening balance/history cutoff is included consistently. |
+| Budget display | Wallet-budget remaining values are clamped at zero in dashboard and budget screens; category movement also mixes savings operations with spending. | The display can hide the amount over budget and may not match the intended treatment of savings. |
+
+These findings are enough to say the current financial model is **not yet demonstrated consistent across views**. They do not establish that the owner's preferred rules are wrong; P2 should first map current behavior against confirmed expectations and preserve compatibility with existing records.
 
 ## Glossary
 
@@ -46,9 +61,9 @@ These are synthetic examples and proposed acceptance cases, not assertions that 
 
 ## Decisions required before P2 changes
 
-1. Adopt savings as allocation/internal movement, or retain another explicitly defined model. Existing Ahorro ingreso/retiro records require interpretation and compatibility mapping; do not blindly reclassify them.
+1. Decide whether savings operations should retain their current inflow/outflow behavior or represent allocation/release of already-recorded money. Existing Ahorro ingreso/retiro records require interpretation and compatibility mapping; do not blindly reclassify them.
 2. Agree on investment scope: contribution tracking only versus tracked investment assets/valuation. Do not invent market value from contributions.
-3. Agree on estimated-yield display and carryover treatment. The recommendation is to separate estimates from recorded cash; current code includes estimates in balances/rollover, so this would change behavior.
+3. Agree on estimated-yield display and carryover treatment. The recommendation is to distinguish projected from recorded cash; current code includes estimates in balances/rollover, so separating them would change behavior.
 4. Define opening-balance storage/effective date and history import cutoff.
 5. Define budget funding/rollover rules across category and wallet views. They describe the same underlying money and must not become independently additive funds.
 6. Confirm decimal storage, rounding stage, and date-boundary rules. COP presentation may use whole pesos while existing amounts retain decimals; preserve precision until a policy is agreed.

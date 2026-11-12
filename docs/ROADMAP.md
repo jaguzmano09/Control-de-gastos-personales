@@ -48,9 +48,9 @@ The administrative boundary is deliberate: an elevated product role does not gra
 | P5. Core experience redesign | Compelling public homepage and complete, accessible desktop/mobile financial workflows | P2, P3, P4 | Draft |
 | P6. Reliable optional features | Safe, measured Gmail/OCR and coherent shopping/yield workflows | P1, P2; P4/P5 patterns | Draft |
 | P7. Public operations | Private product administration, aggregate metrics, user controls, support, recovery, and PWA verification | P1 and implemented release scope | Draft |
-| P8. Limited beta and public expansion | Evidence-based decision to open and expand access | Release gate below | Draft |
+| P8. Controlled public release and expansion | Evidence-based decision to open and expand access | Release gate below | Draft |
 
-P6 may run as separate feature work. Gmail/OCR can remain outside the initial beta if their gates are unmet, provided unavailable functions are clearly withheld and the core product works without them. Existing personal-use data and workflows require an explicit compatibility plan.
+P6 may run as separate feature work. Gmail/OCR can remain unavailable in a public release until their gates are met, with their status clearly explained. Existing personal-use data and workflows require an explicit compatibility plan.
 
 Privacy is a gate in every phase, not work postponed until P7. Homepage and brand discovery can begin alongside P1/P2; final public claims and implementation must match verified product capabilities.
 
@@ -62,12 +62,12 @@ Objective: decide who this is for and what success looks like before fixing the 
 
 - [x] P0.1 — Owner confirmed personal finances in Colombia, COP, and America/Bogota. Evidence: PRODUCT_BRIEF.md decision D01.
 - [x] P0.2 — Owner selected recording and organizing movements as the primary benefit. Evidence: PRODUCT_BRIEF.md decision D02.
-- [ ] P0.3 — Decide the first-beta feature set: essential, optional, deferred. Progress: D03 accepts progressive Gmail/OCR availability; feature-by-feature essential/optional/deferred classifications remain open.
-- [ ] P0.4 — Agree on financial definitions: opening balance, actual balance, budget allocation, available budget, transfer, savings inflow/withdrawal, investment, estimated yield, and paid interest. A draft model proposal exists but has not been owner-approved.
+- [ ] P0.3 — Define public-release scope and readiness. Progress: owner says the product is beyond beta terminology and considers its existing features part of the product, subject to improvement; Gmail/OCR remain progressively available. Readiness gates still need verification.
+- [ ] P0.4 — Agree on financial definitions: opening balance, actual balance, budget allocation, available budget, transfer, savings inflow/withdrawal, investment, estimated yield, and paid interest. Owner asked to see concrete discrepancies before deciding whether to preserve current behavior; source-review findings are recorded in [FINANCIAL_MODEL_PROPOSAL.md](product/FINANCIAL_MODEL_PROPOSAL.md).
 - [ ] P0.5 — Decide what to preserve from the current identity and workflow. Progress: the owner requires a distinctive identity and appealing homepage; name, tone, and detailed brand constraints remain open.
-- [ ] P0.6 — Identify operating constraints: maintenance capacity, support ownership, acceptable provider costs, and whether beta access is invited or open. Progress: this is a solo personal project; the owner confirmed a zero-cost constraint for now, so use free plans/resources only and do not create billable services. Support ownership and beta access model remain open. Monetization remains a separate decision, not an assumed implementation requirement.
-- [ ] P0.7 — Define three connected journeys: a visitor discovering the public homepage, a member managing personal finances, and the owner inspecting product metrics. Progress: homepage attraction, personal finance, and admin metrics are accepted concerns; the connected journeys and next actions are not yet specified.
-- [ ] P0.8 — Record privacy commitments and an initial data inventory: collection purpose, minimum necessary fields, provider access, retention, deletion, and permitted administrative visibility. Progress: the privacy map and threat model exist; provider disclosure/retention, backup expiry, deletion/export, and cohort limits remain unresolved.
+- [ ] P0.6 — Identify operating constraints: maintenance capacity, support ownership, provider costs, and public access. Progress: this is a solo personal project; the owner confirmed a zero-cost constraint for now, so use free plans/resources only and do not create billable services. Support ownership and public access model remain open.
+- [x] P0.7 — Define three connected journeys: a visitor discovering the public homepage, a member managing personal finances, and the owner inspecting product metrics. Owner accepted the proposed journeys and next actions in [PRODUCT_BRIEF.md](product/PRODUCT_BRIEF.md); visual flows and implementation remain in later phases.
+- [ ] P0.8 — Record privacy commitments and an initial data inventory: collection purpose, minimum necessary fields, provider access, retention, deletion, and permitted administrative visibility. Owner confirms no providers are selected yet and agrees a provider policy is needed; define the policy and require review before any integration is adopted.
 
 ### Deliverables and exit criteria
 
@@ -83,12 +83,11 @@ This register preserves the questions that need the owner's judgment. Continue i
 
 | Roadmap item | Owner decision still needed | Follow-up action after the decision |
 |---|---|---|
-| P0.3 | For each feature, choose essential, optional, or deferred for the first beta. Progressive Gmail/OCR enablement is already accepted. | Update the beta scope matrix and implement or withhold each feature accordingly. |
-| P0.4 | Approve or revise the proposed definitions for balances, budgets, transfers, savings, investments, estimated yield, and paid interest. | Finalize the financial glossary, reconcile current calculations, and add coverage for the approved rules. |
+| P0.3 | Agree which existing capabilities are ready for public access and what improvements are release gates; no beta framing or feature removal is implied. Gmail/OCR remain progressive. | Keep all existing features in scope while verifying their individual readiness; communicate availability accurately. |
+| P0.4 | Review the concrete current-behavior discrepancies in FINANCIAL_MODEL_PROPOSAL.md, then decide whether to preserve the current behavior or adopt the proposed rules. | Record each chosen rule, reconcile calculations across views, and preserve compatibility with existing records. |
 | P0.5 | Specify which current identity/workflow elements to preserve, plus naming, tone, and brand constraints for a distinctive public identity. | Develop and review the identity and homepage direction against those constraints. |
-| P0.6 | Zero-cost/free-tier-only operation is confirmed for now. Support/maintenance ownership and invited versus open beta access remain undecided. | Design around free resources; identify any limits before depending on a provider. Decide support and beta access before inviting users. |
-| P0.7 | Approve the key steps and calls to action for visitor, member, and admin journeys. | Turn them into flows, acceptance criteria, and then implementation. |
-| P0.8 | Decide provider disclosure/retention expectations, backup expiry, deletion/export commitments, and minimum cohort size for admin metrics. | Update privacy disclosures and controls, operational retention/deletion processes, and metric aggregation thresholds. |
+| P0.6 | Zero-cost/free-tier-only operation is confirmed for now. Support/maintenance ownership and public access remain undecided. | Design around free resources; identify any limits before depending on a provider. Decide support and public access before opening registration. |
+| P0.8 | No providers are selected. Decide the review required before adoption: data sent, purpose, retention/deletion, region/access, and user disclosure/consent. Backup expiry, export/deletion commitments, and minimum metric cohort also need policy. | Create a provider-review gate and privacy-notice/control requirements before integrating a provider; define retention, deletion, and metric thresholds. |
 | P1.3 | No cost quote or paid project is authorized. First determine whether isolated testing can be done with existing free/local resources without touching production or incurring a charge. | Use only a verified zero-cost isolated option. If none is available, keep P1.3/P1.4 blocked and explain the constraint before requesting any change to the free-only decision. |
 
 The owner is currently an individual project owner and has confirmed free-tier-only operation for now. Do not seek a paid quote or create a billable resource. Investigate a local/free isolated test path first; if the path cannot meet isolation requirements at zero cost, record the limitation and defer those environment-dependent checks until the owner changes this constraint.
@@ -248,7 +247,7 @@ A working private contact route, verified data-control procedures, a successful 
 
 Primary findings: F09, F12, F13. Supporting work: F01, F07, F11.
 
-## P8. Run a limited beta, then decide on expansion
+## P8. Run a controlled public release, then decide on expansion
 
 Objective: replace assumptions about usefulness and reliability with observed evidence.
 
@@ -259,16 +258,16 @@ Objective: replace assumptions about usefulness and reliability with observed ev
 - [ ] P8.3 — Observe first-use completion and whether people can explain their available amount and pending/confirmed distinction.
 - [ ] P8.4 — Track repeat use, correction needs, support causes, integration failures, and operating cost.
 - [ ] P8.5 — Fix discovered blockers and repeat only the affected checks plus required regression checks.
-- [ ] P8.6 — Review the evidence with the owner and record a decision: expand, extend beta, narrow scope, or defer release.
+- [ ] P8.6 — Review the evidence with the owner and record a decision: expand access, continue controlled access, narrow scope, or defer release.
 - [ ] P8.7 — Evaluate homepage comprehension, brand recognition/appeal, onboarding conversion, and return use as separate questions. Inspect the owner's aggregate dashboard for usefulness and privacy before expanding access; distinguish measured results from qualitative feedback.
 
 ### Deliverables and exit criteria
 
-A beta report with real findings, unresolved risks, core-task outcomes, cohort definitions, and agreed next targets. Expansion is an explicit owner decision based on evidence; neither a passing build nor visual approval alone authorizes it.
+A controlled-release report with real findings, unresolved risks, core-task outcomes, cohort definitions, and agreed next targets. Expansion is an explicit owner decision based on evidence; neither a passing build nor visual approval alone authorizes it.
 
 ## Release gate
 
-A limited external beta requires:
+A controlled initial public release requires:
 
 - P0 scope and financial definitions agreed.
 - P1 foundation and isolation evidence complete.

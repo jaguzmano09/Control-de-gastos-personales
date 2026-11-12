@@ -15,6 +15,10 @@ Source: owner feedback, roadmap v2, and repository assessment. This brief does n
 | D06 | Owner retains ordinary account capabilities plus protected product administration | Owner roadmap feedback |
 | D07 | Privacy is a cross-phase priority | Owner roadmap feedback |
 | D08 | Documentation/comments and Git commit messages in English; owner communication in Spanglish | Owner communication and Git feedback |
+| D09 | Do not describe the current product as a beta; its existing capabilities are considered part of the product and remain subject to continuous improvement | Owner feedback on P0.3 |
+| D10 | The homepage, member, and admin journeys are accepted as proposed in this brief | Owner feedback on P0.7 |
+| D11 | No external providers are currently selected; provider integrations need a privacy and operations policy before adoption | Owner feedback on P0.8 |
+| D12 | Operate with free resources only for now; no paid provider or infrastructure is authorized | Owner feedback |
 
 ## Product definition
 
@@ -36,9 +40,9 @@ A public promise can describe that outcome only once the journey is implemented 
 
 Returning members should reach sign-in and recording quickly. Public acquisition content should not obstruct their routine work. The homepage concept and route layout will be designed in P4/P5, not silently changed here.
 
-## First-beta scope proposal
+## Current product scope and public-readiness proposal
 
-Only progressive integration availability is owner-confirmed; the remaining classifications below are proposals for review.
+The owner does not consider the current product a beta and considers its existing capabilities part of the product, subject to improvement. This does not waive quality, security, privacy, or correctness gates for public access. Gmail and OCR availability remains progressive, as confirmed in D03. The table below is an implementation/readiness inventory, not a proposal to remove or silently defer existing features.
 
 | Capability | Proposed classification | Delivery gate |
 |---|---|---|
@@ -48,16 +52,16 @@ Only progressive integration availability is owner-confirmed; the remaining clas
 | Manual income/expense recording | Essential | Complete validation, clear result, correction path, no duplicate submissions |
 | History, filtering, editing | Essential | Records remain discoverable beyond the current 300-row cap |
 | Accurate balances and state explanations | Essential | P2 agreement across views; estimates distinguished from recorded money |
-| Budget assignment | Supporting core | A usable amount editor and precise budget terminology; never required before first recording |
+| Budget assignment | Existing core capability | A usable amount editor and precise budget terminology; never required before first recording |
 | Review queue and categorization | Required when assisted capture is enabled | Unconfirmed imports do not affect calculations; corrections are recoverable |
-| Transfers, savings, investments | Existing capability under financial-model review | P2 semantics and compatibility before public exposure or changes |
+| Transfers, savings, investments | Existing capabilities; semantics under financial-model review | P2 correctness and compatibility before changing calculations |
 | Gmail/OCR | Progressive, owner-confirmed | Feature-specific correctness, privacy, recovery, and resource gates |
-| Shopping and price memory | Advanced, proposed later introduction | Existing personal records preserved; purchase handoff remains correct |
-| Yield estimation | Advanced, proposed later introduction | Assumptions/limits explicit; no invented actual interest |
+| Shopping and price memory | Existing capability subject to improvement | Existing personal records preserved; purchase handoff remains correct |
+| Yield estimation | Existing capability subject to improvement | Assumptions/limits explicit; separate estimates from recorded cash if that rule is approved |
 | Owner metrics area | Essential administration | Trusted role provisioning and aggregate visibility; never a financial-data browser |
 | Billing, shared households, teams, multiple currencies | Deferred pending a product decision | No implementation implied by this brief |
 
-This is a release-availability proposal, not permission to delete features or data from the current personal workspace.
+This is a release-readiness inventory, not permission to delete features or data from the current personal workspace.
 
 ## Experience and identity requirements
 
@@ -71,9 +75,9 @@ Avoid moral judgment about spending, fabricated social proof, unsupported bank s
 
 ## Operating assumptions and open decisions
 
-Proposed working approach: invitation-based beta, existing infrastructure, optional providers gated independently, and no payment integration in the first implementation block.
+Proposed working approach: controlled public access, existing infrastructure, optional providers gated independently, and no payment integration in the first implementation block.
 
-Still open: beta cohort/access policy, acceptable provider spend, support capacity/contact, exact retention schedules, final brand constraints, and financial-model choices identified in FINANCIAL_MODEL_PROPOSAL.md. Do not substitute arbitrary dates, budgets, or commercial targets for these decisions.
+Still open: public access policy, support capacity/contact, exact retention schedules, final brand constraints, and financial-model choices identified in FINANCIAL_MODEL_PROPOSAL.md. The owner confirmed free-resource-only operation for now. Do not substitute arbitrary dates, budgets, or commercial targets for these decisions.
 
 ## P0 task evidence
 
@@ -81,11 +85,11 @@ Still open: beta cohort/access policy, acceptable provider spend, support capaci
 |---|---|---|
 | P0.1 | Confirmed | D01 |
 | P0.2 | Confirmed | D02 |
-| P0.3 | In review | D03 plus scope table; full classifications need review |
-| P0.4 | In review | FINANCIAL_MODEL_PROPOSAL.md |
+| P0.3 | Partially confirmed | D03, D09, and current scope table; feature-specific public-readiness gates remain |
+| P0.4 | Audit requested | Owner prefers current behavior if correct and asked for concrete errors; see FINANCIAL_MODEL_PROPOSAL.md findings |
 | P0.5 | In review | Identity requirements above; final constraints/name unconfirmed |
 | P0.6 | In review | Operating assumptions above; budget/capacity not invented |
-| P0.7 | Ready for review | Three journey definitions above |
-| P0.8 | Ready for review | PRIVACY_DATA_MAP.md and explicit admin boundary |
+| P0.7 | Confirmed | D10 and three journey definitions above |
+| P0.8 | Principle confirmed; policy pending | D11 and PRIVACY_DATA_MAP.md; no provider currently selected, policy required before adoption |
 
 P0 is in review, not complete. D01–D08 do not approve all proposals by association.
