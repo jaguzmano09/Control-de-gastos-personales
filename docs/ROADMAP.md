@@ -63,7 +63,7 @@ Objective: decide who this is for and what success looks like before fixing the 
 - [x] P0.1 — Owner confirmed personal finances in Colombia, COP, and America/Bogota. Evidence: PRODUCT_BRIEF.md decision D01.
 - [x] P0.2 — Owner selected recording and organizing movements as the primary benefit. Evidence: PRODUCT_BRIEF.md decision D02.
 - [ ] P0.3 — Define public-release scope and readiness. Progress: owner says the product is beyond beta terminology and considers its existing features part of the product, subject to improvement; Gmail/OCR remain progressively available. Readiness gates still need verification.
-- [ ] P0.4 — Agree on financial definitions: opening balance, actual balance, budget allocation, available budget, transfer, savings inflow/withdrawal, investment, estimated yield, and paid interest. Owner asked to see concrete discrepancies before deciding whether to preserve current behavior; source-review findings are recorded in [FINANCIAL_MODEL_PROPOSAL.md](product/FINANCIAL_MODEL_PROPOSAL.md).
+- [ ] P0.4 — Agree on financial definitions: opening balance, actual balance, budget allocation, available budget, transfer, savings, estimated yield, and paid interest. Progress: owner confirmed transfer, piggy-bank savings, EA growth, positive budget rollover, monthly-view, and overspend semantics (D13–D15). Opening balance/history cutoff, savings-goal representation, provider-specific yield terms, and rounding remain to specify. Concrete current mismatches are recorded in [FINANCIAL_MODEL_PROPOSAL.md](product/FINANCIAL_MODEL_PROPOSAL.md).
 - [ ] P0.5 — Decide what to preserve from the current identity and workflow. Progress: the owner requires a distinctive identity and appealing homepage; name, tone, and detailed brand constraints remain open.
 - [ ] P0.6 — Identify operating constraints: maintenance capacity, support ownership, provider costs, and public access. Progress: this is a solo personal project; the owner confirmed a zero-cost constraint for now, so use free plans/resources only and do not create billable services. Support ownership and public access model remain open.
 - [x] P0.7 — Define three connected journeys: a visitor discovering the public homepage, a member managing personal finances, and the owner inspecting product metrics. Owner accepted the proposed journeys and next actions in [PRODUCT_BRIEF.md](product/PRODUCT_BRIEF.md); visual flows and implementation remain in later phases.
@@ -84,7 +84,7 @@ This register preserves the questions that need the owner's judgment. Continue i
 | Roadmap item | Owner decision still needed | Follow-up action after the decision |
 |---|---|---|
 | P0.3 | Agree which existing capabilities are ready for public access and what improvements are release gates; no beta framing or feature removal is implied. Gmail/OCR remain progressive. | Keep all existing features in scope while verifying their individual readiness; communicate availability accurately. |
-| P0.4 | Review the concrete current-behavior discrepancies in FINANCIAL_MODEL_PROPOSAL.md, then decide whether to preserve the current behavior or adopt the proposed rules. | Record each chosen rule, reconcile calculations across views, and preserve compatibility with existing records. |
+| P0.4 | Core behavior is now confirmed in D13–D15. Review the proposed wallet-based piggy-bank representation; exact opening-balance/history cutoff, provider-specific yield posting/day-count, rounding, and treatment of an overspend in the next month's budget still need definition. | Finalize those details in the financial glossary, then reconcile calculations across views and preserve compatibility with existing records. |
 | P0.5 | Specify which current identity/workflow elements to preserve, plus naming, tone, and brand constraints for a distinctive public identity. | Develop and review the identity and homepage direction against those constraints. |
 | P0.6 | Zero-cost/free-tier-only operation is confirmed for now. Support/maintenance ownership and public access remain undecided. | Design around free resources; identify any limits before depending on a provider. Decide support and public access before opening registration. |
 | P0.8 | No providers are selected. Decide the review required before adoption: data sent, purpose, retention/deletion, region/access, and user disclosure/consent. Backup expiry, export/deletion commitments, and minimum metric cohort also need policy. | Create a provider-review gate and privacy-notice/control requirements before integrating a provider; define retention, deletion, and metric thresholds. |
@@ -121,12 +121,12 @@ Objective: make every displayed amount follow the same agreed rules.
 
 ### Tasks
 
-- [ ] P2.1 — Translate the P0 glossary into a table of effects for each transaction type, state, and savings operation. Define rounding and date boundaries.
-- [ ] P2.2 — Implement transfer source/destination or explicitly linked counterpart semantics, with atomic persistence and retry safety.
-- [ ] P2.3 — Reconcile savings, opening balances, investments, estimated yield, and actual interest without unintended duplicate money.
-- [ ] P2.4 — Correct the rollover yield query so account selection and null-wallet selection are conjunctive.
-- [ ] P2.5 — Make rollover assignment transactional and retry-safe; derive totals from assignments, support multiple sources, and define reassignment/recalculation behavior.
-- [ ] P2.6 — Consolidate shared financial rules across overview, budgets, yield, and month closing. Keep estimated and recorded values distinguishable.
+- [ ] P2.1 — Translate the P0 glossary into a table of effects for each transaction type, state, transfer, savings operation, yield, and budget rollover. Progress: owner-confirmed semantics and source-review gaps are recorded in [FINANCIAL_MODEL_PROPOSAL.md](product/FINANCIAL_MODEL_PROPOSAL.md); still define opening-balance/history cutoff, goal representation, provider-specific yield day-count/posting rules, rounding, and overspend recovery.
+- [ ] P2.2 — Implement source/destination transfers between owned accounts/pockets; both sides update as one internal movement, with atomic persistence and retry safety.
+- [ ] P2.3 — Implement purpose-based savings allocation/release as movement of existing money; reconcile legacy savings rows without treating them as new income/spending.
+- [ ] P2.4 — Calculate configured EA yield from the actual account/pocket principal with daily compounding and product-specific terms; keep estimates distinct from posted interest. Correct account/pocket query scoping.
+- [ ] P2.5 — Make positive budget rollover an assignment of prior unspent plan to a target, not cash; make assignment transactional/retry-safe and show exact overspend rather than clamping to zero.
+- [ ] P2.6 — Consolidate shared financial rules across overview, budgets, yield, and month closing. Label selected-period net separately from cumulative/current balances.
 - [ ] P2.7 — Guarantee complete aggregation at supported volumes; avoid silently calculating from capped result sets.
 - [ ] P2.8 — Prepare a compatibility/reconciliation plan for existing personal records before changing accounting semantics.
 

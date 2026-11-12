@@ -19,6 +19,9 @@ Source: owner feedback, roadmap v2, and repository assessment. This brief does n
 | D10 | The homepage, member, and admin journeys are accepted as proposed in this brief | Owner feedback on P0.7 |
 | D11 | No external providers are currently selected; provider integrations need a privacy and operations policy before adoption | Owner feedback on P0.8 |
 | D12 | Operate with free resources only for now; no paid provider or infrastructure is authorized | Owner feedback |
+| D13 | Transfers move money between tracked accounts; savings contributions/withdrawals move existing money into/out of a purpose-based piggy bank; neither creates income or spending | Owner's COP 20,000/COP 15,000 transfer example and savings explanation |
+| D14 | EA yield grows daily on the configured account/pocket; prior-month positive budget remainder is assigned to a budget and is not extra cash; monthly activity must be distinguished from current balance | Owner's yield, rollover, and monthly-view clarification |
+| D15 | Budgets remain fixed plans; show exact negative remaining amount when overspent and make it reviewable instead of clamping to zero | Owner accepted displaying the negative and reviewing alternatives |
 
 ## Product definition
 
@@ -86,7 +89,7 @@ Still open: public access policy, support capacity/contact, exact retention sche
 | P0.1 | Confirmed | D01 |
 | P0.2 | Confirmed | D02 |
 | P0.3 | Partially confirmed | D03, D09, and current scope table; feature-specific public-readiness gates remain |
-| P0.4 | Audit requested | Owner prefers current behavior if correct and asked for concrete errors; see FINANCIAL_MODEL_PROPOSAL.md findings |
+| P0.4 | Partially confirmed | D13–D15 establish transfer, savings, yield, rollover, and overspend semantics; opening balance/history cutoff, savings-goal representation, product-specific yield terms, and rounding remain to specify. See FINANCIAL_MODEL_PROPOSAL.md. |
 | P0.5 | In review | Identity requirements above; final constraints/name unconfirmed |
 | P0.6 | In review | Operating assumptions above; budget/capacity not invented |
 | P0.7 | Confirmed | D10 and three journey definitions above |
