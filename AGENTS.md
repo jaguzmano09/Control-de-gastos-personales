@@ -45,4 +45,4 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-Lint still needs configuration: it opened an interactive setup prompt during this review; do not report it as passing. Do not run build and dev simultaneously against `.next`. Financial changes need meaningful transfer, rollover, concurrency, and isolation cases in addition to existing yield tests.
+Lint is now configured and runs noninteractively; it currently reports six warnings. The CI workflow is awaiting its first remote run. Do not run build and dev simultaneously against `.next`. Financial changes need meaningful transfer, rollover, concurrency, and isolation cases in addition to existing yield tests.

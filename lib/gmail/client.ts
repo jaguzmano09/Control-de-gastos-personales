@@ -3,6 +3,17 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me'
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
+interface GmailMessagePart {
+  mimeType?: string
+  body?: { data?: string }
+  parts?: GmailMessagePart[]
+  headers?: { name: string; value: string }[]
+}
+
+interface GmailMessage {
+  payload?: GmailMessagePart
+}
+
 export function buildGoogleAuthUrl(state: string) {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_OAUTH_CLIENT_ID!,
@@ -10,7 +21,7 @@ export function buildGoogleAuthUrl(state: string) {
     response_type: 'code',
     scope: SCOPES.join(' '),
     access_type: 'offline',
-    prompt: 'consent', // fuerza a que Google mande refresh_token siempre
+    prompt: 'consent', // Request a refresh token when the user authorizes the connection.
     state,
   })
   return `${GOOGLE_OAUTH_URL}?${params.toString()}`
@@ -69,11 +80,11 @@ export async function getMessage(accessToken: string, messageId: string) {
   return res.json()
 }
 
-export function extractSenderAndText(message: any): { from: string; text: string } {
+export function extractSenderAndText(message: GmailMessage): { from: string; text: string } {
   const headers = message.payload?.headers ?? []
-  const from = headers.find((h: any) => h.name === 'From')?.value ?? ''
+  const from = headers.find((header) => header.name === 'From')?.value ?? ''
 
-  function findPlainText(parts: any[]): string {
+  function findPlainText(parts: GmailMessagePart[]): string {
     for (const part of parts ?? []) {
       if (part.mimeType === 'text/plain' && part.body?.data) {
         return Buffer.from(part.body.data, 'base64url').toString('utf-8')

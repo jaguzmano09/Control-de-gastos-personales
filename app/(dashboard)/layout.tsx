@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarMenu } from '@/components/SidebarMenu'
 
@@ -18,9 +19,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <p className="eyebrow">Control financiero personal</p>
             <p className="mt-1 text-xs text-ledger-muted">Registra y revisa cada movimiento con claridad.</p>
           </div>
-          <a href="/" className="btn btn-secondary btn-sm hidden shrink-0 sm:inline-flex">
+          <Link href="/" className="btn btn-secondary btn-sm hidden shrink-0 sm:inline-flex">
             Resumen
-          </a>
+          </Link>
         </div>
         {children}
       </main>

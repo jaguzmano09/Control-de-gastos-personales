@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 interface Category {
   id: string
@@ -160,7 +161,7 @@ export default async function TransaccionesPage({
           <p className="mt-2 max-w-xl text-sm text-white/75">Consulta, filtra y administra todos tus movimientos desde un solo lugar.</p>
         </div>
         <div className="mt-6 sm:absolute sm:right-8 sm:top-8 sm:mt-0">
-          <a href="/transacciones/nueva" className="btn border border-white/20 bg-white text-ledger-green shadow-lg hover:bg-white/90">Nueva transacción</a>
+          <Link href="/transacciones/nueva" className="btn border border-white/20 bg-white text-ledger-green shadow-lg hover:bg-white/90">Nueva transacción</Link>
         </div>
       </header>
 
@@ -282,12 +283,12 @@ export default async function TransaccionesPage({
           Filtrar
         </button>
 
-        <a
+        <Link
           href="/transacciones"
           className="btn btn-secondary"
         >
           Limpiar
-        </a>
+        </Link>
       </form>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-ledger-line bg-white shadow-[0_10px_28px_rgba(20,37,29,0.05)]">

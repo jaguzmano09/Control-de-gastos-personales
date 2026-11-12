@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from '@/src/types/database.types'
@@ -14,14 +14,14 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options as never)
             })
           } catch {
-            // Los Server Components no siempre pueden modificar cookies.
-            // El middleware se encarga de refrescar la sesión.
+            // Server Components cannot always modify cookies.
+            // Middleware handles session refresh when that happens.
           }
         },
       },

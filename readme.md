@@ -570,15 +570,25 @@ Runs the TypeScript compiler without generating output.
 npm run lint
 ```
 
-Lint currently opens Next.js's interactive ESLint setup prompt; it is not yet a
-configured noninteractive check. Track its completion under roadmap task P1.6.
+Lint uses the checked-in Next.js/TypeScript ESLint configuration and runs without
+interactive setup. Existing warnings are reported but do not fail the check.
+
+### Unit tests and CI
+
+```bash
+npm run test:unit
+```
+
+The GitHub Actions workflow runs lint, typecheck, unit tests, the production build,
+and foundation HTTP checks with placeholder public Supabase values. It does not
+receive production credentials or execute authorized cron jobs.
 
 ### Foundation HTTP verification
 
 After a successful production build, run:
 
 ```bash
-node scripts/verify-foundation.cjs
+npm run verify:foundation
 ```
 
 The script starts and stops two local production servers on temporary ports. It
@@ -594,8 +604,6 @@ installation, authenticated flows, and production configuration need separate ch
 For product scope and current progress, see [the roadmap](docs/ROADMAP.md),
 [the P0 product brief](docs/product/PRODUCT_BRIEF.md), and
 [the first foundation delivery](docs/implementation/FOUNDATION_PROGRESS.md).
-
-Runs the project's linting process.
 
 ---
 

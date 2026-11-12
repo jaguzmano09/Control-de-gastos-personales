@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary, getPendingReviewCount } from '@/lib/data/dashboard'
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 
 function firstDayOfMonth(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
@@ -201,7 +202,7 @@ export default async function DashboardHomePage({
               <input type="month" name="period" defaultValue={selectedPeriod} className={`${inputClass} mt-1 w-full`} />
             </div>
             <button type="submit" className="btn btn-primary">Filtrar</button>
-            <a href="/" className="btn btn-secondary">Actual</a>
+            <Link href="/" className="btn btn-secondary">Actual</Link>
           </form>
         </div>
       </header>

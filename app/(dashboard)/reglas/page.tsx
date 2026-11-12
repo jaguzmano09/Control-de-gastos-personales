@@ -50,7 +50,7 @@ export default async function ReglasPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-ledger-text">
-                  "{rule.pattern}" ({rule.match_type}) → <span className="text-ledger-green">{rule.categories?.name}</span>
+                  &ldquo;{rule.pattern}&rdquo; ({rule.match_type}) → <span className="text-ledger-green">{rule.categories?.name}</span>
                 </p>
                 <p className="mt-1 text-xs text-ledger-muted">
                   {rule.source === 'auto_learned' ? 'Aprendida automáticamente' : 'Manual'} · usada {rule.times_used} {rule.times_used === 1 ? 'vez' : 'veces'}
