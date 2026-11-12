@@ -2,15 +2,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { refreshAccessToken, listHistory, getMessage, extractSenderAndText, normalizeSenderAddress } from '@/lib/gmail/client'
 import { extractTransactionFromText } from '@/lib/gemini/client'
+import { hasValidCronAuthorization } from '@/lib/security/cron-auth'
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) {
-    return NextResponse.json({ error: 'CRON_SECRET no configurado' }, { status: 500 })
+    return NextResponse.json({ error: 'Cron authentication unavailable' }, { status: 503 })
   }
 
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!hasValidCronAuthorization(request.headers.get('authorization'), cronSecret)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     .select('user_id, refresh_token, gmail_history_id')
     .eq('is_active', true)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 
   const summary: Array<{ created: number; failed: boolean }> = []
 

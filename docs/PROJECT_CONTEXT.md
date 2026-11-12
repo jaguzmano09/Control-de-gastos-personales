@@ -18,6 +18,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 - React 18.3, strict TypeScript, Tailwind 3.4.
 - Supabase Auth/Postgres/RLS with JS and SSR SDKs. Browser, session server, and service-role clients use generated `Database` types. `@supabase/ssr` is pinned to 0.12.7 after 0.5.2 caused `never`-typed query results against the current SDK. Middleware remains untyped because it uses Auth and consent queries only; type inference through this middleware adapter produced query-builder errors with the generated database definition.
 - The CI workflow has passed all checks on the typed-client commit. Scoped npm overrides now address the reviewed development-tool advisories; `npm audit` reports zero vulnerabilities. `next lint` still warns that the command is deprecated and needs migration before Next.js 16.
+- Both privileged cron routes fail closed if `CRON_SECRET` is missing and compare bearer credentials with a timing-safe helper. Their error responses no longer return database details; rollover responses expose aggregate counts rather than private account IDs or financial amounts. Gmail OAuth logs contain no raw provider or database errors.
 - Vercel: rollover cron on day 1 at 05:00 UTC; Gmail daily at 06:00 UTC.
 - Gemini extraction through REST; Tesseract.js shared worker/queue; Sharp preprocessing; optional PaddleOCR service.
 - PWA manifest, icons, service worker, and offline page. This does not provide offline financial editing: the worker only implements a navigation fallback.

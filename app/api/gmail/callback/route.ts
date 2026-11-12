@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
     if (error) throw error
 
     return clearStateCookie(NextResponse.redirect(new URL('/correo?connected=true', request.url)))
-  } catch (err) {
-    console.error('Error conectando Gmail', err)
+  } catch {
+    console.error('Gmail OAuth callback failed')
     return clearStateCookie(
       NextResponse.redirect(new URL('/correo?error=No+se+pudo+conectar+Gmail', request.url))
     )

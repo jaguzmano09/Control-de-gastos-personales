@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { calculateDailyYield } from '@/lib/yield-calculation'
+import { hasValidCronAuthorization } from '@/lib/security/cron-auth'
+
+const internalErrorResponse = () => NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 
 function currentMonthStart() {
   const now = new Date()
@@ -17,11 +20,10 @@ function previousMonthOf(dateStr: string) {
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) {
-    return NextResponse.json({ error: 'CRON_SECRET no configurado' }, { status: 500 })
+    return NextResponse.json({ error: 'Cron authentication unavailable' }, { status: 503 })
   }
 
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!hasValidCronAuthorization(request.headers.get('authorization'), cronSecret)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
@@ -49,13 +51,13 @@ export async function GET(request: NextRequest) {
   ])
 
   if (budgetsError) {
-    return NextResponse.json({ error: budgetsError.message }, { status: 500 })
+    return internalErrorResponse()
   }
   if (accountsError) {
-    return NextResponse.json({ error: accountsError.message }, { status: 500 })
+    return internalErrorResponse()
   }
   if (walletsError) {
-    return NextResponse.json({ error: walletsError.message }, { status: 500 })
+    return internalErrorResponse()
   }
 
   type RolloverBudget = {
@@ -95,7 +97,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (createBudgetError) {
-      return NextResponse.json({ error: createBudgetError.message }, { status: 500 })
+      return internalErrorResponse()
     }
     previousBudgets.push(createdBudget as RolloverBudget)
     existingBudgetKeys.add(key)
@@ -125,7 +127,7 @@ export async function GET(request: NextRequest) {
 
     const { data: spentRows, error: spentError } = await spentQuery
     if (spentError) {
-      return NextResponse.json({ error: spentError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
     const spent = (spentRows ?? [])
@@ -142,7 +144,7 @@ export async function GET(request: NextRequest) {
       .match(budget.wallet_id ? { wallet_id: budget.wallet_id } : { account_id: budget.account_id })
       .maybeSingle()
     if (yieldConfigError) {
-      return NextResponse.json({ error: yieldConfigError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
     let yieldAmount = 0
@@ -153,7 +155,7 @@ export async function GET(request: NextRequest) {
         .eq('config_id', yieldConfig.id)
         .order('valid_from')
       if (yieldRatesError) {
-        return NextResponse.json({ error: yieldRatesError.message }, { status: 500 })
+        return internalErrorResponse()
       }
 
       let yieldTransactionsQuery = supabase
@@ -168,7 +170,7 @@ export async function GET(request: NextRequest) {
         : yieldTransactionsQuery.eq('account_id', budget.account_id!).is('wallet_id', null)
       const { data: yieldTransactions, error: yieldTransactionsError } = await yieldTransactionsQuery
       if (yieldTransactionsError) {
-        return NextResponse.json({ error: yieldTransactionsError.message }, { status: 500 })
+        return internalErrorResponse()
       }
 
       yieldAmount = calculateDailyYield({
@@ -204,7 +206,7 @@ export async function GET(request: NextRequest) {
       .in('category_id', categoryIdsInSpent.length > 0 ? categoryIdsInSpent : ['00000000-0000-0000-0000-000000000000'])
 
     if (categoryBudgetsError) {
-      return NextResponse.json({ error: categoryBudgetsError.message }, { status: 500 })
+      return internalErrorResponse()
     }
     const matchingCategoryIds = Array.from(new Set((previousCategoryBudgets ?? []).map((row) => row.category_id)))
     const categoryId = matchingCategoryIds.length === 1 ? matchingCategoryIds[0] : null
@@ -221,7 +223,7 @@ export async function GET(request: NextRequest) {
 
     const { data: existingCurrent, error: currentError } = await currentQuery.maybeSingle()
     if (currentError) {
-      return NextResponse.json({ error: currentError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
     const budgetQuery = existingCurrent
@@ -237,7 +239,7 @@ export async function GET(request: NextRequest) {
 
     const { error: budgetError } = await budgetQuery
     if (budgetError) {
-      return NextResponse.json({ error: budgetError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
     if (leftover > 0) {
@@ -256,7 +258,7 @@ export async function GET(request: NextRequest) {
         }, { onConflict: 'source_budget_id,target_period_month' })
 
       if (reviewError) {
-        return NextResponse.json({ error: reviewError.message }, { status: 500 })
+        return internalErrorResponse()
       }
       if (categoryId) {
         const key = `${budget.user_id}:${categoryId}`
@@ -271,7 +273,7 @@ export async function GET(request: NextRequest) {
         .eq('status', 'pending')
 
       if (zeroReviewError) {
-        return NextResponse.json({ error: zeroReviewError.message }, { status: 500 })
+        return internalErrorResponse()
       }
     }
 
@@ -297,7 +299,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle()
 
     if (currentCategoryError) {
-      return NextResponse.json({ error: currentCategoryError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
     const categoryBudgetQuery = currentCategoryBudget
@@ -316,7 +318,7 @@ export async function GET(request: NextRequest) {
 
     const { error: categoryBudgetError } = await categoryBudgetQuery
     if (categoryBudgetError) {
-      return NextResponse.json({ error: categoryBudgetError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
   }
@@ -329,7 +331,7 @@ export async function GET(request: NextRequest) {
       .in('id', categoryIds)
 
     if (categoriesError) {
-      return NextResponse.json({ error: categoriesError.message }, { status: 500 })
+      return internalErrorResponse()
     }
 
     const categoryNames = new Map((categories ?? []).map((category) => [category.id, category.name]))
@@ -338,5 +340,11 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, month: currentMonth, processed: results.length, results })
+  return NextResponse.json({
+    ok: true,
+    month: currentMonth,
+    processed: results.length,
+    categories_assigned: results.filter((result) => result.category_status === 'assigned').length,
+    manual_selection_required: results.filter((result) => result.category_status === 'manual_selection_required').length,
+  })
 }
