@@ -570,6 +570,31 @@ Runs the TypeScript compiler without generating output.
 npm run lint
 ```
 
+Lint currently opens Next.js's interactive ESLint setup prompt; it is not yet a
+configured noninteractive check. Track its completion under roadmap task P1.6.
+
+### Foundation HTTP verification
+
+After a successful production build, run:
+
+```bash
+node scripts/verify-foundation.cjs
+```
+
+The script starts and stops two local production servers on temporary ports. It
+checks public PWA assets, protected routes, and rejected cron requests with missing
+or invalid configuration. It never sends an authorized cron request and supplies
+no service-role write key. Evidence is saved to
+`docs/implementation/foundation-verification.json`.
+
+Public installation assets remain available without a session. Gmail sync rejects
+a missing `CRON_SECRET` before creating a privileged database client. Full offline
+installation, authenticated flows, and production configuration need separate checks.
+
+For product scope and current progress, see [the roadmap](docs/ROADMAP.md),
+[the P0 product brief](docs/product/PRODUCT_BRIEF.md), and
+[the first foundation delivery](docs/implementation/FOUNDATION_PROGRESS.md).
+
 Runs the project's linting process.
 
 ---

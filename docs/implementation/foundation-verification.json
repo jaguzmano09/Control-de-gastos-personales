@@ -1,0 +1,83 @@
+{
+  "scope": "Local production build; public assets and rejected requests only; no authorized jobs or data writes",
+  "checkedAt": "2026-11-12T00:24:04.504Z",
+  "serverCleanup": "Both owned verification servers exited",
+  "checks": [
+    {
+      "check": "GET /manifest.webmanifest",
+      "status": "passed"
+    },
+    {
+      "check": "HEAD /manifest.webmanifest",
+      "status": "passed"
+    },
+    {
+      "check": "GET /sw.js",
+      "status": "passed"
+    },
+    {
+      "check": "HEAD /sw.js",
+      "status": "passed"
+    },
+    {
+      "check": "GET /offline.html",
+      "status": "passed"
+    },
+    {
+      "check": "HEAD /offline.html",
+      "status": "passed"
+    },
+    {
+      "check": "Unauthenticated protection: /transacciones",
+      "status": "passed"
+    },
+    {
+      "check": "Unauthenticated protection: /admin",
+      "status": "passed"
+    },
+    {
+      "check": "Unauthenticated protection: /sw.js/private",
+      "status": "passed"
+    },
+    {
+      "check": "Missing-secret rejection: /api/gmail/sync",
+      "status": "passed"
+    },
+    {
+      "check": "Missing-secret rejection: /api/gmail/sync",
+      "status": "passed"
+    },
+    {
+      "check": "Missing-secret rejection: /api/cron/rollover",
+      "status": "passed"
+    },
+    {
+      "check": "Missing-secret rejection: /api/cron/rollover",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid-authorization rejection: /api/gmail/sync",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid-authorization rejection: /api/gmail/sync",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid-authorization rejection: /api/gmail/sync",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid-authorization rejection: /api/cron/rollover",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid-authorization rejection: /api/cron/rollover",
+      "status": "passed"
+    },
+    {
+      "check": "Invalid-authorization rejection: /api/cron/rollover",
+      "status": "passed"
+    }
+  ]
+}

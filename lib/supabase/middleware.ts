@@ -4,8 +4,14 @@ import { NextResponse, type NextRequest } from "next/server"
 type CookieToSet = { name: string; value: string; options?: Parameters<typeof NextResponse.next>[0] }
 
 const PUBLIC_PATHS = new Set(['/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
+const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html'])
 
 export async function updateSession(request: NextRequest) {
+  // Public installation assets must remain available without a session or database access.
+  if (PUBLIC_ASSET_PATHS.has(request.nextUrl.pathname)) {
+    return NextResponse.next({ request })
+  }
+
   let response = NextResponse.next({ request })
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

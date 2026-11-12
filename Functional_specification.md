@@ -15,7 +15,7 @@ multiple users in the future.
 
 Current stack:
 
-- Next.js 14 with App Router, React 18, and TypeScript.
+- Next.js 15 with App Router, React 18, and TypeScript.
 - Tailwind CSS for the interface.
 - Supabase PostgreSQL, Auth, and Row Level Security (RLS).
 - Vercel for deployment and scheduled tasks.
@@ -205,6 +205,11 @@ pendiente_revision or duplicado
 
 The scheduled `/api/gmail/sync` task runs daily through Vercel.
 
+Both scheduled endpoints must reject missing `CRON_SECRET` configuration before
+creating a privileged database client or executing work. Missing configuration
+returns 500; a missing or incorrect authorization header with configured secret
+returns 401. Rejection-path verification never sends an authorized job request.
+
 ---
 
 ## 7. Budgets and rollover
@@ -332,6 +337,16 @@ Mandatory rules:
 - Add migrations for schema changes; do not edit production data from a page.
 - Verify RLS policies and cross-ownership checks when relating accounts,
   wallets, lists, budgets, and transactions.
+
+The public static assets `/manifest.webmanifest`, `/sw.js`, and `/offline.html`
+must be available without a session and without querying authentication or document
+acceptance. This exact allowlist does not make other paths public, including
+paths beneath an asset-like prefix. Financial routes retain session protection.
+
+The P0 product brief and financial glossary under `docs/product/` distinguish
+owner-confirmed scope from proposed future financial semantics. Those proposals
+do not supersede implemented business rules until their compatibility and
+validation work is explicitly completed.
 
 ### 10.1 Public beta, consent, and administration
 
