@@ -215,9 +215,9 @@ export default async function CuentasPage({
             Nombre de la cuenta
             <input name="name" required className={inputClass} placeholder="Ej. Banco principal" />
           </label>
-          <label className="text-xs font-medium text-ledger-muted">Categoría (solo si no tendrá bolsillos)
+          <label className="text-xs font-medium text-ledger-muted">Categoría (opcional, solo si no tendrá bolsillos)
             <select name="category_id" className={inputClass}>
-              <option value="">Selecciona una categoría si aplica</option>
+              <option value="">Asignar ahora o con el primer ingreso/transferencia</option>
               {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           </label>

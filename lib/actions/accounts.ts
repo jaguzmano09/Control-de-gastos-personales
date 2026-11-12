@@ -12,9 +12,9 @@ export async function createAccount(formData: FormData) {
   const name = (formData.get('name') as string)?.trim()
   const category_id = (formData.get('category_id') as string)?.trim()
   const has_wallets = formData.get('has_wallets') === 'true'
-  if (!name || (!has_wallets && !category_id)) throw new Error('El nombre y la categoría son obligatorios para una cuenta sin bolsillos')
+  if (!name) throw new Error('El nombre de la cuenta es obligatorio')
 
-  const { error } = await supabase.from('accounts').insert({ user_id: user.id, name, category_id: has_wallets ? null : category_id, has_wallets })
+  const { error } = await supabase.from('accounts').insert({ user_id: user.id, name, category_id: has_wallets ? null : category_id || null, has_wallets })
   if (error) throw error
 
   revalidatePath('/cuentas')
