@@ -23,28 +23,38 @@ export async function updateSession(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  function redirectWithCookies(path: string) {
+    const redirectResponse = NextResponse.redirect(new URL(path, request.url))
+    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
+    return redirectResponse
+  }
+
   const isPublicPath = PUBLIC_PATHS.has(request.nextUrl.pathname)
 
   if (!user && !isPublicPath && !request.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return redirectWithCookies('/login')
   }
 
   if (user && request.nextUrl.pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url))
+    return redirectWithCookies('/')
   }
 
   // Terms and privacy acceptance is versioned in the database. Existing users
   // are guided through renewal before entering protected product routes.
   if (user && !isPublicPath && !request.nextUrl.pathname.startsWith('/api/') && request.nextUrl.pathname !== '/consentimiento') {
-    const [{ data: activeDocuments }, { data: acceptances }] = await Promise.all([
-      supabase.from('document_versions').select('id').eq('is_active', true),
+    const [{ data: activeDocuments, error: documentsError }, { data: acceptances, error: acceptancesError }] = await Promise.all([
+      supabase.from('document_versions').select('id, document_key').eq('is_active', true),
       supabase.from('user_document_acceptances').select('document_version_id').eq('user_id', user.id),
     ])
+    const documentKeys = new Set((activeDocuments ?? []).map((document) => document.document_key))
+    if (documentsError || acceptancesError || !documentKeys.has('terms') || !documentKeys.has('privacy')) {
+      return redirectWithCookies('/consentimiento?error=' + encodeURIComponent('No pudimos verificar los documentos vigentes. Inténtalo de nuevo más tarde.'))
+    }
     const acceptedDocumentIds = new Set((acceptances ?? []).map((acceptance) => acceptance.document_version_id))
     const isMissingAcceptance = (activeDocuments ?? []).some((document) => !acceptedDocumentIds.has(document.id))
 
     if (isMissingAcceptance) {
-      return NextResponse.redirect(new URL('/consentimiento', request.url))
+      return redirectWithCookies('/consentimiento')
     }
   }
 
