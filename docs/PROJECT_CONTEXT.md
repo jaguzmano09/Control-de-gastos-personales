@@ -1,6 +1,6 @@
 ﻿# Project memory
 
-Exploration date: 2026-11-11. Findings concern local source. No financial records or secret values were inspected; no migrations or remote data changes were performed.
+Exploration date: 2026-11-11. Findings concern local source. No financial records or secret values were inspected. Subsequent authorized remote privacy remediations are recorded in the relevant migration notes and roadmap.
 
 ## Product and owner intent
 
@@ -16,7 +16,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 
 - Next.js App Router: package.json declares ^15.5.21; the installed build identifies 15.5.28. Older documents still say 14.
 - React 18.3, strict TypeScript, Tailwind 3.4.
-- Supabase Auth/Postgres/RLS with JS and SSR SDKs. The session server client currently lacks the Database generic; browser and service-role clients use it.
+- Supabase Auth/Postgres/RLS with JS and SSR SDKs. Browser, session server, and service-role clients use generated `Database` types. `@supabase/ssr` is pinned to 0.12.7 after 0.5.2 caused `never`-typed query results against the current SDK. Middleware remains untyped because it uses Auth and consent queries only; type inference through this middleware adapter produced query-builder errors with the generated database definition.
 - Vercel: rollover cron on day 1 at 05:00 UTC; Gmail daily at 06:00 UTC.
 - Gemini extraction through REST; Tesseract.js shared worker/queue; Sharp preprocessing; optional PaddleOCR service.
 - PWA manifest, icons, service worker, and offline page. This does not provide offline financial editing: the worker only implements a navigation fallback.

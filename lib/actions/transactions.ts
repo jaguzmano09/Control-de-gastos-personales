@@ -35,12 +35,13 @@ export async function createManualTransaction(formData: FormData) {
     const { error } = await supabase.rpc('confirm_shopping_purchase', {
       p_draft_id: purchaseDraftId,
       p_occurred_at: occurred_at,
-      p_category_id: category_id || null,
+      // PostgreSQL permits NULL here; generated RPC types cannot express argument nullability.
+      p_category_id: (category_id || null) as string,
       p_account_id: account_id,
-      p_wallet_id: wallet_id || null,
-      p_description: description || null,
-      p_is_necessary: is_necessary,
-      p_submission_id: submission_id,
+      p_wallet_id: (wallet_id || null) as string,
+      p_description: (description || null) as string,
+      p_is_necessary: is_necessary as boolean,
+      p_submission_id: submission_id as string,
     })
     if (error) redirect('/transacciones/nueva?purchase_draft_id=' + purchaseDraftId + '&error=' + encodeURIComponent(error.message))
     revalidatePath('/transacciones')

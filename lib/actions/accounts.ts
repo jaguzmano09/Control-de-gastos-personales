@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/types/database.types'
 import { redirect } from 'next/navigation'
 
 export async function createAccount(formData: FormData) {
@@ -96,16 +95,17 @@ export async function createYieldConfig(formData: FormData) {
     fail(configError.message)
   }
   const configId = config?.id
+  const requiredConfigId = configId as string
   if (!configId) fail('No se pudo crear la configuración de rendimiento.')
 
   const { error: rateError } = await supabase.from('yield_rates').insert({
     user_id: user.id,
-    config_id: configId,
+    config_id: requiredConfigId,
     ea_percent: eaPercent,
     valid_from: startDate,
   })
   if (rateError) {
-    await supabase.from('yield_configs').delete().eq('id', configId).eq('user_id', user.id)
+    await supabase.from('yield_configs').delete().eq('id', requiredConfigId).eq('user_id', user.id)
     if (rateError.code === '23505') {
       fail('Ya existe una tasa registrada para esa fecha. Usa una fecha diferente.')
     }
@@ -125,6 +125,7 @@ export async function updateYieldRate(formData: FormData) {
   }
 
   const rateId = (formData.get('rate_id') as string)?.trim()
+  const requiredRateId = rateId as string
   const validFrom = (formData.get('valid_from') as string)?.trim()
   const eaPercent = Number(formData.get('ea_percent'))
   if (!rateId || !validFrom || !Number.isFinite(eaPercent) || eaPercent < 0 || eaPercent > 100) {
@@ -134,7 +135,7 @@ export async function updateYieldRate(formData: FormData) {
   const { error } = await supabase
     .from('yield_rates')
     .update({ ea_percent: eaPercent, valid_from: validFrom })
-    .eq('id', rateId)
+    .eq('id', requiredRateId)
     .eq('user_id', user.id)
   if (error) {
     if (error.code === '23505') {
@@ -167,12 +168,13 @@ export async function deleteYieldRate(formData: FormData) {
     .maybeSingle()
   if (rateError) fail(rateError.message)
   const configId = rate?.config_id
+  const requiredConfigId = configId as string
   if (!configId) fail('No se encontró la tasa de rendimiento')
 
   const { count, error: countError } = await supabase
     .from('yield_rates')
     .select('id', { count: 'exact', head: true })
-    .eq('config_id', configId)
+    .eq('config_id', requiredConfigId)
     .eq('user_id', user.id)
   if (countError) fail(countError.message)
   if ((count ?? 0) <= 1) {

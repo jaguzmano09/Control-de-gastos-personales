@@ -1,8 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-type CookieToSet = { name: string; value: string; options?: Parameters<typeof NextResponse.next>[0] }
-
 const PUBLIC_PATHS = new Set(['/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
 const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html'])
 
@@ -19,7 +17,7 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
-        setAll: (items: CookieToSet[]) => {
+        setAll: (items) => {
           items.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
           items.forEach(({ name, value, options }) => response.cookies.set(name, value, options as never))

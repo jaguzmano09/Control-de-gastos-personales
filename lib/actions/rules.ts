@@ -9,12 +9,14 @@ export async function createRule(formData: FormData) {
   if (!user) throw new Error('No autenticado')
 
   const pattern = (formData.get('pattern') as string)?.trim().toLowerCase()
-  const match_type = formData.get('match_type') as string
+  const match_type = formData.get('match_type') as 'contains' | 'exact' | 'regex'
   const category_id = formData.get('category_id') as string
   const priorityRaw = formData.get('priority') as string
   const priority = priorityRaw ? Number(priorityRaw) : 0
 
   if (!pattern || !category_id) throw new Error('Patrón y categoría son obligatorios')
+
+  if (!['contains', 'exact', 'regex'].includes(match_type)) throw new Error('Invalid match type')
 
   const { error } = await supabase.from('categorization_rules').insert({
     user_id: user.id,

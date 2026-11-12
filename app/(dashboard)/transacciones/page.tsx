@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import type { Database } from '@/src/types/database.types'
+
+type TransactionType = Database['public']['Enums']['transaction_type']
+type TransactionStatus = Database['public']['Enums']['transaction_status']
 
 interface Category {
   id: string
@@ -140,12 +144,12 @@ export default async function TransaccionesPage({
     query = query.eq('account_id', filters.account_id)
   }
 
-  if (filters.type) {
-    query = query.eq('type', filters.type)
+  if (filters.type && TYPES.includes(filters.type as TransactionType)) {
+    query = query.eq('type', filters.type as TransactionType)
   }
 
-  if (filters.status) {
-    query = query.eq('status', filters.status)
+  if (filters.status && Object.hasOwn(STATUS_LABEL, filters.status)) {
+    query = query.eq('status', filters.status as TransactionStatus)
   }
 
   const { data: rawTransactions } = await query

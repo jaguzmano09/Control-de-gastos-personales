@@ -15,7 +15,7 @@ type Transaction = {
   id: string
   occurred_at: string
   type: string
-  savings_operation: 'ingreso' | 'retiro' | null
+  savings_operation: string | null
   category_id: string | null
   account_id: string
   wallet_id: string | null
