@@ -42,7 +42,11 @@ export async function updateWalletBudgetThreshold(formData: FormData) {
   const period_month = formData.get('period_month') as string
   const alert_threshold_percent = Number(formData.get('alert_threshold_percent'))
 
-  if (!wallet_id && !account_id) throw new Error('Falta bolsillo o cuenta')
+  if ((!wallet_id && !account_id) || (wallet_id && account_id)
+    || !/^\d{4}-(0[1-9]|1[0-2])-01$/.test(period_month)
+    || !Number.isInteger(alert_threshold_percent) || alert_threshold_percent < 0 || alert_threshold_percent > 100) {
+    throw new Error('Datos de alerta inválidos')
+  }
 
   let query = supabase
     .from('wallet_budgets')
@@ -62,5 +66,5 @@ export async function updateWalletBudgetThreshold(formData: FormData) {
     if (insertError) throw insertError
   }
 
-  revalidatePath('/presupuestos/bolsillos')
+  revalidatePath('/cuentas')
 }

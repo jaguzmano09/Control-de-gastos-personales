@@ -3,6 +3,7 @@ import { getMonthSummary } from '@/lib/data/dashboard'
 import { updateCategoryBudgetThreshold } from '@/lib/actions/budgets'
 import { currentYearMonth, yearMonthToDate } from '@/lib/date-utils'
 import { MonthSelector } from '@/components/MonthSelector'
+import { getCategoryLocationBudgets } from '@/lib/data/category-location-budgets'
 
 function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
@@ -21,13 +22,14 @@ export default async function PresupuestoCategoriasPage({
   const periodMonth = yearMonthToDate(yearMonth)
 
   const supabase = await createClient()
+  const summaryPromise = getMonthSummary(supabase, periodMonth)
+  const locationBudgetsPromise = getCategoryLocationBudgets(supabase, periodMonth, summaryPromise)
 
-  const [{ data: categories }, { data: budgets }, summary] = await Promise.all([
+  const [{ data: categories }, { data: budgets }, locationBudgets] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
-    supabase.from('category_budgets').select('category_id, amount, rollover_amount, alert_threshold_percent').eq('period_month', periodMonth),
-    getMonthSummary(supabase, periodMonth),
+    supabase.from('category_budgets').select('category_id, alert_threshold_percent').eq('period_month', periodMonth),
+    locationBudgetsPromise,
   ])
-
   const budgetByCategory = new Map((budgets ?? []).map((b) => [b.category_id, b]))
 
   return (
@@ -49,23 +51,21 @@ export default async function PresupuestoCategoriasPage({
       <div className="mt-7 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
         <div className="grid divide-y divide-black/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <SummaryCard label="Categorías" value={(categories ?? []).length.toString()} detail="activas" />
-          <SummaryCard label="Con presupuesto" value={(budgets ?? []).length.toString()} detail="este mes" />
-          <SummaryCard label="Con alertas" value={(budgets ?? []).filter((budget) => budget.alert_threshold_percent !== null).length.toString()} detail="configuradas" />
+          <SummaryCard label="Con presupuesto" value={Array.from(locationBudgets.values()).filter((budget) => budget.budget > 0).length.toString()} detail="este mes" />
+          <SummaryCard label="Con alertas" value={(budgets ?? []).filter((budget) => budget.alert_threshold_percent !== null && locationBudgets.has(budget.category_id)).length.toString()} detail="configuradas" />
         </div>
       </div>
 
       <div className="mt-7 grid gap-5 lg:grid-cols-2">
         {(categories ?? []).map((category) => {
           const budget = budgetByCategory.get(category.id)
-          const assigned = Number(budget?.amount ?? 0)
-          const rollover = Number(budget?.rollover_amount ?? 0)
-          const totalBudget = assigned + rollover
-          const movement = summary.gastoByCategory.get(category.id) ?? 0
-          const gastoNormal = summary.gastoNormalByCategory.get(category.id) ?? 0
-          const ahorroIngreso = summary.ahorroIngresoByCategory.get(category.id) ?? 0
-          const ahorroRetiro = summary.ahorroRetiroByCategory.get(category.id) ?? 0
-          const spent = gastoNormal
-          const remaining = totalBudget + movement
+          const allocation = locationBudgets.get(category.id)
+          const assigned = allocation?.assigned ?? 0
+          const rollover = allocation?.rollover ?? 0
+          const totalBudget = allocation?.budget ?? 0
+          const movement = (allocation?.transferMovement ?? 0) + (allocation?.yieldAmount ?? 0)
+          const spent = allocation?.spent ?? 0
+          const remaining = allocation?.available ?? 0
           const threshold = budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined
           const percent = totalBudget > 0 ? Math.min((spent / totalBudget) * 100, 100) : 0
           const isOverBudget = remaining < 0
@@ -76,7 +76,7 @@ export default async function PresupuestoCategoriasPage({
               <div className="flex items-start justify-between gap-4 border-b border-ledger-line/70 bg-gradient-to-br from-white via-white to-ledger-green/5 p-5">
                 <div>
                   <p className="text-base font-semibold text-ledger-text">{category.name}</p>
-                  <p className="mt-1 text-xs text-ledger-muted">{totalBudget > 0 ? `${percent.toFixed(0)}% utilizado` : 'Sin presupuesto asignado'}</p>
+                  <p className="mt-1 text-xs text-ledger-muted">{allocation?.locations ? `${allocation.locations} cuenta(s) o bolsillo(s) · ${percent.toFixed(0)}% utilizado` : 'Sin cuenta o bolsillo asociado'}</p>
                 </div>
                 <div className="text-right">
                   <p className={`text-lg font-semibold ${remaining >= 0 ? 'text-ledger-green' : 'text-red-700'}`}>{formatCOP(remaining)}</p>
@@ -85,9 +85,9 @@ export default async function PresupuestoCategoriasPage({
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-ledger-muted">Movimiento del mes</span>
+                  <span className="text-ledger-muted">Balance de movimientos</span>
                   <span className={isOverBudget ? 'font-medium text-red-700' : isOverThreshold ? 'font-medium text-amber-700' : 'font-medium text-ledger-text'}>
-                  Movimiento: {formatCOP(movement)}
+                  Transferencias + rendimiento: {formatCOP(movement)}
                   </span>
                 </div>
                 <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-ledger-line/60">
@@ -96,12 +96,13 @@ export default async function PresupuestoCategoriasPage({
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                <div className="mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 xl:grid-cols-6">
                 <Metric label="Presupuesto" value={assigned} />
                 <Metric label="Sobrante" value={rollover} />
-                <Metric label="Ahorro ingresado" value={ahorroIngreso} positive />
-                <Metric label="Gastos" value={gastoNormal} />
-                <Metric label="Retiros de ahorro" value={ahorroRetiro} />
+                <Metric label="Gastos" value={spent} />
+                <Metric label="Transferencias netas" value={allocation?.transferMovement ?? 0} />
+                <Metric label="Rendimiento estimado" value={allocation?.yieldAmount ?? 0} positive />
+                <Metric label="Disponible" value={remaining} positive={remaining >= 0} negative={remaining < 0} />
                 </div>
               {isOverBudget && <p className="mt-2 text-xs text-red-700">Superaste el presupuesto de esta categoría.</p>}
               {isOverThreshold && <p className="mt-2 text-xs text-amber-700">Cruzaste el umbral de alerta ({threshold}%).</p>}
@@ -135,11 +136,11 @@ function SummaryCard({ label, value, detail }: { label: string; value: string; d
   )
 }
 
-function Metric({ label, value, positive = false }: { label: string; value: number; positive?: boolean }) {
+function Metric({ label, value, positive = false, negative = false }: { label: string; value: number; positive?: boolean; negative?: boolean }) {
   return (
     <div className="rounded-sm bg-black/[0.03] px-2 py-1.5">
       <p className="text-ledger-muted">{label}</p>
-      <p className={`mt-0.5 ${positive ? 'text-ledger-green' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
+      <p className={`mt-0.5 ${positive ? 'text-ledger-green' : negative ? 'text-red-700' : 'text-ledger-text'}`}>{formatCOP(value)}</p>
     </div>
   )
 }

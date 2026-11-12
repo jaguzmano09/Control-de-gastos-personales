@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { getExpenseLocationStatuses } from '@/lib/data/expense-location-status'
+import { addEstimatedYieldToExpenseStatuses, getExpenseLocationStatuses } from '@/lib/data/expense-location-status'
+import { getMonthSummary } from '@/lib/data/dashboard'
 import { todayInBogota, yearMonthToDate } from '@/lib/date-utils'
 import { NuevaTransaccionForm } from './NuevaTransaccionForm'
 
@@ -14,13 +15,15 @@ export default async function NuevaTransaccionPage({
   const defaultOccurredAt = occurred_at || today
   const currentPeriodMonth = yearMonthToDate(today.slice(0, 7))
 
-  const [{ data: categories }, { data: accounts }, { data: wallets }, { data: draft }, locationStatuses] = await Promise.all([
+  const [{ data: categories }, { data: accounts }, { data: wallets }, { data: draft }, locationStatusesRaw, summary] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
     supabase.from('accounts').select('id, name, category_id, has_wallets').eq('is_active', true).order('name'),
     supabase.from('wallets').select('id, name, account_id, category_id').eq('is_active', true).order('name'),
     purchase_draft_id ? supabase.from('shopping_purchase_drafts').select('id, description, status, shopping_purchase_draft_lines(quantity, actual_unit_price)').eq('id', purchase_draft_id).maybeSingle() : Promise.resolve({ data: null }),
     getExpenseLocationStatuses(supabase, currentPeriodMonth),
+    getMonthSummary(supabase, currentPeriodMonth),
   ])
+  const locationStatuses = addEstimatedYieldToExpenseStatuses(locationStatusesRaw, summary)
   const draftTotal = (draft?.shopping_purchase_draft_lines ?? []).reduce((total: number, line: { quantity: number; actual_unit_price: number }) => total + line.quantity * line.actual_unit_price, 0)
 
   if (purchase_draft_id && (!draft || draft.status !== 'borrador' || draftTotal <= 0)) {

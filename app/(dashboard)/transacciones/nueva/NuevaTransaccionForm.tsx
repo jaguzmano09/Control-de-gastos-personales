@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { createManualTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
-import type { ExpenseLocationStatus } from '@/lib/data/expense-location-status'
+import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
@@ -30,7 +30,7 @@ export function NuevaTransaccionForm({
   error?: string
   initialValues?: { occurredAt?: string; description?: string; amount?: string }
   currentPeriodMonth: string
-  locationStatuses: ExpenseLocationStatus[]
+  locationStatuses: ExpenseLocationStatusWithYield[]
   purchaseDraftId?: string
 }) {
   const [step, setStep] = useState<'form' | 'confirm'>('form')
@@ -306,7 +306,7 @@ function formatCOP(amount: number) {
 }
 
 function LocationStatusSummary({ status, currentPeriodMonth, transactionType, role, showDateNote = false, isLoading, hasError }: {
-  status: ExpenseLocationStatus
+  status: ExpenseLocationStatusWithYield
   currentPeriodMonth: string
   transactionType: typeof TYPES[number]
   role: 'source' | 'destination'
@@ -328,7 +328,7 @@ function LocationStatusSummary({ status, currentPeriodMonth, transactionType, ro
         ? { label: 'Sin categoría', classes: 'bg-amber-100 text-amber-900' }
         : !status.budget_assigned
           ? { label: 'Sin presupuesto', classes: 'bg-amber-100 text-amber-900' }
-          : status.available_amount < 0
+          : status.available_with_yield < 0
             ? { label: 'Sobre presupuesto', classes: 'bg-red-100 text-red-800' }
             : { label: 'Disponible para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
 
@@ -351,7 +351,8 @@ function LocationStatusSummary({ status, currentPeriodMonth, transactionType, ro
       <div><dt className="inline text-ledger-muted">Presupuesto: </dt><dd className="inline font-medium text-ledger-text">{budgetLabel}</dd></div>
       {status.transfer_in > 0 && <div><dt className="inline text-ledger-muted">Transferencias recibidas: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.transfer_in)}</dd></div>}
       <div><dt className="inline text-ledger-muted">Gastado: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.spent)}</dd></div>
-      <div><dt className="inline text-ledger-muted">Disponible antes de rendimientos: </dt><dd className={`inline font-medium ${status.available_amount < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status.available_amount)}</dd></div>
+      <div><dt className="inline text-ledger-muted">Rendimiento estimado: </dt><dd className="inline font-medium text-ledger-green">{formatCOP(status.estimated_yield)}</dd></div>
+      <div><dt className="inline text-ledger-muted">Disponible: </dt><dd className={`inline font-medium ${status.available_with_yield < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status.available_with_yield)}</dd></div>
       </dl>}
       {!isLoading && !hasError && !status.category_id && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">{transactionType === 'Ingreso' && role === 'source' ? 'La categoría que seleccionaste se asignará al registrar este ingreso.' : transactionType === 'Transferencia' ? `La categoría de ${role === 'source' ? 'origen' : 'destino'} se asignará al confirmar la transferencia.` : 'Registra un ingreso o una transferencia para asignar la categoría y habilitar su presupuesto.'}</p>}
       {!isLoading && !hasError && status.category_id && !status.budget_assigned && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">{transactionType === 'Ingreso' ? 'Este ingreso asignará presupuesto a la ubicación al confirmar.' : transactionType === 'Transferencia' && role === 'destination' ? 'Esta transferencia asignará fondos a este destino al confirmar.' : 'Registra un ingreso o recibe una transferencia en este destino para asignar el presupuesto.'}</p>}

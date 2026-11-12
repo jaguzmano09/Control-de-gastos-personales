@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { updateTransaction, deleteTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
-import type { ExpenseLocationStatus } from '@/lib/data/expense-location-status'
+import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
@@ -39,7 +39,7 @@ export function EditTransaccionForm({
   wallets: Wallet[]
   error?: string
   initialPeriodMonth: string
-  locationStatuses: ExpenseLocationStatus[]
+  locationStatuses: ExpenseLocationStatusWithYield[]
 }) {
   const [occurredAt, setOccurredAt] = useState(transaction.occurred_at.slice(0, 10))
   const [accountId, setAccountId] = useState(transaction.account_id)
@@ -114,14 +114,14 @@ export function EditTransaccionForm({
                 : ''
   const canSave = type !== 'Gasto' || (!expenseBlockReason && !isLoadingStatuses)
 
-  function optionDetails(status?: ExpenseLocationStatus) {
+  function optionDetails(status?: ExpenseLocationStatusWithYield) {
     if (!status) return 'Sin categoría o presupuesto'
     const category = status.category_name ? `Categoría: ${status.category_name}` : 'Sin categoría'
     const assigned = status.assigned_amount + status.rollover_amount
     const budget = status.category_id && status.budget_assigned
       ? assigned > 0 ? `Presupuesto: ${formatCOP(assigned)}` : `Financiado por transferencias: ${formatCOP(status.transfer_in)}`
       : 'Sin presupuesto este mes'
-    return `${category} · ${budget} · Disponible: ${formatCOP(status.available_amount)}`
+    return `${category} · ${budget} · Disponible: ${formatCOP(status.available_with_yield)}`
   }
 
   async function retryLocationStatuses() {
@@ -286,7 +286,7 @@ function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 }
 
-function LocationStatusSummary({ status, occurredAt }: { status: ExpenseLocationStatus; occurredAt: string }) {
+function LocationStatusSummary({ status, occurredAt }: { status: ExpenseLocationStatusWithYield; occurredAt: string }) {
   const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
     .format(new Date(`${occurredAt.slice(0, 7)}-01T00:00:00Z`))
   const assigned = status.assigned_amount + status.rollover_amount
@@ -298,7 +298,8 @@ function LocationStatusSummary({ status, occurredAt }: { status: ExpenseLocation
       <div><dt className="inline text-ledger-muted">Presupuesto {periodLabel}: </dt><dd className="inline font-medium text-ledger-text">{budgetLabel}</dd></div>
       {status.transfer_in > 0 && <div><dt className="inline text-ledger-muted">Transferencias recibidas: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.transfer_in)}</dd></div>}
       <div><dt className="inline text-ledger-muted">Gastado: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.spent)}</dd></div>
-      <div><dt className="inline text-ledger-muted">Disponible antes de rendimientos: </dt><dd className={`inline font-medium ${status.available_amount < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status.available_amount)}</dd></div>
+      <div><dt className="inline text-ledger-muted">Rendimiento estimado: </dt><dd className="inline font-medium text-ledger-green">{formatCOP(status.estimated_yield)}</dd></div>
+      <div><dt className="inline text-ledger-muted">Disponible: </dt><dd className={`inline font-medium ${status.available_with_yield < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status.available_with_yield)}</dd></div>
     </dl>
   )
 }

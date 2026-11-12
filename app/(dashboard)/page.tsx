@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary, getPendingReviewCount } from '@/lib/data/dashboard'
+import { getCategoryLocationBudgets } from '@/lib/data/category-location-budgets'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 
@@ -22,7 +23,7 @@ const inputClass =
 type DashboardCategory = { id: string; name: string }
 type DashboardWallet = { id: string; name: string; account_id: string; accounts: { name: string } | null }
 type DashboardAccount = { id: string; name: string; is_active: boolean }
-type CategoryBudget = { category_id: string; amount: number; rollover_amount: number; alert_threshold_percent: number | null }
+type CategoryBudget = { category_id: string; alert_threshold_percent: number | null }
 type WalletBudget = { wallet_id: string; assigned_amount: number; rollover_amount: number; total_budget: number; alert_threshold_percent: number | null }
 
 export default async function DashboardHomePage({
@@ -34,6 +35,8 @@ export default async function DashboardHomePage({
   const supabase = await createClient()
   const monthStart = periodToMonthStart(filters.period)
   const selectedPeriod = monthStart.slice(0, 7)
+  const summaryPromise = getMonthSummary(supabase, monthStart)
+  const categoryLocationBudgetsPromise = getCategoryLocationBudgets(supabase, monthStart, summaryPromise)
 
   const [
     { data: categoriesData },
@@ -43,14 +46,16 @@ export default async function DashboardHomePage({
     { data: walletBudgetsData },
     summary,
     pendingCount,
+    locationBudgetsByCategory,
   ] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true),
     supabase.from('wallets').select('id, name, account_id, accounts(name)').eq('is_active', true),
     supabase.from('accounts').select('id, name, is_active').eq('is_active', true).order('name'),
-    supabase.from('category_budgets').select('category_id, amount, rollover_amount, alert_threshold_percent').eq('period_month', monthStart),
+    supabase.from('category_budgets').select('category_id, alert_threshold_percent').eq('period_month', monthStart),
     supabase.from('wallet_budgets').select('wallet_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', monthStart).not('wallet_id', 'is', null),
-    getMonthSummary(supabase, monthStart),
+    summaryPromise,
     getPendingReviewCount(supabase),
+    categoryLocationBudgetsPromise,
   ])
 
   const categories = categoriesData as DashboardCategory[] | null
@@ -58,10 +63,9 @@ export default async function DashboardHomePage({
   const accounts = accountsData as DashboardAccount[] | null
   const categoryBudgets = categoryBudgetsData as CategoryBudget[] | null
   const walletBudgets = walletBudgetsData as WalletBudget[] | null
+  const categoryBudgetById = new Map((categoryBudgets ?? []).map((budget) => [budget.category_id, budget]))
 
   const categoryNameById = new Map((categories ?? []).map((c) => [c.id, c.name]))
-  const walletNameById = new Map((wallets ?? []).map((w) => [w.id, w.name]))
-  const walletAccountNameById = new Map((wallets ?? []).map((w) => [w.id, w.accounts?.name ?? 'Cuenta']))
   const walletsByAccount = new Map<string, DashboardWallet[]>()
   for (const wallet of wallets ?? []) {
     const list = walletsByAccount.get(wallet.account_id) ?? []
@@ -83,30 +87,22 @@ export default async function DashboardHomePage({
       : false
   })
   const accountsWithoutMovement = (accounts ?? []).filter((account) => !accountsWithMovement.some((item) => item.id === account.id))
-  const categoryBudgetStats = (categoryBudgets ?? []).reduce(
-    (totals, budget) => {
-      const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
-      const total = Number(budget.amount) + Number(budget.rollover_amount)
-      return {
-        total: totals.total + total,
-        spent: totals.spent + (summary.gastoNormalByCategory.get(budget.category_id) ?? 0),
-      }
-    },
+  const categoryBudgetStats = Array.from(locationBudgetsByCategory.values()).reduce(
+    (totals, budget) => ({ total: totals.total + budget.budget, spent: totals.spent + budget.spent }),
     { total: 0, spent: 0 },
   )
-  const categoryBudgetsWithActivity = (categoryBudgets ?? []).filter((budget) => {
-    const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
-    return movement !== 0 || Number(budget.rollover_amount) > 0
-  })
-  const categoryHighlights = (categoryBudgets ?? []).map((budget) => {
-    const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
-    const total = Number(budget.amount) + Number(budget.rollover_amount)
-    const spent = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
+  const budgetedDestinations = Array.from(locationBudgetsByCategory.values()).reduce((count, budget) => count + budget.locations, 0)
+  const categoryBudgetsWithActivity = Array.from(locationBudgetsByCategory.entries())
+    .filter(([, budget]) => budget.budget !== 0 || budget.spent !== 0 || budget.available !== 0)
+    .map(([category_id, values]) => ({ category_id, ...values, alert_threshold_percent: categoryBudgetById.get(category_id)?.alert_threshold_percent ?? null }))
+  const categoryHighlights = categoryBudgetsWithActivity.map((budget) => {
+    const total = budget.budget
+    const spent = budget.spent
     return {
       name: categoryNameById.get(budget.category_id) ?? 'Categoría',
       total,
       spent,
-      remaining: total + movement,
+      remaining: budget.available,
       percent: total > 0 ? (spent / total) * 100 : 0,
     }
   })
@@ -149,7 +145,7 @@ export default async function DashboardHomePage({
     {
       href: '/presupuestos/categorias',
       label: 'Presupuestos',
-      value: `${(categoryBudgets ?? []).length + (walletBudgets ?? []).length}`,
+      value: `${budgetedDestinations}`,
       detail: 'Asignaciones activas',
       accent: 'border-amber-400/40 bg-amber-50 text-amber-700',
     },
@@ -275,7 +271,7 @@ export default async function DashboardHomePage({
           <div className="mt-5 grid grid-cols-2 gap-2 border-t border-black/5 pt-4 sm:grid-cols-3">
             <div className="rounded-xl bg-ledger-green/[0.06] px-3 py-2.5">
               <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Categorías</p>
-              <p className="mt-1 text-base font-semibold text-ledger-text">{(categoryBudgets ?? []).length}</p>
+              <p className="mt-1 text-base font-semibold text-ledger-text">{categoryBudgetsWithActivity.length}</p>
             </div>
             <div className="rounded-xl bg-black/[0.03] px-3 py-2.5">
               <p className="text-[11px] uppercase tracking-[0.12em] text-ledger-muted">Asignado</p>
@@ -303,28 +299,25 @@ export default async function DashboardHomePage({
         <div className="border-t border-black/5 bg-black/[0.015] p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ledger-muted">Detalle por categoría</p>
-            <a href={`/presupuestos/categorias?period=${selectedPeriod}`} className="text-xs font-medium text-ledger-green transition hover:text-ledger-text">
+          <a href={`/presupuestos/categorias?month=${selectedPeriod}`} className="text-xs font-medium text-ledger-green transition hover:text-ledger-text">
               Administrar presupuestos
             </a>
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
           {categoryBudgetsWithActivity.map((budget) => {
-            const movement = summary.gastoByCategory.get(budget.category_id) ?? 0
-            const gastoNormal = summary.gastoNormalByCategory.get(budget.category_id) ?? 0
-            const ahorroIngreso = summary.ahorroIngresoByCategory.get(budget.category_id) ?? 0
-            const ahorroRetiro = summary.ahorroRetiroByCategory.get(budget.category_id) ?? 0
             return (
               <BudgetCard
                 key={budget.category_id}
                 label={categoryNameById.get(budget.category_id) ?? 'Categoría'}
-                spent={Math.max(0, -movement)}
-                total={Number(budget.amount) + Number(budget.rollover_amount) + Math.max(0, movement)}
+                spent={budget.spent}
+                total={budget.budget}
+                available={budget.available}
                 alertThreshold={budget.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
               >
-                <BudgetMetric label="Ahorro ingresado" value={ahorroIngreso} positive />
-                <BudgetMetric label="Gastos" value={gastoNormal} />
-                <BudgetMetric label="Retiros de ahorro" value={ahorroRetiro} />
-                <BudgetMetric label="Base" value={Number(budget.amount) + Number(budget.rollover_amount)} />
+                <BudgetMetric label="Presupuesto" value={budget.budget} />
+                <BudgetMetric label="Gastos" value={budget.spent} />
+                <BudgetMetric label="Transferencias netas" value={budget.transferMovement} />
+                <BudgetMetric label="Rendimiento estimado" value={budget.yieldAmount} positive />
               </BudgetCard>
             )
           })}
@@ -333,7 +326,7 @@ export default async function DashboardHomePage({
             <div className="rounded-2xl border border-dashed border-black/15 bg-white px-5 py-8 text-center">
               <p className="text-sm font-medium text-ledger-text">Aún no has asignado presupuesto por categoría.</p>
               <p className="mt-1 text-sm text-ledger-muted">Configura tus categorías para comenzar a controlar el mes.</p>
-              <a href={`/presupuestos/categorias?period=${selectedPeriod}`} className="btn btn-primary btn-sm mt-4">
+              <a href={`/presupuestos/categorias?month=${selectedPeriod}`} className="btn btn-primary btn-sm mt-4">
                 Configurar presupuesto
               </a>
             </div>
@@ -400,7 +393,7 @@ export default async function DashboardHomePage({
             const spent = summary.gastoByWallet.get(wallet.id) ?? 0
             const total = Number(budget?.total_budget ?? 0)
             const yieldAmount = summary.yieldByWallet.get(wallet.id) ?? 0
-            const available = Math.max(total - spent + yieldAmount, 0)
+            const available = total - spent + (summary.transferByWallet.get(wallet.id) ?? 0) + yieldAmount
             return (
               <BudgetCard
                 key={wallet.id}
@@ -545,12 +538,12 @@ export default async function DashboardHomePage({
                               label={wallet.name}
                               spent={spent}
                               total={total}
-                              available={Math.max(total - spent + yieldAmount, 0)}
+                              available={total - spent + (summary.transferByWallet.get(wallet.id) ?? 0) + yieldAmount}
                               alertThreshold={budget?.alert_threshold_percent ? Number(budget.alert_threshold_percent) : undefined}
                             >
                               <BudgetMetric label="Asignado" value={Number(budget?.assigned_amount ?? 0)} />
                               <BudgetMetric label="Sobrante" value={Number(budget?.rollover_amount ?? 0)} />
-                              <BudgetMetric label="Saldo" value={Math.max(total - spent + yieldAmount, 0)} positive />
+                              <BudgetMetric label="Disponible" value={total - spent + (summary.transferByWallet.get(wallet.id) ?? 0) + yieldAmount} positive />
                               <BudgetMetric label="Rendimientos" value={yieldAmount} positive />
                             </BudgetCard>
                           )
@@ -619,8 +612,8 @@ function BudgetCard({ label, sublabel, spent, total, available, alertThreshold, 
 }) {
   const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const isOverThreshold = alertThreshold !== undefined && total > 0 && (spent / total) * 100 >= alertThreshold
-  const isOverBudget = total > 0 && spent > total
   const remaining = available ?? total - spent
+  const isOverBudget = remaining < 0
 
   return (
     <div className="surface-card p-4 sm:p-5">

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getExpenseLocationStatuses } from '@/lib/data/expense-location-status'
+import { getExpenseLocationStatusesWithYield } from '@/lib/data/expense-location-status'
 import type { Database } from '@/lib/types/database.types'
 
 type TransactionType = Database['public']['Enums']['transaction_type']
@@ -14,7 +14,7 @@ export async function refreshExpenseLocationStatuses(periodMonth: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No autenticado')
-  return getExpenseLocationStatuses(supabase, periodMonth)
+  return getExpenseLocationStatusesWithYield(supabase, periodMonth)
 }
 
 export async function createManualTransaction(formData: FormData) {
@@ -139,7 +139,7 @@ export async function updateTransaction(formData: FormData) {
   revalidatePath(`/transacciones/${id}`)
   revalidatePath('/')
   revalidatePath('/presupuestos/categorias')
-  revalidatePath('/presupuestos/bolsillos')
+  revalidatePath('/cuentas')
   redirect('/transacciones')
 }
 
@@ -153,6 +153,6 @@ export async function deleteTransaction(formData: FormData) {
   revalidatePath('/transacciones')
   revalidatePath('/')
   revalidatePath('/presupuestos/categorias')
-  revalidatePath('/presupuestos/bolsillos')
+  revalidatePath('/cuentas')
   redirect('/transacciones')
 }

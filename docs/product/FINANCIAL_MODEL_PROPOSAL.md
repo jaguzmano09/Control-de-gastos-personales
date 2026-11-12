@@ -1,8 +1,8 @@
 ﻿# Financial glossary and proposed model
 
-Status: Core semantics below are owner-confirmed for P2. This document is a product accounting design, not financial advice or a migration. Existing calculation behavior remains unchanged until a compatible implementation and reconciliation plan are ready.
+Status: Core semantics below are owner-confirmed for P2. This document is a product accounting design, not financial advice or a migration. The owner-confirmed destination/category/dashboard display aggregation (D17) has been implemented without rewriting stored personal records; the underlying ledger, opening-balance and yield-principal calculations still require reconciliation.
 
-The current calculations conflict with the owner-confirmed semantics below. P2 must reconcile the implementation with those rules and existing personal records before changing calculations.
+Some current calculations still conflict with the owner-confirmed semantics below. P2 must reconcile the ledger and yield calculations with those rules and existing personal records before changing persisted calculations.
 
 ## Owner-confirmed accounting semantics
 
@@ -14,7 +14,7 @@ The current calculations conflict with the owner-confirmed semantics below. P2 m
 | Expense eligibility | An expense inherits the assigned category of its account or pocket. It can be recorded only when that location has a category and a monthly budget funded by confirmed income, rollover, or an incoming transfer. It remains recordable after the budget is exhausted so the product can show the exact negative available amount; missing category or missing monthly funding blocks the expense. Categories are assigned only through transactions, never from account settings. |
 | Transfer allocation | A transfer uses the assigned category of each endpoint without asking again. If an endpoint has no category, the user selects it in the transfer flow and the assignment is persisted atomically with the transfer. Accounts with pockets require a pocket endpoint and use only that pocket's category. The amount moves out of the source category/location allocation and into the destination category/location allocation alongside the account/pocket balance. It is not income or spending; consolidated balance and total allocated budget across locations remain unchanged. |
 | Available budget balance | Starts with confirmed income assigned to that category at that location, plus assigned positive rollover; expenses reduce it. A COP 300,000 funded allocation begins with COP 300,000 available. If it goes below zero, show the exact deficit. |
-| Category and pocket budget views | Category and pocket summaries are two aggregations of the same category/location allocations. They must not be added together as if they were separate funds. |
+| Category and pocket budget views | Available is calculated per account/pocket from that location's monthly budget, spending, net transfers, and destination-specific estimated yield. The category view and dashboard sum those exact location values by assigned category; categories do not create another pool of funds. |
 | Effective annual yield | The configured EA rate represents daily growth calculated from the total funded available balance in the pocket, regardless of which income category funded it. Show accrued yield as estimated until an actual credit is recorded. Use the product's actual rate and terms; a market average is not the user's rate. |
 | Monthly budget rollover | Positive unspent budget from the previous month, assigned to a category/location target. It increases that target's available budget, not a second pool of money. |
 | Over-budget result | Show the exact negative remaining amount and make it reviewable. Do not silently clamp it to zero. Let the user record real expenses even when they exceed a plan; surface options to review or adjust the plan. |
@@ -30,8 +30,8 @@ Read-only source review of `lib/data/dashboard.ts`, `lib/yield-calculation.ts`, 
 
 | Area | Current implementation | Why it conflicts with the confirmed semantics |
 |---|---|---|
-| Transfers | A `Transferencia` affects a statistic but has no destination and does not debit/credit either account or wallet. | The core transfer example cannot be represented, nor can source and destination category/location allocations be reconciled. |
-| Category/location budgets | Confirmed income auto-updates `category_budgets` aggregated only by category and `wallet_budgets` aggregated only by location. There is no persisted category+location allocation row. | A category view and a pocket view can independently look plausible while losing which category's budget is actually held in which location. |
+| Transfers | Linked transfer destinations and endpoint category assignment are now supported in the transaction flow and migrations. | Existing historical rows and balance/yield calculations still need reconciliation against the owner examples. |
+| Category/location budgets | The schema still has separate `category_budgets` and `wallet_budgets`; no persisted category+location allocation row exists. Current category/dashboard available displays derive from active account/pocket category assignments and location budgets. | Rollover and legacy category-budget rows may still diverge from location allocations; they must not be treated as another available pool. |
 | Categories | Manual forms allow category-less income/expense; the database schema also permits them. | Such movements cannot fund or consume the correct category/location budget. |
 | Savings | `Ahorro / ingreso` currently increases account, wallet, and consolidated balances; `retiro` decreases them and is grouped with category spending. | This treats an internal contribution as income and a release as spending, contrary to the piggy-bank semantics. |
 | Yield principal | Dashboard and rollover calculations use `wallet_budgets.rollover_amount` as the yield opening balance rather than the actual balance of the configured account/pocket. | Yield can be calculated from a budget remainder rather than the money earning interest. |
@@ -41,7 +41,7 @@ Read-only source review of `lib/data/dashboard.ts`, `lib/yield-calculation.ts`, 
 | Balance period | `getMonthSummary` loads confirmed transactions for the selected month (and only through today for the current month); the overview also derives account figures from this period summary. | A period net can be mistaken for the current cumulative account balance. |
 | Budget display | Wallet-budget remaining values are clamped at zero; category movement also mixes savings operations with spending. | The UI hides how far spending exceeded the fixed plan and applies the wrong savings semantics. |
 
-These findings show the current calculations are **not consistent with the confirmed rules**. P2 should implement a category/location budget allocation as the source of truth, derive category and pocket views from it, and preserve a safe interpretation path for existing records.
+The read-only findings above are an earlier audit snapshot, not a claim that each item remains unchanged. D17's UI aggregation now derives category and dashboard available from the same location-level values shown with accounts and pockets. The underlying tables remain separate, and several ledger/yield issues in the table still require P2 work and a safe interpretation path for existing records.
 
 ## Effective annual yield research
 

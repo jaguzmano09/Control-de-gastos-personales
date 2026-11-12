@@ -10,8 +10,7 @@ const NAV_ITEMS = [
   { href: '/mercado', label: 'Lista de mercado' },
   { href: '/revision', label: 'Revisión' },
   { href: '/presupuestos/categorias', label: 'Presupuesto por categoría' },
-  { href: '/presupuestos/bolsillos', label: 'Presupuesto por bolsillo' },
-  { href: '/cuentas', label: 'Cuentas' },
+  { href: '/cuentas', label: 'Cuentas y bolsillos' },
   { href: '/reglas', label: 'Reglas' },
   { href: '/correo', label: 'Correo' },
 ]

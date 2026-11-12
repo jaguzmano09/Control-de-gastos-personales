@@ -9,8 +9,11 @@ import {
   toggleYieldConfig,
   updateYieldRate,
 } from '@/lib/actions/accounts'
-import { getExpenseLocationStatuses, type ExpenseLocationStatus } from '@/lib/data/expense-location-status'
-import { todayInBogota, yearMonthToDate } from '@/lib/date-utils'
+import { addEstimatedYieldToExpenseStatuses, getExpenseLocationStatuses, type ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
+import { getMonthSummary } from '@/lib/data/dashboard'
+import { currentYearMonth, yearMonthToDate } from '@/lib/date-utils'
+import { MonthSelector } from '@/components/MonthSelector'
+import { updateWalletBudgetThreshold } from '@/lib/actions/budgets'
 
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
@@ -31,6 +34,14 @@ type YieldConfig = {
   is_active: boolean
 }
 type YieldRate = { id: string; config_id: string; ea_percent: number; valid_from: string }
+type MonthlyBudget = {
+  wallet_id: string | null
+  account_id: string | null
+  assigned_amount: number
+  rollover_amount: number
+  total_budget: number
+  alert_threshold_percent: number | null
+}
 
 function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
@@ -39,26 +50,35 @@ function formatCOP(amount: number) {
 export default async function CuentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>
+  searchParams: Promise<{ error?: string; success?: string; month?: string }>
 }) {
   const params = await searchParams
+  const yearMonth = params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : currentYearMonth()
   const supabase = await createClient()
-  const periodMonth = yearMonthToDate(todayInBogota().slice(0, 7))
+  const periodMonth = yearMonthToDate(yearMonth)
 
-  const [{ data: accountsData }, { data: walletsData }, { data: yieldConfigsData }, { data: yieldRatesData }, locationStatuses] = await Promise.all([
+  const [{ data: accountsData }, { data: walletsData }, { data: yieldConfigsData }, { data: yieldRatesData }, locationStatusesRaw, { data: budgetsData }, summary] = await Promise.all([
     supabase.from('accounts').select('id, name, category_id, has_wallets, is_active').order('name'),
     supabase.from('wallets').select('id, name, account_id, category_id, is_active').order('name'),
     supabase.from('yield_configs').select('id, account_id, wallet_id, start_date, is_active'),
     supabase.from('yield_rates').select('id, config_id, ea_percent, valid_from').order('valid_from', { ascending: false }),
     getExpenseLocationStatuses(supabase, periodMonth),
+    supabase.from('wallet_budgets').select('wallet_id, account_id, assigned_amount, rollover_amount, total_budget, alert_threshold_percent').eq('period_month', periodMonth),
+    getMonthSummary(supabase, periodMonth),
   ])
+  const locationStatuses = addEstimatedYieldToExpenseStatuses(locationStatusesRaw, summary)
   const accounts = accountsData as Account[] | null
   const wallets = walletsData as Wallet[] | null
   const yieldConfigs = yieldConfigsData as YieldConfig[] | null
   const yieldRates = yieldRatesData as YieldRate[] | null
-  const statusByTarget = new Map<string, ExpenseLocationStatus>(
+  const monthlyBudgets = (budgetsData ?? []) as MonthlyBudget[]
+  const statusByTarget = new Map<string, ExpenseLocationStatusWithYield>(
     locationStatuses.map((status) => [`${status.location_type}:${status.location_id}`, status]),
   )
+  const budgetByTarget = new Map(monthlyBudgets.map((budget) => [
+    `${budget.wallet_id ? 'wallet' : 'account'}:${budget.wallet_id ?? budget.account_id}`,
+    budget,
+  ]))
   const configByTarget = new Map(
     (yieldConfigs ?? []).map((config) => [`${config.account_id ? 'account' : 'wallet'}:${config.account_id ?? config.wallet_id}`, config]),
   )
@@ -75,20 +95,23 @@ export default async function CuentasPage({
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-5xl">
       <header className="border-b border-black/10 pb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Organización financiera</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-serif text-3xl text-ledger-text sm:text-4xl">Cuentas y bolsillos</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-ledger-muted">
-              Administra dónde está tu dinero y configura el rendimiento de cada destino.
+              Administra tus cuentas, bolsillos y su presupuesto mensual en un solo lugar.
             </p>
           </div>
           <div className="rounded-2xl border border-ledger-green/15 bg-ledger-green/5 px-4 py-3 text-right">
             <p className="text-2xl font-semibold text-ledger-green">{(accounts ?? []).length}</p>
             <p className="text-xs text-ledger-muted">cuentas registradas</p>
           </div>
+        </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-ledger-muted">Disponible incluye movimientos del mes y rendimiento estimado.</p>
+          <MonthSelector yearMonth={yearMonth} basePath="/cuentas" />
         </div>
       </header>
 
@@ -113,7 +136,7 @@ export default async function CuentasPage({
                   <p className="mt-1 text-xs text-ledger-muted">
                     {account.has_wallets ? 'El saldo se organiza por bolsillos' : 'El saldo pertenece directamente a esta cuenta'}
                   </p>
-                  {!account.has_wallets && <LocationSummary status={statusByTarget.get(`account:${account.id}`)} periodMonth={periodMonth} isActive={account.is_active} />}
+                  {!account.has_wallets && <LocationSummary status={statusByTarget.get(`account:${account.id}`)} budget={budgetByTarget.get(`account:${account.id}`)} locationId={account.id} spent={summary.accountById.get(account.id)?.gasto ?? 0} transferMovement={(summary.accountById.get(account.id)?.transferIn ?? 0) - (summary.accountById.get(account.id)?.transferOut ?? 0)} yieldAmount={summary.yieldByAccount.get(account.id) ?? 0} periodMonth={periodMonth} isActive={account.is_active} />}
                 </div>
               </div>
               <form action={toggleAccountActive}>
@@ -160,7 +183,7 @@ export default async function CuentasPage({
                           config={config}
                           rates={config ? ratesByConfig.get(config.id) ?? [] : []}
                         />
-                        <LocationSummary status={statusByTarget.get(`wallet:${wallet.id}`)} periodMonth={periodMonth} isActive={wallet.is_active} />
+                        <LocationSummary status={statusByTarget.get(`wallet:${wallet.id}`)} budget={budgetByTarget.get(`wallet:${wallet.id}`)} locationId={wallet.id} walletId={wallet.id} spent={summary.gastoByWallet.get(wallet.id) ?? 0} transferMovement={summary.transferByWallet.get(wallet.id) ?? 0} yieldAmount={summary.yieldByWallet.get(wallet.id) ?? 0} periodMonth={periodMonth} isActive={wallet.is_active} />
                       </li>
                     )
                   })}
@@ -212,26 +235,50 @@ export default async function CuentasPage({
   )
 }
 
-function LocationSummary({ status, periodMonth, isActive }: { status?: ExpenseLocationStatus; periodMonth: string; isActive: boolean }) {
+function LocationSummary({
+  status,
+  budget,
+  locationId,
+  walletId,
+  spent,
+  transferMovement,
+  yieldAmount,
+  periodMonth,
+  isActive,
+}: {
+  status?: ExpenseLocationStatusWithYield
+  budget?: MonthlyBudget
+  locationId: string
+  walletId?: string
+  spent: number
+  transferMovement: number
+  yieldAmount: number
+  periodMonth: string
+  isActive: boolean
+}) {
   const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
     .format(new Date(`${periodMonth}T00:00:00Z`))
-  const assigned = status ? status.assigned_amount + status.rollover_amount : 0
-  const budgetLabel = status?.category_id && status.budget_assigned
-    ? assigned > 0 ? formatCOP(assigned) : `Transferencias (${formatCOP(status.transfer_in)})`
-    : 'Sin asignar'
+  const assigned = Number(budget?.assigned_amount ?? 0)
+  const rollover = Number(budget?.rollover_amount ?? 0)
+  const total = Number(budget?.total_budget ?? assigned + rollover)
+  const available = total - spent + transferMovement + yieldAmount
+  const threshold = budget?.alert_threshold_percent === null || budget?.alert_threshold_percent === undefined
+    ? undefined
+    : Number(budget.alert_threshold_percent)
+  const percent = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const state = !isActive
     ? { label: 'Inactiva', classes: 'bg-black/5 text-ledger-muted' }
     : !status?.category_id
       ? { label: 'Sin categoría', classes: 'bg-amber-100 text-amber-900' }
-      : !status.budget_assigned
+      : total <= 0
         ? { label: 'Sin presupuesto', classes: 'bg-amber-100 text-amber-900' }
-        : status.available_amount < 0
+        : available < 0
           ? { label: 'Sobre presupuesto', classes: 'bg-red-100 text-red-800' }
           : { label: 'Lista para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
 
   return (
-    <section aria-label={`Estado de ${status?.location_name ?? 'la cuenta o bolsillo'}`} className="mt-4 max-w-2xl overflow-hidden rounded-xl border border-black/[0.07] bg-[#f8faf8]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] px-4 py-3">
+    <section aria-label={`Estado de ${status?.location_name ?? 'la cuenta o bolsillo'}`} className="mt-4 max-w-2xl border-y border-black/[0.07]">
+      <div className="flex flex-wrap items-center justify-between gap-3 py-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ledger-muted">Categoría asignada</p>
           <p className="mt-0.5 truncate text-sm font-semibold text-ledger-text">{status?.category_name ?? 'Sin asignar'}</p>
@@ -239,29 +286,48 @@ function LocationSummary({ status, periodMonth, isActive }: { status?: ExpenseLo
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${state.classes}`}>{state.label}</span>
       </div>
 
-      <dl className="grid grid-cols-2 divide-x divide-y divide-black/[0.06] sm:grid-cols-4 sm:divide-y-0">
-        <div className="min-w-0 px-4 py-3">
-          <dt className="text-[10px] font-medium text-ledger-muted">Presupuesto · {periodLabel}</dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums text-ledger-text">{budgetLabel}</dd>
-        </div>
-        <div className="min-w-0 px-4 py-3">
-          <dt className="text-[10px] font-medium text-ledger-muted">Transferencias recibidas</dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums text-ledger-text">{formatCOP(status?.transfer_in ?? 0)}</dd>
-        </div>
-        <div className="min-w-0 px-4 py-3">
-          <dt className="text-[10px] font-medium text-ledger-muted">Gastado este mes</dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums text-ledger-text">{formatCOP(status?.spent ?? 0)}</dd>
-        </div>
-        <div className="min-w-0 px-4 py-3">
-          <dt className="text-[10px] font-medium text-ledger-muted">Disponible</dt>
-          <dd className={`mt-1 truncate text-sm font-semibold tabular-nums ${status && status.available_amount < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status?.available_amount ?? 0)}</dd>
-        </div>
+      <dl className="grid grid-cols-2 divide-x divide-y divide-black/[0.06] sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
+        <SummaryMetric label={`Presupuesto · ${periodLabel}`} value={total} />
+        <SummaryMetric label="Gastado" value={spent} />
+        <SummaryMetric label="Mov. transferencias" value={transferMovement} />
+        <SummaryMetric label="Rendimiento estimado" value={yieldAmount} />
+        <SummaryMetric label="Disponible" value={available} emphasized />
+        <SummaryMetric label="Uso del presupuesto" value={percent} percent />
       </dl>
 
-      {!status?.category_id && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">La categoría y el presupuesto se asignan al registrar un ingreso o una transferencia.</p>}
-      {status?.category_id && !status.budget_assigned && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Asigna el presupuesto con un ingreso o recibe una transferencia en este destino.</p>}
+      <p className="border-t border-black/[0.06] py-2.5 text-xs text-ledger-muted">
+        Asignado {formatCOP(assigned)} · Sobrante {formatCOP(rollover)}
+        {threshold !== undefined ? ` · Alerta ${threshold}%` : ''}
+      </p>
+      {total > 0 && (
+        <div className="pb-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-black/5">
+            <div className={`h-full rounded-full ${available < 0 ? 'bg-red-700' : threshold !== undefined && percent >= threshold ? 'bg-amber-500' : 'bg-ledger-green'}`} style={{ width: `${percent}%` }} />
+          </div>
+        </div>
+      )}
+
+      {!status?.category_id && <p className="border-t border-black/[0.06] py-2.5 text-xs leading-5 text-ledger-muted">La categoría y el presupuesto se asignan al registrar un ingreso o una transferencia.</p>}
+      {status?.category_id && total <= 0 && <p className="border-t border-black/[0.06] py-2.5 text-xs leading-5 text-ledger-muted">Asigna el presupuesto con un ingreso o recibe una transferencia en este destino.</p>}
+      {status?.category_id && <form action={updateWalletBudgetThreshold} className="flex flex-wrap items-end gap-3 border-t border-black/[0.06] py-3">
+        {walletId ? <input type="hidden" name="wallet_id" value={walletId} /> : <input type="hidden" name="account_id" value={locationId} />}
+        <input type="hidden" name="period_month" value={periodMonth} />
+        <label className="text-xs text-ledger-muted">Alerta al gastar (%)
+          <input type="number" name="alert_threshold_percent" min="0" max="100" step="1" defaultValue={threshold ?? 80} className="ml-2 w-20 rounded-lg border border-black/10 bg-white px-2.5 py-2 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green" />
+        </label>
+        <button type="submit" className="btn btn-secondary btn-sm">Guardar alerta</button>
+      </form>}
     </section>
   )
+}
+
+function SummaryMetric({ label, value, emphasized = false, percent = false }: { label: string; value: number; emphasized?: boolean; percent?: boolean }) {
+  return <div className="min-w-0 px-3 py-3">
+    <dt className="truncate text-[10px] font-medium text-ledger-muted">{label}</dt>
+    <dd className={`mt-1 truncate text-sm font-semibold tabular-nums ${emphasized ? value < 0 ? 'text-red-700' : 'text-ledger-green' : 'text-ledger-text'}`}>
+      {percent ? `${value.toFixed(0)}%` : formatCOP(value)}
+    </dd>
+  </div>
 }
 
 function YieldSettings({
