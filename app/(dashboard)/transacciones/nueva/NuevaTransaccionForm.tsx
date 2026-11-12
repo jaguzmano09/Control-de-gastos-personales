@@ -64,8 +64,12 @@ export function NuevaTransaccionForm({
   const destinationWalletName = wallets.find((w) => w.id === destinationWalletId)?.name
   const sourceWallet = wallets.find((wallet) => wallet.id === walletId && wallet.account_id === accountId)
   const destinationWallet = wallets.find((wallet) => wallet.id === destinationWalletId && wallet.account_id === destinationAccountId)
-  const assignedSourceCategoryId = sourceWallet?.category_id ?? selectedAccount?.category_id ?? ''
-  const assignedDestinationCategoryId = destinationWallet?.category_id ?? destinationAccount?.category_id ?? ''
+  const assignedSourceCategoryId = sourceWallet
+    ? sourceWallet.category_id ?? ''
+    : selectedAccount?.has_wallets ? '' : selectedAccount?.category_id ?? ''
+  const assignedDestinationCategoryId = destinationWallet
+    ? destinationWallet.category_id ?? ''
+    : destinationAccount?.has_wallets ? '' : destinationAccount?.category_id ?? ''
   const assignedSourceCategoryName = categories.find((category) => category.id === assignedSourceCategoryId)?.name
   const assignedDestinationCategoryName = categories.find((category) => category.id === assignedDestinationCategoryId)?.name
   const sourceCategoryForSubmission = type === 'Transferencia' || type === 'Ingreso'

@@ -57,8 +57,12 @@ export function EditTransaccionForm({
   )
   const sourceWallet = wallets.find((wallet) => wallet.id === walletId && wallet.account_id === accountId)
   const destinationWallet = wallets.find((wallet) => wallet.id === destinationWalletId && wallet.account_id === destinationAccountId)
-  const sourceCategoryId = sourceWallet?.category_id ?? selectedAccount?.category_id ?? ''
-  const destinationCategoryId = destinationWallet?.category_id ?? destinationAccount?.category_id ?? ''
+  const sourceCategoryId = sourceWallet
+    ? sourceWallet.category_id ?? ''
+    : selectedAccount?.has_wallets ? '' : selectedAccount?.category_id ?? ''
+  const destinationCategoryId = destinationWallet
+    ? destinationWallet.category_id ?? ''
+    : destinationAccount?.has_wallets ? '' : destinationAccount?.category_id ?? ''
   const destinationCategoryName = categories.find((category) => category.id === destinationCategoryId)?.name
   const sourceCategoryForSubmission = type === 'Ingreso' || type === 'Transferencia' ? sourceCategoryId || categoryId : categoryId
   const destinationCategoryForSubmission = destinationCategoryId || destinationCategoryChoice

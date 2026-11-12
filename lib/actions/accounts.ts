@@ -12,9 +12,9 @@ export async function createAccount(formData: FormData) {
   const name = (formData.get('name') as string)?.trim()
   const category_id = (formData.get('category_id') as string)?.trim()
   const has_wallets = formData.get('has_wallets') === 'true'
-  if (!name || !category_id) throw new Error('El nombre y la categoría son obligatorios')
+  if (!name || (!has_wallets && !category_id)) throw new Error('El nombre y la categoría son obligatorios para una cuenta sin bolsillos')
 
-  const { error } = await supabase.from('accounts').insert({ user_id: user.id, name, category_id, has_wallets })
+  const { error } = await supabase.from('accounts').insert({ user_id: user.id, name, category_id: has_wallets ? null : category_id, has_wallets })
   if (error) throw error
 
   revalidatePath('/cuentas')
@@ -27,6 +27,8 @@ export async function updateAccountCategory(formData: FormData) {
   const id = (formData.get('id') as string)?.trim()
   const category_id = (formData.get('category_id') as string)?.trim()
   if (!id || !category_id) throw new Error('Selecciona una categoría')
+  const { data: account } = await supabase.from('accounts').select('has_wallets').eq('id', id).eq('user_id', user.id).maybeSingle()
+  if (!account || account.has_wallets) throw new Error('Las cuentas con bolsillos usan una categoría independiente por bolsillo')
   const { error } = await supabase.from('accounts').update({ category_id }).eq('id', id).eq('user_id', user.id)
   if (error) throw error
   revalidatePath('/cuentas')
@@ -71,7 +73,7 @@ export async function createWallet(formData: FormData) {
   // Mantiene consistente el flag informativo has_wallets de la cuenta padre.
   const { error: accountError } = await supabase
     .from('accounts')
-    .update({ has_wallets: true })
+    .update({ has_wallets: true, category_id: null })
     .eq('id', account_id)
     .eq('user_id', user.id)
   if (accountError) throw accountError

@@ -105,16 +105,16 @@ export default async function CuentasPage({
                   <p className="mt-1 text-xs text-ledger-muted">
                     {account.has_wallets ? 'El saldo se organiza por bolsillos' : 'El saldo pertenece directamente a esta cuenta'}
                   </p>
-                  <form action={updateAccountCategory} className="mt-3 flex flex-wrap items-end gap-2">
+                  {!account.has_wallets && <form action={updateAccountCategory} className="mt-3 flex flex-wrap items-end gap-2">
                     <input type="hidden" name="id" value={account.id} />
-                    <label className="text-xs text-ledger-muted">Categoría predeterminada de la cuenta
+                    <label className="text-xs text-ledger-muted">Categoría de la cuenta
                       <select name="category_id" defaultValue={account.category_id ?? ''} required className={`${inputClass} min-w-48`}>
                         <option value="">Selecciona una categoría</option>
                         {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                       </select>
                     </label>
                     <button type="submit" className="btn btn-secondary btn-sm">Guardar categoría</button>
-                  </form>
+                  </form>}
                 </div>
               </div>
               <form action={toggleAccountActive}>
@@ -165,7 +165,7 @@ export default async function CuentasPage({
                           <input type="hidden" name="id" value={wallet.id} />
                           <label className="text-xs text-ledger-muted">Categoría del bolsillo
                             <select name="category_id" defaultValue={wallet.category_id ?? ''} className={`${inputClass} min-w-48`}>
-                              <option value="">Heredar categoría de la cuenta</option>
+                              <option value="">Sin categoría; se asignará al usar el bolsillo</option>
                               {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                             </select>
                           </label>
@@ -181,7 +181,7 @@ export default async function CuentasPage({
                 <input type="hidden" name="account_id" value={account.id} />
                 <input name="name" placeholder="Nombre del nuevo bolsillo" required className={`${inputClass} mt-0 flex-1`} />
                 <select name="category_id" className={`${inputClass} sm:max-w-56`} aria-label="Categoría del bolsillo, opcional">
-                  <option value="">Heredar categoría de la cuenta</option>
+                  <option value="">Asignar ahora o al usar el bolsillo</option>
                   {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select>
                 <button type="submit" className="btn btn-primary btn-sm shrink-0">
@@ -215,9 +215,9 @@ export default async function CuentasPage({
             Nombre de la cuenta
             <input name="name" required className={inputClass} placeholder="Ej. Banco principal" />
           </label>
-          <label className="text-xs font-medium text-ledger-muted">Categoría predeterminada
-            <select name="category_id" required className={inputClass}>
-              <option value="">Selecciona una categoría</option>
+          <label className="text-xs font-medium text-ledger-muted">Categoría (solo si no tendrá bolsillos)
+            <select name="category_id" className={inputClass}>
+              <option value="">Selecciona una categoría si aplica</option>
               {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           </label>
