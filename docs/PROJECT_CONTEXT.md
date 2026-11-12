@@ -4,11 +4,13 @@ Exploration date: 2026-11-11. Findings concern local source. No financial record
 
 ## Product and owner intent
 
-Control de Gastos Personales began as a replacement for a personal spreadsheet. The owner wants public-use readiness, a critical assessment, coherent identity, and durable development context. Two independent assessment agents were authorized. The initial segment, business model, and final name remain unconfirmed.
+The owner accepted the roadmap and instructed development to begin. Priorities remain a compelling public homepage, distinctive useful/enjoyable experience, owner administration alongside personal use, and privacy. See [ROADMAP.md](ROADMAP.md), now Working v3. P0 deliverables are in review; scoped P1 fixes are locally verified. No remote data/schema change or owner role promotion has been performed.
+
+Control de Gastos Personales began as a replacement for a personal spreadsheet. The owner wants public-use readiness, a critical assessment, coherent identity, and durable development context. Two independent assessment agents were authorized. The business model and final name remain unconfirmed.
 
 Owner preferences, explicitly requested on 2026-11-11: communicate in Spanglish; write code comments and documentation in English. Product UI remains Spanish unless separately changed.
 
-Audience hypothesis, NOT an approved decision: people in Colombia managing several accounts/wallets who need to record expenses and understand monthly spending capacity. Evidence: COP/es-CO, Colombian extraction prompts, and accounts described in the specification. Do not assume international or business-accounting support.
+Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chose recording/organizing movements as the primary benefit and progressive Gmail/OCR availability after reliability checks. See [the P0 product brief](product/PRODUCT_BRIEF.md) for decisions D01-D08. Do not assume international or business-accounting support.
 
 ## Effective stack
 
@@ -18,7 +20,7 @@ Audience hypothesis, NOT an approved decision: people in Colombia managing sever
 - Vercel: rollover cron on day 1 at 05:00 UTC; Gmail daily at 06:00 UTC.
 - Gemini extraction through REST; Tesseract.js shared worker/queue; Sharp preprocessing; optional PaddleOCR service.
 - PWA manifest, icons, service worker, and offline page. This does not provide offline financial editing: the worker only implements a navigation fallback.
-- Local production verification found unauthenticated requests for /manifest.webmanifest, /sw.js, and /offline.html redirecting to /login (HTTP 307); see F13 in the assessment.
+- Original verification found public PWA assets redirecting to login (F13). The first P1 delivery corrected exact-path access before session/database work; GET/HEAD and private-path boundaries pass locally. Full installation/offline lifecycle remains unverified.
 
 ## Route map
 
@@ -78,6 +80,7 @@ RPCs: accept_current_documents, admin_product_event_metrics, record_product_even
 - Rollover: cron processes targets and updates next-period budgets/reviews. Manual assignment currently overwrites category rollover and updates review status separately.
 - Consent: login hardcodes document versions; DB owns active versions, a trigger creates profiles/registration acceptances, and an RPC renews acceptance. UI consent routing alone does not enforce acceptance at every API/database mutation.
 - Events: migration/RPC/admin view exist; no product-flow instrumentation calls were found.
+- Owner administration is an accepted future requirement: the same identity should retain its complete personal workspace and access a server-authorized metrics area. Existing role/aggregate-RPC foundations do not establish that the owner's account is provisioned or that the required metrics exist. Define aggregate visibility and small-cohort safeguards before implementing analytics; admin status does not authorize routine access to others' private financial data.
 
 ## Entry points by change
 
@@ -101,6 +104,10 @@ Forest green, ivory, dark text, white, and clay accents; serif headings and an I
 The review used Impeccable with two independent assessments, Supabase, webapp-testing, and local brand guidance at skill/brand/brand/SKILL.md. App Router patterns and the local cybersecurity guide were also explored. The repository catalog is skill/README.md; copies under skill/_installed/ should not be treated as distinct capabilities. Voice/messaging references live under skill/brand/brand/references/. No skills were installed or modified.
 
 ## Verification and unresolved areas
+
+Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records typecheck/build, six existing yield tests, and 19 foundation HTTP scenarios. Reproduce after a production build with node scripts/verify-foundation.cjs. Both cron endpoints reject missing/invalid configuration before work; authorized jobs were not executed. Lint still opens setup and is not passing. Original assessment results below remain historical context.
+
+The owner requests scoped Git commits/pushes when appropriate, with English Conventional Commit messages and documented validation. Preserve unrelated changes and shared history.
 
 Typecheck and all six existing yield tests passed. Lint opened an interactive setup prompt and did not complete. Production build passed with Next.js 15.5.28 and 27 generated pages. Browser/detector evidence and limitations are recorded in the assessment and docs/audit/.
 

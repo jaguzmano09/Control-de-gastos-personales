@@ -2,13 +2,25 @@
 
 Proposed on 2026-11-11. This is not a schedule commitment or an owner-approved identity. It follows PLATFORM_REVIEW_2026-11-11.md.
 
+For the detailed execution draft, task IDs, dependencies, and owner-feedback worksheet, see [ROADMAP.md](ROADMAP.md). This document remains the supporting product-direction rationale.
+
 ## One governing principle
 
 **Verifiable clarity about everyday money.** Every figure explainable, every automation reviewable, and every screen clear about the next decision.
 
 Use the same standard for design, backend, and brand. A feature, animation, or sentence should help someone understand, record, or decide confidently. Prioritize correctness and complete tasks before expanding integrations.
 
-Audience hypothesis: people in Colombia managing multiple accounts/wallets who want monthly spending control without a complicated spreadsheet. Validate with the owner and real users before defining the final identity. Do not assume all countries or business accounting are in scope.
+## Confirmed owner feedback
+
+The owner accepted the roadmap direction and requires a public homepage that attracts prospective customers from the first impression and explains the platform's value. Treat this as a dedicated acquisition journey, with truthful product previews, clear next actions, and straightforward access for returning members.
+
+Identity must be distinctive and supported by functionality, usability, and enjoyment throughout actual tasks. Evaluate creative directions against the audience and product behavior rather than treating a new logo or palette as sufficient.
+
+The owner's identity must retain all ordinary personal-account capabilities and add a protected administrative area for product and operational metrics. Plan registrations, activation, usage, retention, reliability, and cost measures only where their sources and definitions are available. The role and metrics are requirements to implement and verify, not completed features.
+
+Privacy is a cross-phase priority. Administrative metrics should be aggregated with suitable reporting granularity and access controls; private transactions, balances, receipts, email contents, and credentials are not routine administrative analytics. Data minimization, provider disclosure, private support, retention/deletion, and verification of user isolation remain release gates.
+
+Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chose recording and organizing movements as the primary benefit, with progressive Gmail/OCR availability after reliability checks. Planning supports trustworthy records. Detailed scope and financial semantics remain in review in [the P0 brief](product/PRODUCT_BRIEF.md) and [financial proposal](product/FINANCIAL_MODEL_PROPOSAL.md).
 
 ## Proposed identity, pending validation
 
@@ -35,7 +47,7 @@ Documentation and design can overlap, but opening access depends on integrity, p
 
 ## Recommended initial experience
 
-Make a short sequence excellent: create workspace → first account → income or explicitly defined opening balance → expense → budget → explained available amount. Show review when there is something to review. OCR, Gmail, yield, and shopping can be progressively introduced with honest beta states instead of burdening first use.
+Make the confirmed primary task excellent: create workspace, create a financial account, record a movement, then find and correct it. Introduce opening-balance context and budgets as subsequent steps; do not require a budget before first recording. Show review when needed. Gmail/OCR are progressively gated as confirmed by the owner; advanced shopping/yield scope remains proposed rather than removed from existing personal use.
 
 Organize navigation around overview, transactions, and budgets; group capture/review and account/integration management. Study usage before removing existing functions. Mobile entry should be reachable and survive interruptions.
 

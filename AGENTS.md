@@ -6,6 +6,9 @@ This project was explored on 2026-11-11. Before changing it, read:
 2. `Functional_specification.md`: intended business rules; reconcile with implementation and actual schema.
 3. `docs/PLATFORM_REVIEW_2026-11-11.md`: critical assessment and known risks.
 4. `docs/PUBLIC_RELEASE_PLAN.md`: proposed product direction and release gates.
+5. `docs/ROADMAP.md`: phased execution draft, task IDs, dependencies, acceptance criteria, and owner decisions. The owner accepted its overall direction and added requirements; detailed decisions remain open. Listed tasks are not automatically implemented or completed.
+6. `docs/product/PRODUCT_BRIEF.md`, `docs/product/FINANCIAL_MODEL_PROPOSAL.md`, and `docs/product/PRIVACY_DATA_MAP.md`: P0 decisions, proposed financial semantics, and privacy boundaries. Only explicitly confirmed decisions are approved; proposals do not rewrite existing data.
+7. `docs/implementation/FOUNDATION_PROGRESS.md`: first local fixes and reproducible HTTP evidence.
 
 These files provide durable repository context, not guaranteed automatic memory across sessions. Update them when decisions, flows, or risks change. Distinguish implemented behavior, verified behavior, and proposals. Recommendations are not owner-approved decisions.
 
@@ -13,8 +16,12 @@ These files provide durable repository context, not guaranteed automatic memory 
 
 - Communicate with the owner in Spanglish, as requested on 2026-11-11.
 - Write code comments and all new or updated documentation in English.
+- Create meaningful, scoped Git commits as work progresses and push completed commits when appropriate, as explicitly requested by the owner. Use English Conventional Commit subjects and explanatory bodies with relevant validation/limitations. Inspect the branch, remote, and diff; stage explicit paths, preserve unrelated changes, and never include secrets, generated build output, or real financial data. Do not rewrite shared history or force-push without explicit authorization.
 - Keep product interface messages in Spanish unless the owner requests otherwise.
-- The owner wants a critical assessment and coherent identity before public release. Initial audience, business model, and final brand name remain unconfirmed.
+- The owner wants a critical assessment and coherent identity before public release. Initial audience is confirmed: personal finances in Colombia, COP, America/Bogota. The primary benefit is recording/organizing movements; Gmail/OCR become available progressively after reliability checks. Business model and final brand name remain unconfirmed.
+- The public homepage must attract prospective customers immediately and clearly explain the platform's value. Brand identity must be distinctive and expressed through an effective, enjoyable product experience.
+- The owner's account must retain ordinary personal-account functionality and also provide a protected administrative area for product/operational metrics. This is a planned requirement, not evidence that privileges were changed.
+- Privacy is a cross-phase release requirement. Administrative analytics must preserve personal financial isolation and avoid routine access to other users' transactions, balances, receipts, emails, or credentials; use appropriately aggregated product metrics.
 
 ## Invariants
 
