@@ -216,7 +216,7 @@ export function NuevaTransaccionForm({
 
           {type === 'Ingreso' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida se asignará a la cuenta o bolsillo al guardar este ingreso.</p>}
           {type === 'Transferencia' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al origen al confirmar.</p>}
-          {type === 'Gasto' && selectedLocationStatus && <LocationStatusSummary status={selectedLocationStatus} occurredAt={occurredAt} />}
+          {type === 'Gasto' && selectedLocationStatus && <LocationStatusSummary status={selectedLocationStatus} occurredAt={occurredAt} isLoading={isLoadingStatuses} hasError={statusLoadFailed} />}
           {type === 'Gasto' && expenseBlockReason && <div role="alert" className="rounded-sm border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             <p>{expenseBlockReason}</p>
             {statusLoadFailed && <button type="button" onClick={retryLocationStatuses} className="mt-2 font-medium underline underline-offset-2">Reintentar consulta</button>}
@@ -337,22 +337,49 @@ function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 }
 
-function LocationStatusSummary({ status, occurredAt }: { status: ExpenseLocationStatus; occurredAt: string }) {
+function LocationStatusSummary({ status, occurredAt, isLoading, hasError }: { status: ExpenseLocationStatus; occurredAt: string; isLoading: boolean; hasError: boolean }) {
   const periodLabel = occurredAt
     ? new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${occurredAt.slice(0, 7)}-01T00:00:00Z`))
     : 'este mes'
   const assigned = status.assigned_amount + status.rollover_amount
-  const budgetLabel = assigned > 0 ? formatCOP(assigned) : status.transfer_in > 0 ? `Financiado por transferencias (${formatCOP(status.transfer_in)})` : formatCOP(assigned)
+  const budgetLabel = !status.category_id || !status.budget_assigned
+    ? 'Sin asignar'
+    : assigned > 0 ? formatCOP(assigned) : `Transferencias (${formatCOP(status.transfer_in)})`
+  const state = isLoading
+    ? { label: 'Consultando', classes: 'bg-black/5 text-ledger-muted' }
+    : hasError
+      ? { label: 'Estado no disponible', classes: 'bg-red-100 text-red-800' }
+      : !status.category_id
+        ? { label: 'Sin categoría', classes: 'bg-amber-100 text-amber-900' }
+        : !status.budget_assigned
+          ? { label: 'Sin presupuesto', classes: 'bg-amber-100 text-amber-900' }
+          : status.available_amount < 0
+            ? { label: 'Sobre presupuesto', classes: 'bg-red-100 text-red-800' }
+            : { label: 'Lista para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
 
   return (
-    <dl className="grid gap-1 rounded-sm border border-black/10 bg-white px-3 py-2 text-xs sm:grid-cols-2">
-      <div><dt className="inline text-ledger-muted">Ubicación: </dt><dd className="inline font-medium text-ledger-text">{status.location_name}</dd></div>
-      <div><dt className="inline text-ledger-muted">Categoría asignada: </dt><dd className="inline font-medium text-ledger-text">{status.category_name ?? 'Sin asignar'}</dd></div>
+    <section aria-label={`Estado mensual de ${status.location_name}`} aria-busy={isLoading} className="overflow-hidden rounded-xl border border-black/[0.07] bg-[#f8faf8]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ledger-muted">{status.location_name}</p>
+          <p className="mt-0.5 truncate text-sm font-semibold text-ledger-text">{status.category_name ?? 'Sin categoría asignada'}</p>
+        </div>
+        <span aria-live="polite" className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${state.classes}`}>{state.label}</span>
+      </div>
+
+      {isLoading || hasError ? (
+        <p role="status" className={`px-4 py-4 text-xs leading-5 ${hasError ? 'text-red-800' : 'text-ledger-muted'}`}>
+          {hasError ? 'No pudimos consultar el presupuesto de este periodo.' : `Consultando el presupuesto de ${periodLabel}…`}
+        </p>
+      ) : <dl className="grid grid-cols-2 divide-x divide-y divide-black/[0.06] sm:grid-cols-4 sm:divide-y-0 [&>div]:min-w-0 [&>div]:px-4 [&>div]:py-3 [&>div>dt]:block [&>div>dt]:text-[10px] [&>div>dd]:mt-1 [&>div>dd]:block [&>div>dd]:text-sm [&>div>dd]:font-semibold [&>div>dd]:tabular-nums">
       <div><dt className="inline text-ledger-muted">Presupuesto {periodLabel}: </dt><dd className="inline font-medium text-ledger-text">{budgetLabel}</dd></div>
       {status.transfer_in > 0 && <div><dt className="inline text-ledger-muted">Transferencias recibidas: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.transfer_in)}</dd></div>}
       <div><dt className="inline text-ledger-muted">Gastado: </dt><dd className="inline font-medium text-ledger-text">{formatCOP(status.spent)}</dd></div>
       <div><dt className="inline text-ledger-muted">Disponible antes de rendimientos: </dt><dd className={`inline font-medium ${status.available_amount < 0 ? 'text-red-700' : 'text-ledger-green'}`}>{formatCOP(status.available_amount)}</dd></div>
-    </dl>
+      </dl>}
+      {!isLoading && !hasError && !status.category_id && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Registra un ingreso o una transferencia para asignar la categoría y habilitar su presupuesto.</p>}
+      {!isLoading && !hasError && status.category_id && !status.budget_assigned && <p className="border-t border-black/[0.06] px-4 py-2.5 text-xs leading-5 text-ledger-muted">Registra un ingreso o recibe una transferencia en este destino para asignar el presupuesto.</p>}
+    </section>
   )
 }
 
