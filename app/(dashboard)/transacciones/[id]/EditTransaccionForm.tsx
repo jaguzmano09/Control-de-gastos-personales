@@ -44,6 +44,7 @@ export function EditTransaccionForm({
   const [type, setType] = useState(transaction.type)
   const [destinationAccountId, setDestinationAccountId] = useState(transaction.destination_account_id ?? '')
   const [destinationWalletId, setDestinationWalletId] = useState(transaction.destination_wallet_id ?? '')
+  const [destinationCategoryChoice, setDestinationCategoryChoice] = useState(transaction.destination_category_id ?? '')
   const selectedAccount = accounts.find((a) => a.id === accountId)
   const walletsForAccount = useMemo(
     () => wallets.filter((w) => w.account_id === accountId),
@@ -59,6 +60,8 @@ export function EditTransaccionForm({
   const sourceCategoryId = sourceWallet?.category_id ?? selectedAccount?.category_id ?? ''
   const destinationCategoryId = destinationWallet?.category_id ?? destinationAccount?.category_id ?? ''
   const destinationCategoryName = categories.find((category) => category.id === destinationCategoryId)?.name
+  const sourceCategoryForSubmission = type === 'Ingreso' || type === 'Transferencia' ? sourceCategoryId || categoryId : categoryId
+  const destinationCategoryForSubmission = destinationCategoryId || destinationCategoryChoice
 
   return (
     <div className="mt-8 space-y-8">
@@ -70,6 +73,8 @@ export function EditTransaccionForm({
 
       <form action={updateTransaction} className="space-y-5">
         <input type="hidden" name="id" value={transaction.id} />
+        <input type="hidden" name="category_id" value={sourceCategoryForSubmission} />
+        <input type="hidden" name="destination_category_id" value={type === 'Transferencia' ? destinationCategoryForSubmission : ''} />
 
         <div>
           <label className="block text-sm text-ledger-text">Fecha</label>
@@ -96,15 +101,16 @@ export function EditTransaccionForm({
 
         <div>
           <label className="block text-sm text-ledger-text">Categoría</label>
-          <select value={type === 'Transferencia' ? sourceCategoryId : categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={type === 'Transferencia'} required={type === 'Gasto' || type === 'Ingreso'} className={inputClass}>
+          <select value={type === 'Ingreso' || type === 'Transferencia' ? sourceCategoryId || categoryId : categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={(type === 'Ingreso' || type === 'Transferencia') && !!sourceCategoryId} required={type === 'Gasto' || type === 'Ingreso' || (type === 'Transferencia' && !sourceCategoryId)} className={inputClass}>
             <option value="">— Sin categoría —</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
+        {type === 'Ingreso' && !sourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida se asignará a la cuenta o bolsillo al guardar este ingreso.</p>}
 
         <div>
           <label className="block text-sm text-ledger-text">Cuenta</label>
-          <select name="account_id" value={accountId} onChange={(e) => setAccountId(e.target.value)} required className={inputClass}>
+          <select name="account_id" value={accountId} onChange={(e) => { setAccountId(e.target.value); setWalletId(''); setCategoryId('') }} required className={inputClass}>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
@@ -112,7 +118,7 @@ export function EditTransaccionForm({
         {selectedAccount?.has_wallets && (
           <div>
             <label className="block text-sm text-ledger-text">Bolsillo</label>
-            <select name="wallet_id" value={walletId} onChange={(event) => setWalletId(event.target.value)} required className={inputClass}>
+            <select name="wallet_id" value={walletId} onChange={(event) => { setWalletId(event.target.value); setCategoryId('') }} required className={inputClass}>
               <option value="">— Elige uno —</option>
               {walletsForAccount.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
@@ -122,28 +128,27 @@ export function EditTransaccionForm({
         {type === 'Transferencia' && <>
           <div>
             <label className="block text-sm text-ledger-text">Cuenta de destino</label>
-            <select name="destination_account_id" value={destinationAccountId} onChange={(event) => { setDestinationAccountId(event.target.value); setDestinationWalletId('') }} required className={inputClass}>
+            <select name="destination_account_id" value={destinationAccountId} onChange={(event) => { setDestinationAccountId(event.target.value); setDestinationWalletId(''); setDestinationCategoryChoice('') }} required className={inputClass}>
               <option value="">— Selecciona una cuenta —</option>
               {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
             </select>
           </div>
           {destinationAccount?.has_wallets && <div>
             <label className="block text-sm text-ledger-text">Bolsillo de destino</label>
-            <select name="destination_wallet_id" value={destinationWalletId} onChange={(event) => setDestinationWalletId(event.target.value)} required className={inputClass}>
+            <select name="destination_wallet_id" value={destinationWalletId} onChange={(event) => { setDestinationWalletId(event.target.value); setDestinationCategoryChoice('') }} required className={inputClass}>
               <option value="">— Elige uno —</option>
               {destinationWallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}
             </select>
           </div>}
           <div>
             <label className="block text-sm text-ledger-text">Categoría de destino</label>
-            <select value={destinationCategoryId} disabled className={inputClass}>
+            <select value={destinationCategoryId || destinationCategoryChoice} onChange={(event) => setDestinationCategoryChoice(event.target.value)} required={!destinationCategoryId} disabled={!!destinationCategoryId} className={inputClass}>
               <option value="">— Selecciona una categoría —</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           </div>
-          <p className="text-sm text-ledger-muted">Categoría asignada: {destinationCategoryName ?? 'sin asignar'}</p>
-          {!sourceCategoryId && <p className="text-xs text-amber-800">Asigna una categoría al origen en <a className="underline" href="/cuentas">Cuentas y bolsillos</a>.</p>}
-          {!destinationCategoryId && <p className="text-xs text-amber-800">Asigna una categoría al destino en <a className="underline" href="/cuentas">Cuentas y bolsillos</a>.</p>}
+          {!sourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al origen al guardar.</p>}
+          {!destinationCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al destino al guardar.</p>}
         </>}
 
         <div>
@@ -181,8 +186,6 @@ export function EditTransaccionForm({
         }}
       >
         <input type="hidden" name="id" value={transaction.id} />
-        <input type="hidden" name="category_id" value={type === 'Transferencia' ? sourceCategoryId : categoryId} />
-        <input type="hidden" name="destination_category_id" value={type === 'Transferencia' ? destinationCategoryId : ''} />
         <button type="submit" className="btn btn-danger btn-full">
           Eliminar transacción
         </button>

@@ -1,10 +1,11 @@
 # Supabase Migration Reconciliation
 
-Status: inventory in progress. No schema baseline has been generated and no legacy migration has been replayed. Two new finance migrations have since been applied and recorded in the hosted ledger.
+Status: inventory in progress. No schema baseline has been generated and no legacy migration has been replayed. Three new finance migrations have since been applied and recorded in the hosted ledger.
 
 ## Current evidence
 
-- The initial linked-project inspection found an empty migration ledger. Since then, `20261112035814_add_transfer_destinations` and `20261112035909_account_category_defaults` were applied through the connected Supabase migration tool and verified in the hosted ledger.
+- The initial linked-project inspection found an empty migration ledger. Since then, `20261112035814_add_transfer_destinations`, `20261112035909_account_category_defaults`, and `20261112042500_inherit_categories_from_income_and_transfer` were applied through the connected Supabase migration tool and verified in the hosted ledger.
+- The latest finance migration backfilled account/pocket categories only where confirmed November 2026 income proves a single distinct category. Both Dale pockets now have their established categories (`Otros` and `Mercado`). Conflicting or absent evidence remains unassigned. The migration also assigns a missing location category atomically when a confirmed income or transfer first uses it; a pocket assignment does not silently set its parent account default.
 - The hosted `public` schema has 23 tables with RLS enabled, 22 policies, 17 functions, and 29 triggers, while repository migrations do not define the initial core financial schema.
 - The repository currently contains 17 migration files. They are mostly feature changes dated September through November 2026; they do not form a complete fresh-install history for the hosted database.
 - `20261108000000_add_public_beta_foundations.sql` creates profiles, consent records, and product telemetry, but assumes the existing application schema.

@@ -45,6 +45,7 @@ export function NuevaTransaccionForm({
   const [walletId, setWalletId] = useState('')
   const [destinationAccountId, setDestinationAccountId] = useState(accounts[1]?.id ?? accounts[0]?.id ?? '')
   const [destinationWalletId, setDestinationWalletId] = useState('')
+  const [destinationCategoryChoice, setDestinationCategoryChoice] = useState('')
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
   const [isNecessary, setIsNecessary] = useState('')
@@ -67,11 +68,15 @@ export function NuevaTransaccionForm({
   const assignedDestinationCategoryId = destinationWallet?.category_id ?? destinationAccount?.category_id ?? ''
   const assignedSourceCategoryName = categories.find((category) => category.id === assignedSourceCategoryId)?.name
   const assignedDestinationCategoryName = categories.find((category) => category.id === assignedDestinationCategoryId)?.name
+  const sourceCategoryForSubmission = type === 'Transferencia' || type === 'Ingreso'
+    ? assignedSourceCategoryId || categoryId
+    : categoryId
+  const destinationCategoryForSubmission = assignedDestinationCategoryId || destinationCategoryChoice
 
   function handleContinue() {
     if (!occurredAt || !accountId || !amount || Number(amount) <= 0) return
-    if ((type === 'Gasto' || type === 'Ingreso') && !categoryId) return
-    if (type === 'Transferencia' && (!assignedSourceCategoryId || !assignedDestinationCategoryId || !destinationAccountId)) return
+    if ((type === 'Gasto' || type === 'Ingreso') && !sourceCategoryForSubmission) return
+    if (type === 'Transferencia' && (!sourceCategoryForSubmission || !destinationCategoryForSubmission || !destinationAccountId)) return
     setStep('confirm')
   }
 
@@ -103,17 +108,18 @@ export function NuevaTransaccionForm({
 
           <div>
             <label className="block text-sm text-ledger-text">{type === 'Transferencia' ? 'Categoría de origen' : 'Categoría'}</label>
-            <select value={type === 'Transferencia' ? assignedSourceCategoryId : categoryId} onChange={(e) => setCategoryId(e.target.value)} required={type === 'Gasto' || type === 'Ingreso'} disabled={type === 'Transferencia'} className={inputClass}>
+            <select value={type === 'Transferencia' || type === 'Ingreso' ? assignedSourceCategoryId || categoryId : categoryId} onChange={(e) => setCategoryId(e.target.value)} required={type === 'Gasto' || type === 'Ingreso' || (type === 'Transferencia' && !assignedSourceCategoryId)} disabled={(type === 'Transferencia' || type === 'Ingreso') && !!assignedSourceCategoryId} className={inputClass}>
               <option value="">— Sin categoría —</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
 
-          {type === 'Transferencia' && !assignedSourceCategoryId && <p className="text-xs text-amber-800">Asigna una categoría a la cuenta o bolsillo en <a className="underline" href="/cuentas">Cuentas y bolsillos</a>.</p>}
+          {type === 'Ingreso' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida se asignará a la cuenta o bolsillo al guardar este ingreso.</p>}
+          {type === 'Transferencia' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al origen al confirmar.</p>}
 
           <div>
             <label className="block text-sm text-ledger-text">Cuenta</label>
-            <select value={accountId} onChange={(e) => { setAccountId(e.target.value); setWalletId('') }} required className={inputClass}>
+            <select value={accountId} onChange={(e) => { setAccountId(e.target.value); setWalletId(''); setCategoryId('') }} required className={inputClass}>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
@@ -121,7 +127,7 @@ export function NuevaTransaccionForm({
           {selectedAccount?.has_wallets && (
             <div>
               <label className="block text-sm text-ledger-text">Bolsillo</label>
-              <select value={walletId} onChange={(e) => setWalletId(e.target.value)} required className={inputClass}>
+              <select value={walletId} onChange={(e) => { setWalletId(e.target.value); setCategoryId('') }} required className={inputClass}>
                 <option value="">— Elige uno —</option>
                 {walletsForAccount.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
@@ -131,25 +137,25 @@ export function NuevaTransaccionForm({
           {type === 'Transferencia' && <>
             <div>
               <label className="block text-sm text-ledger-text">Cuenta de destino</label>
-              <select value={destinationAccountId} onChange={(e) => { setDestinationAccountId(e.target.value); setDestinationWalletId('') }} required className={inputClass}>
+              <select value={destinationAccountId} onChange={(e) => { setDestinationAccountId(e.target.value); setDestinationWalletId(''); setDestinationCategoryChoice('') }} required className={inputClass}>
                 {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
             {destinationAccount?.has_wallets && <div>
               <label className="block text-sm text-ledger-text">Bolsillo de destino</label>
-              <select value={destinationWalletId} onChange={(e) => setDestinationWalletId(e.target.value)} required className={inputClass}>
+              <select value={destinationWalletId} onChange={(e) => { setDestinationWalletId(e.target.value); setDestinationCategoryChoice('') }} required className={inputClass}>
                 <option value="">— Elige uno —</option>
                 {destinationWallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>}
             <div>
               <label className="block text-sm text-ledger-text">Categoría de destino</label>
-              <select value={assignedDestinationCategoryId} disabled className={inputClass}>
+              <select value={assignedDestinationCategoryId || destinationCategoryChoice} onChange={(e) => setDestinationCategoryChoice(e.target.value)} required={!assignedDestinationCategoryId} disabled={!!assignedDestinationCategoryId} className={inputClass}>
                 <option value="">— Selecciona una categoría —</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            {!assignedDestinationCategoryId && <p className="text-xs text-amber-800">Asigna una categoría al destino en <a className="underline" href="/cuentas">Cuentas y bolsillos</a>.</p>}
+            {!assignedDestinationCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al destino al confirmar.</p>}
           </>}
 
           <div>
@@ -185,13 +191,13 @@ export function NuevaTransaccionForm({
               <Row label="Fecha" value={new Date(occurredAt + 'T00:00:00').toLocaleDateString('es-CO')} />
               <Row label="Tipo" value={type} />
               {(type as string) === 'Ahorro' && <Row label="Operación" value={savingsOperation === 'ingreso' ? 'Ingreso para el ahorro' : 'Retiro o gasto del ahorro'} />}
-              <Row label={type === 'Transferencia' ? 'Categoría de origen' : 'Categoría'} value={type === 'Transferencia' ? assignedSourceCategoryName ?? 'Sin asignar' : categoryName ?? '—'} />
+              <Row label={type === 'Transferencia' ? 'Categoría de origen' : 'Categoría'} value={(type === 'Transferencia' || type === 'Ingreso') ? categories.find((category) => category.id === sourceCategoryForSubmission)?.name ?? 'Sin asignar' : categoryName ?? '—'} />
               <Row label="Cuenta" value={selectedAccount?.name ?? ''} />
               {walletName && <Row label="Bolsillo" value={walletName} />}
               {type === 'Transferencia' && <>
                 <Row label="Destino" value={destinationName ?? ''} />
                 {destinationWalletName && <Row label="Bolsillo de destino" value={destinationWalletName} />}
-                <Row label="Categoría de destino" value={assignedDestinationCategoryName ?? 'Pendiente de asignar en Cuentas y bolsillos'} />
+                <Row label="Categoría de destino" value={categories.find((category) => category.id === destinationCategoryForSubmission)?.name ?? 'Sin asignar'} />
               </>}
               <Row label="Descripción" value={description || '—'} />
               <Row label="Monto" value={Number(amount).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} />
@@ -205,12 +211,12 @@ export function NuevaTransaccionForm({
           <input type="hidden" name="submission_id" value={submissionId} />
           {purchaseDraftId && <input type="hidden" name="purchase_draft_id" value={purchaseDraftId} />}
           <input type="hidden" name="savings_operation" value={(type as string) === 'Ahorro' ? savingsOperation : ''} />
-          <input type="hidden" name="category_id" value={type === 'Transferencia' ? assignedSourceCategoryId : categoryId} />
+          <input type="hidden" name="category_id" value={sourceCategoryForSubmission} />
           <input type="hidden" name="account_id" value={accountId} />
           <input type="hidden" name="wallet_id" value={walletId} />
           <input type="hidden" name="destination_account_id" value={type === 'Transferencia' ? destinationAccountId : ''} />
           <input type="hidden" name="destination_wallet_id" value={type === 'Transferencia' ? destinationWalletId : ''} />
-          <input type="hidden" name="destination_category_id" value={type === 'Transferencia' ? assignedDestinationCategoryId : ''} />
+          <input type="hidden" name="destination_category_id" value={type === 'Transferencia' ? destinationCategoryForSubmission : ''} />
           <input type="hidden" name="description" value={description} />
           <input type="hidden" name="amount" value={amount} />
           <input type="hidden" name="is_necessary" value={isNecessary} />
