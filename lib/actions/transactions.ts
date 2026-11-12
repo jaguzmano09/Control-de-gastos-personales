@@ -3,10 +3,19 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getExpenseLocationStatuses } from '@/lib/data/expense-location-status'
 import type { Database } from '@/lib/types/database.types'
 
 type TransactionType = Database['public']['Enums']['transaction_type']
 type SavingsOperation = 'ingreso' | 'retiro'
+
+export async function refreshExpenseLocationStatuses(periodMonth: string) {
+  if (!/^\d{4}-\d{2}-01$/.test(periodMonth)) throw new Error('Mes inválido')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('No autenticado')
+  return getExpenseLocationStatuses(supabase, periodMonth)
+}
 
 export async function createManualTransaction(formData: FormData) {
   const supabase = await createClient()

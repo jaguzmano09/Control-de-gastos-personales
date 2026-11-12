@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getExpenseLocationStatuses } from '@/lib/data/expense-location-status'
+import { yearMonthToDate } from '@/lib/date-utils'
 import { EditTransaccionForm } from './EditTransaccionForm'
 
 export default async function TransaccionDetallePage({
@@ -13,14 +15,16 @@ export default async function TransaccionDetallePage({
   const { error } = await searchParams
   const supabase = await createClient()
 
-  const [{ data: transaction }, { data: categories }, { data: accounts }, { data: wallets }] = await Promise.all([
-    supabase.from('transactions').select('*').eq('id', id).maybeSingle(),
+  const { data: transaction } = await supabase.from('transactions').select('*').eq('id', id).maybeSingle()
+  if (!transaction) notFound()
+
+  const periodMonth = yearMonthToDate(transaction.occurred_at.slice(0, 7))
+  const [{ data: categories }, { data: accounts }, { data: wallets }, locationStatuses] = await Promise.all([
     supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
     supabase.from('accounts').select('id, name, category_id, has_wallets').eq('is_active', true).order('name'),
     supabase.from('wallets').select('id, name, account_id, category_id').eq('is_active', true).order('name'),
+    getExpenseLocationStatuses(supabase, periodMonth),
   ])
-
-  if (!transaction) notFound()
 
   return (
     <div className="max-w-lg">
@@ -31,6 +35,8 @@ export default async function TransaccionDetallePage({
         categories={categories ?? []}
         accounts={accounts ?? []}
         wallets={wallets ?? []}
+        initialPeriodMonth={periodMonth}
+        locationStatuses={locationStatuses}
         error={error}
       />
     </div>

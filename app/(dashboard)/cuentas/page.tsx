@@ -6,11 +6,11 @@ import {
   deleteYieldRate,
   toggleAccountActive,
   toggleWalletActive,
-  updateAccountCategory,
-  updateWalletCategory,
   toggleYieldConfig,
   updateYieldRate,
 } from '@/lib/actions/accounts'
+import { getExpenseLocationStatuses, type ExpenseLocationStatus } from '@/lib/data/expense-location-status'
+import { todayInBogota, yearMonthToDate } from '@/lib/date-utils'
 
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
@@ -32,6 +32,10 @@ type YieldConfig = {
 }
 type YieldRate = { id: string; config_id: string; ea_percent: number; valid_from: string }
 
+function formatCOP(amount: number) {
+  return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
+}
+
 export default async function CuentasPage({
   searchParams,
 }: {
@@ -39,18 +43,22 @@ export default async function CuentasPage({
 }) {
   const params = await searchParams
   const supabase = await createClient()
+  const periodMonth = yearMonthToDate(todayInBogota().slice(0, 7))
 
-  const [{ data: accountsData }, { data: walletsData }, { data: categoriesData }, { data: yieldConfigsData }, { data: yieldRatesData }] = await Promise.all([
+  const [{ data: accountsData }, { data: walletsData }, { data: yieldConfigsData }, { data: yieldRatesData }, locationStatuses] = await Promise.all([
     supabase.from('accounts').select('id, name, category_id, has_wallets, is_active').order('name'),
     supabase.from('wallets').select('id, name, account_id, category_id, is_active').order('name'),
-    supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
     supabase.from('yield_configs').select('id, account_id, wallet_id, start_date, is_active'),
     supabase.from('yield_rates').select('id, config_id, ea_percent, valid_from').order('valid_from', { ascending: false }),
+    getExpenseLocationStatuses(supabase, periodMonth),
   ])
   const accounts = accountsData as Account[] | null
   const wallets = walletsData as Wallet[] | null
   const yieldConfigs = yieldConfigsData as YieldConfig[] | null
   const yieldRates = yieldRatesData as YieldRate[] | null
+  const statusByTarget = new Map<string, ExpenseLocationStatus>(
+    locationStatuses.map((status) => [`${status.location_type}:${status.location_id}`, status]),
+  )
   const configByTarget = new Map(
     (yieldConfigs ?? []).map((config) => [`${config.account_id ? 'account' : 'wallet'}:${config.account_id ?? config.wallet_id}`, config]),
   )
@@ -105,16 +113,7 @@ export default async function CuentasPage({
                   <p className="mt-1 text-xs text-ledger-muted">
                     {account.has_wallets ? 'El saldo se organiza por bolsillos' : 'El saldo pertenece directamente a esta cuenta'}
                   </p>
-                  {!account.has_wallets && <form action={updateAccountCategory} className="mt-3 flex flex-wrap items-end gap-2">
-                    <input type="hidden" name="id" value={account.id} />
-                    <label className="text-xs text-ledger-muted">Categoría de la cuenta
-                      <select name="category_id" defaultValue={account.category_id ?? ''} required className={`${inputClass} min-w-48`}>
-                        <option value="">Selecciona una categoría</option>
-                        {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                      </select>
-                    </label>
-                    <button type="submit" className="btn btn-secondary btn-sm">Guardar categoría</button>
-                  </form>}
+                  {!account.has_wallets && <LocationSummary status={statusByTarget.get(`account:${account.id}`)} periodMonth={periodMonth} />}
                 </div>
               </div>
               <form action={toggleAccountActive}>
@@ -161,16 +160,7 @@ export default async function CuentasPage({
                           config={config}
                           rates={config ? ratesByConfig.get(config.id) ?? [] : []}
                         />
-                        <form action={updateWalletCategory} className="mt-3 flex flex-wrap items-end gap-2">
-                          <input type="hidden" name="id" value={wallet.id} />
-                          <label className="text-xs text-ledger-muted">Categoría del bolsillo
-                            <select name="category_id" defaultValue={wallet.category_id ?? ''} className={`${inputClass} min-w-48`}>
-                              <option value="">Sin categoría; se asignará al usar el bolsillo</option>
-                              {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                            </select>
-                          </label>
-                          <button type="submit" className="btn btn-secondary btn-sm">Guardar categoría</button>
-                        </form>
+                        <LocationSummary status={statusByTarget.get(`wallet:${wallet.id}`)} periodMonth={periodMonth} />
                       </li>
                     )
                   })}
@@ -180,10 +170,6 @@ export default async function CuentasPage({
               <form action={createWallet} className="mt-5 flex flex-col gap-2 rounded-xl border border-dashed border-ledger-green/30 bg-ledger-green/[0.03] p-3 sm:flex-row">
                 <input type="hidden" name="account_id" value={account.id} />
                 <input name="name" placeholder="Nombre del nuevo bolsillo" required className={`${inputClass} mt-0 flex-1`} />
-                <select name="category_id" className={`${inputClass} sm:max-w-56`} aria-label="Categoría del bolsillo, opcional">
-                  <option value="">Asignar ahora o al usar el bolsillo</option>
-                  {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                </select>
                 <button type="submit" className="btn btn-primary btn-sm shrink-0">
                   {account.has_wallets ? 'Agregar' : 'Crear bolsillo'}
                 </button>
@@ -210,16 +196,10 @@ export default async function CuentasPage({
             <p className="mt-1 text-xs leading-5 text-ledger-muted">Crea una nueva cuenta y define desde el inicio si manejará bolsillos.</p>
           </div>
         </div>
-        <form action={createAccount} className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+        <form action={createAccount} className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <label className="text-xs font-medium text-ledger-muted">
             Nombre de la cuenta
             <input name="name" required className={inputClass} placeholder="Ej. Banco principal" />
-          </label>
-          <label className="text-xs font-medium text-ledger-muted">Categoría (opcional, solo si no tendrá bolsillos)
-            <select name="category_id" className={inputClass}>
-              <option value="">Asignar ahora o con el primer ingreso/transferencia</option>
-              {(categoriesData ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-            </select>
           </label>
           <label className="flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-xs text-ledger-muted">
             <input type="checkbox" name="has_wallets" value="true" />
@@ -229,6 +209,38 @@ export default async function CuentasPage({
         </form>
       </section>
     </div>
+  )
+}
+
+function LocationSummary({ status, periodMonth }: { status?: ExpenseLocationStatus; periodMonth: string }) {
+  const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(`${periodMonth}T00:00:00Z`))
+  const assigned = status ? status.assigned_amount + status.rollover_amount : 0
+  const budgetLabel = status?.category_id && status.budget_assigned
+    ? assigned > 0 ? formatCOP(assigned) : `Financiado por transferencias (${formatCOP(status.transfer_in)})`
+    : 'Sin presupuesto categorizado'
+
+  return (
+    <dl className="mt-3 grid gap-1 text-xs text-ledger-muted sm:grid-cols-2">
+      <div>
+        <dt className="inline font-medium text-ledger-text">Categoría: </dt>
+        <dd className="inline">{status?.category_name ?? 'Sin asignar'}</dd>
+      </div>
+      <div>
+        <dt className="inline font-medium text-ledger-text">Presupuesto {periodLabel}: </dt>
+        <dd className="inline">{budgetLabel}</dd>
+      </div>
+      {status && status.transfer_in > 0 && <div>
+        <dt className="inline font-medium text-ledger-text">Transferencias recibidas: </dt>
+        <dd className="inline">{formatCOP(status.transfer_in)}</dd>
+      </div>}
+      {status && <div>
+        <dt className="inline font-medium text-ledger-text">Disponible antes de rendimientos: </dt>
+        <dd className={status.available_amount < 0 ? 'inline text-red-700' : 'inline'}>{formatCOP(status.available_amount)}</dd>
+      </div>}
+      {!status?.category_id && <p className="sm:col-span-2">La categoría se asigna al registrar un ingreso o una transferencia.</p>}
+      {status?.category_id && !status.budget_assigned && <p className="sm:col-span-2">Asigna presupuesto registrando un ingreso o recibiendo una transferencia en este destino.</p>}
+    </dl>
   )
 }
 

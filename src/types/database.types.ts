@@ -1125,6 +1125,25 @@ export type Database = {
         Args: { p_list_id: string; p_observed_on?: string }
         Returns: undefined
       }
+      get_transaction_location_status: {
+        Args: { p_period_month: string }
+        Returns: {
+          account_id: string
+          account_name: string
+          assigned_amount: number
+          available_amount: number
+          budget_assigned: boolean
+          category_id: string | null
+          category_name: string | null
+          location_id: string
+          location_name: string
+          location_type: string
+          rollover_amount: number
+          spent: number
+          transfer_in: number
+          transfer_out: number
+        }[]
+      }
       confirm_shopping_purchase: {
         Args: {
           p_account_id: string
