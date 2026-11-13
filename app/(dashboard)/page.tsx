@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary, getPendingReviewCount } from '@/lib/data/dashboard'
+import { formatYearMonth } from '@/lib/date-utils'
 import { getCategoryLocationBudgets } from '@/lib/data/category-location-budgets'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
@@ -177,8 +178,8 @@ export default async function DashboardHomePage({
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Panel financiero</p>
             <h1 className="mt-3 max-w-xl font-serif text-4xl leading-none tracking-tight text-white sm:text-5xl">Tu dinero,<br /><span className="text-white/75">bajo control.</span></h1>
-            <p className="mt-1 capitalize text-sm text-white/75">
-              {new Date(monthStart + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
+            <p className="mt-1 text-sm text-white/75">
+              {formatYearMonth(monthStart.slice(0, 7))}
             </p>
           </div>
           {pendingCount > 0 && (

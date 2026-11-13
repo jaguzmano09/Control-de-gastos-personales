@@ -64,7 +64,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
 
         <div>
           <label className="text-xs text-ledger-muted">Fecha</label>
-          <input type="date" name="occurred_at" defaultValue={transaction.occurred_at} required className={inputClass} />
+          <input type="date" lang="es-CO" name="occurred_at" defaultValue={transaction.occurred_at} required className={inputClass} />
         </div>
 
         <div>

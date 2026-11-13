@@ -95,7 +95,7 @@ export default function LoginPage() {
             </div>
             <p className="mt-4 flex items-center gap-2 text-xs text-ledger-muted">
               <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />
-              Producto en evolución: algunas integraciones están disponibles como funciones beta.
+              Las integraciones de correo y captura por foto se habilitan progresivamente según su confiabilidad.
             </p>
           </div>
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-7">
-              <p className="eyebrow">{mode === 'login' ? 'Qué bueno verte' : 'Únete a la beta'}</p>
+              <p className="eyebrow">{mode === 'login' ? 'Qué bueno verte' : 'Crea tu espacio'}</p>
               <h2 id="access-title" className="mt-2 font-serif text-3xl tracking-tight text-ledger-text">{mode === 'login' ? 'Continúa donde quedaste' : 'Empieza con claridad'}</h2>
               <p className="mt-2 text-sm leading-6 text-ledger-muted">{mode === 'login' ? 'Accede a tu espacio financiero personal.' : 'Configura tu espacio y registra tu primer movimiento a tu ritmo.'}</p>
             </div>
@@ -150,12 +150,12 @@ export default function LoginPage() {
 
       <section className="relative z-10 mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
-          <div><p className="eyebrow">Diseñada para darte control</p><h2 className="mt-3 font-serif text-3xl tracking-tight text-ledger-text sm:text-4xl">Tus decisiones siguen siendo tuyas.</h2><p className="mt-4 leading-7 text-ledger-muted">La plataforma está diseñada para que un dato automático no modifique tus finanzas sin tu confirmación. Las conexiones de correo y la captura por foto son opcionales y se pueden mejorar contigo durante la beta.</p><a href="/seguridad" className="btn btn-secondary mt-6">Conocer nuestras prácticas</a></div>
+          <div><p className="eyebrow">Diseñada para darte control</p><h2 className="mt-3 font-serif text-3xl tracking-tight text-ledger-text sm:text-4xl">Tus decisiones siguen siendo tuyas.</h2><p className="mt-4 leading-7 text-ledger-muted">La plataforma está diseñada para que un dato automático no modifique tus finanzas sin tu confirmación. El correo y la captura por foto son opcionales y se habilitan progresivamente mientras comprobamos que funcionen con fiabilidad.</p><a href="/seguridad" className="btn btn-secondary mt-6">Conocer nuestras prácticas</a></div>
           <div className="grid gap-3 sm:grid-cols-2">
             <TrustCard title="Revisión antes de impacto" description="Solo los movimientos confirmados afectan tus cálculos financieros." />
             <TrustCard title="Integraciones opcionales" description="Tú decides cuándo usar correo o captura inteligente." />
             <TrustCard title="Privacidad visible" description="Consulta cómo se usa tu información antes de crear una cuenta." />
-            <TrustCard title="Producto en evolución" description="Tu feedback ayuda a mejorar las funciones beta de forma responsable." />
+            <TrustCard title="Producto en evolución" description="Tu feedback ayuda a mejorar las integraciones con criterio y responsabilidad." />
           </div>
         </div>
       </section>

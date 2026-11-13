@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { formatYearMonth } from '@/lib/date-utils'
 import { updateTransaction, deleteTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
 import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
 
@@ -154,7 +155,7 @@ export function EditTransaccionForm({
 
         <div>
           <label className="block text-sm text-ledger-text">Fecha</label>
-          <input type="date" name="occurred_at" value={occurredAt} onChange={(event) => setOccurredAt(event.target.value)} required className={inputClass} />
+          <input type="date" lang="es-CO" name="occurred_at" value={occurredAt} onChange={(event) => setOccurredAt(event.target.value)} required className={inputClass} />
         </div>
 
         <div>
@@ -287,8 +288,7 @@ function formatCOP(amount: number) {
 }
 
 function LocationStatusSummary({ status, occurredAt }: { status: ExpenseLocationStatusWithYield; occurredAt: string }) {
-  const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
-    .format(new Date(`${occurredAt.slice(0, 7)}-01T00:00:00Z`))
+  const periodLabel = formatYearMonth(occurredAt.slice(0, 7))
   const assigned = status.assigned_amount + status.rollover_amount
   const budgetLabel = assigned > 0 ? formatCOP(assigned) : status.transfer_in > 0 ? `Financiado por transferencias (${formatCOP(status.transfer_in)})` : formatCOP(assigned)
   return (

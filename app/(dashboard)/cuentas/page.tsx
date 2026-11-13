@@ -256,8 +256,6 @@ function LocationSummary({
   periodMonth: string
   isActive: boolean
 }) {
-  const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
-    .format(new Date(`${periodMonth}T00:00:00Z`))
   const assigned = Number(budget?.assigned_amount ?? 0)
   const rollover = Number(budget?.rollover_amount ?? 0)
   const total = Number(budget?.total_budget ?? assigned + rollover)
@@ -277,7 +275,7 @@ function LocationSummary({
           : { label: 'Lista para gastos', classes: 'bg-ledger-green/10 text-ledger-green' }
 
   return (
-    <section aria-label={`Estado de ${status?.location_name ?? 'la cuenta o bolsillo'}`} className="mt-4 max-w-2xl border-y border-black/[0.07]">
+    <section aria-label={`Estado de ${status?.location_name ?? 'la cuenta o bolsillo'}`} className="mt-4 border-y border-black/[0.07]">
       <div className="flex flex-wrap items-center justify-between gap-3 py-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ledger-muted">Categoría asignada</p>
@@ -287,9 +285,9 @@ function LocationSummary({
       </div>
 
       <dl className="grid grid-cols-2 divide-x divide-y divide-black/[0.06] sm:grid-cols-3 lg:grid-cols-6 lg:divide-y-0">
-        <SummaryMetric label={`Presupuesto · ${periodLabel}`} value={total} />
+        <SummaryMetric label="Presupuesto" value={total} />
         <SummaryMetric label="Gastado" value={spent} />
-        <SummaryMetric label="Mov. transferencias" value={transferMovement} />
+        <SummaryMetric label="Transferencias" value={transferMovement} />
         <SummaryMetric label="Rendimiento estimado" value={yieldAmount} />
         <SummaryMetric label="Disponible" value={available} emphasized />
         <SummaryMetric label="Uso del presupuesto" value={percent} percent />
@@ -323,8 +321,8 @@ function LocationSummary({
 
 function SummaryMetric({ label, value, emphasized = false, percent = false }: { label: string; value: number; emphasized?: boolean; percent?: boolean }) {
   return <div className="min-w-0 px-3 py-3">
-    <dt className="truncate text-[10px] font-medium text-ledger-muted">{label}</dt>
-    <dd className={`mt-1 truncate text-sm font-semibold tabular-nums ${emphasized ? value < 0 ? 'text-red-700' : 'text-ledger-green' : 'text-ledger-text'}`}>
+    <dt className="min-h-8 whitespace-normal break-words text-[10px] font-medium leading-4 text-ledger-muted">{label}</dt>
+    <dd className={`mt-1 whitespace-normal break-words text-sm font-semibold tabular-nums ${emphasized ? value < 0 ? 'text-red-700' : 'text-ledger-green' : 'text-ledger-text'}`}>
       {percent ? `${value.toFixed(0)}%` : formatCOP(value)}
     </dd>
   </div>
@@ -362,7 +360,7 @@ function YieldSettings({
             </label>
             <label className="text-xs font-medium text-ledger-muted">
               Vigente desde
-              <input name="start_date" type="date" required className={inputClass} />
+              <input name="start_date" type="date" lang="es-CO" required className={inputClass} />
             </label>
             <button type="submit" className="btn btn-primary btn-sm">Activar</button>
           </form>
@@ -396,7 +394,7 @@ function YieldSettings({
                           </label>
                           <label className="text-xs text-ledger-muted">
                             Vigente desde
-                            <input name="valid_from" type="date" min={config.start_date} defaultValue={rate.valid_from} required className={inputClass} />
+                            <input name="valid_from" type="date" lang="es-CO" min={config.start_date} defaultValue={rate.valid_from} required className={inputClass} />
                           </label>
                           <button type="submit" className="btn btn-secondary btn-sm">Guardar</button>
                         </form>

@@ -5,7 +5,7 @@ export function PublicFooter() {
         <div>
           <p className="font-serif text-lg text-ledger-text">Control de gastos</p>
           <p className="mt-2 max-w-md leading-6 text-ledger-muted">Una herramienta personal para registrar, entender y organizar tu dinero con claridad.</p>
-          <p className="mt-3 text-xs text-ledger-muted">Producto en evolución. Algunas integraciones están disponibles como funciones beta.</p>
+          <p className="mt-3 text-xs text-ledger-muted">Mejoramos continuamente. Correo y captura por foto se habilitan progresivamente.</p>
         </div>
         <nav aria-label="Información legal y soporte" className="flex flex-wrap content-start gap-x-5 gap-y-3 text-ledger-muted sm:justify-end">
           <a href="/terminos" className="rounded-md transition hover:text-ledger-green focus:outline-none focus-visible:ring-2 focus-visible:ring-ledger-green/30">Términos</a>

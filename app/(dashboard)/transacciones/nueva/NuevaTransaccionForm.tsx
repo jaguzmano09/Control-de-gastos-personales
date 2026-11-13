@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { formatYearMonth } from '@/lib/date-utils'
 import { createManualTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
 import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
 
@@ -130,7 +131,7 @@ export function NuevaTransaccionForm({
         <>
           <div>
             <label className="block text-sm text-ledger-text">Fecha</label>
-            <input type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required className={inputClass} />
+            <input type="date" lang="es-CO" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required className={inputClass} />
           </div>
 
           <div>
@@ -314,8 +315,7 @@ function LocationStatusSummary({ status, currentPeriodMonth, transactionType, ro
   isLoading: boolean
   hasError: boolean
 }) {
-  const periodLabel = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' })
-    .format(new Date(`${currentPeriodMonth}T00:00:00Z`))
+  const periodLabel = formatYearMonth(currentPeriodMonth.slice(0, 7))
   const assigned = status.assigned_amount + status.rollover_amount
   const budgetLabel = !status.category_id || !status.budget_assigned
     ? 'Sin asignar'

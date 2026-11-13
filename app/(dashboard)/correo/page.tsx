@@ -59,12 +59,12 @@ export default async function CorreoPage({
         <h2 className="font-serif text-lg text-ledger-text">Direcciones autorizadas</h2>
         <div className="mt-4 space-y-2">
           {(sources ?? []).map((s) => (
-            <div key={s.id} className="flex items-center justify-between rounded-xl border border-black/10 bg-white p-4 shadow-sm">
-              <div>
-                <p className="text-sm text-ledger-text">{s.email_address}</p>
+            <div key={s.id} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-4 shadow-sm">
+              <div className="min-w-0 flex-1">
+                <p className="break-all text-sm text-ledger-text">{s.email_address}</p>
                 <p className="text-xs text-ledger-muted">{s.accounts?.name}</p>
               </div>
-              <form action={toggleEmailSourceActive}>
+              <form action={toggleEmailSourceActive} className="shrink-0">
                 <input type="hidden" name="id" value={s.id} />
                 <input type="hidden" name="is_active" value={(!s.is_active).toString()} />
                 <button type="submit" className="btn-link btn-sm">
