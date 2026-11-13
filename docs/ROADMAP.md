@@ -1,6 +1,6 @@
 ﻿# Public-readiness roadmap
 
-Status: Working v3 — P0 decisions are partially recorded; P1 privacy fixes and CI are active and verified, while schema reconciliation and isolated-user verification remain open.
+Status: Working v4 — P0 decisions remain partially recorded; P1 privacy/schema isolation gates and P2 financial correctness remain open. Initial P4.1 brand positioning research is documented for owner review and may proceed in parallel.
 Prepared from the 2026-11-11 repository assessment.
 Execution began after the owner's instruction to start development. This document records scope and evidence; it does not by itself authorize deployments, destructive migration execution, or changes to real financial data.
 
@@ -64,7 +64,7 @@ Objective: decide who this is for and what success looks like before fixing the 
 - [x] P0.2 — Owner selected recording and organizing movements as the primary benefit. Evidence: PRODUCT_BRIEF.md decision D02.
 - [ ] P0.3 — Define public-release scope and readiness. Progress: owner says the product is beyond beta terminology and considers its existing features part of the product, subject to improvement; Gmail/OCR remain progressively available. Readiness gates still need verification.
 - [ ] P0.4 — Agree on financial definitions: opening balance, budget allocation, available budget, transfer, estimated yield, and paid interest. Progress: owner confirmed transfers, savings as purpose-named pockets (no savings transaction type), and that category budget is funded by income assigned to a category at a specific account/pocket (D13–D16). Accounts without pockets have one category; accounts with pockets have no account category and each pocket has its own. Categories can only be assigned through transactions. Income assigns a missing category, transfers inherit or assign endpoint categories, and expenses inherit the location category and require a funded monthly location budget. Opening-balance/history cutoff, provider-specific yield terms, rounding, and next-month overspend handling remain open. Concrete current mismatches are recorded in [FINANCIAL_MODEL_PROPOSAL.md](product/FINANCIAL_MODEL_PROPOSAL.md).
-- [ ] P0.5 — Decide what to preserve from the current identity and workflow. Progress: the owner requires a distinctive identity and appealing homepage; name, tone, and detailed brand constraints remain open.
+- [ ] P0.5 — Decide what to preserve from the current identity and workflow. Progress: the owner asked to explore changing the name, logo, and wider identity. Initial positioning/territory research is in [BRAND_DISCOVERY.md](product/BRAND_DISCOVERY.md); the recommended direction and keep/change constraints are not owner-approved.
 - [ ] P0.6 — Identify operating constraints: maintenance capacity, support ownership, provider costs, and public access. Progress: this is a solo personal project; the owner confirmed a zero-cost constraint for now, so use free plans/resources only and do not create billable services. Support ownership and public access model remain open.
 - [x] P0.7 — Define three connected journeys: a visitor discovering the public homepage, a member managing personal finances, and the owner inspecting product metrics. Owner accepted the proposed journeys and next actions in [PRODUCT_BRIEF.md](product/PRODUCT_BRIEF.md); visual flows and implementation remain in later phases.
 - [ ] P0.8 — Record privacy commitments and an initial data inventory: collection purpose, minimum necessary fields, provider access, retention, deletion, and permitted administrative visibility. Owner confirms no providers are selected yet and agrees a provider policy is needed; define the policy and require review before any integration is adopted.
@@ -166,7 +166,7 @@ Objective: establish a recognizable, consistent product whose promises match imp
 
 ### Tasks
 
-- [ ] P4.1 — Agree on positioning, personality, product promise, and evidence supporting each public claim.
+- [ ] P4.1 — Agree on positioning, personality, product promise, and evidence supporting each public claim. Progress: initial market scan and a draft proposition/three creative territories are documented in [BRAND_DISCOVERY.md](product/BRAND_DISCOVERY.md). “Money in context” is the working recommendation only; verify account/pocket/category calculations under P2 and get owner review before public claims or broad implementation.
 - [ ] P4.2 — Develop and review naming options; verify availability/conflicts when choosing a candidate. Define the long name and short form.
 - [ ] P4.3 — Define the visual direction: symbol/logo, palette, typography, numerical presentation, icon usage, spacing, and density.
 - [ ] P4.4 — Unify tokens and reusable patterns for inputs, buttons, financial figures, tables, alerts, review states, empty states, errors, and confirmations.
@@ -334,4 +334,4 @@ P1 received bounded routing/cron fixes, reproducible CI, and live Supabase priva
 
 For each task when execution begins, record: status, responsible person, linked change, acceptance evidence, unresolved limitations, and the next dependency. Suggested statuses: Draft, Ready, In progress, In review, Verified, Deferred. A task becomes Verified only when its acceptance evidence exists.
 
-Revision history: v1 established tasks; v2 incorporated homepage, identity, owner administration, and privacy feedback; v3 records confirmed Colombia/recording/progressive-integration decisions and the first scoped implementation evidence. Detailed decisions remain open for further feedback.
+Revision history: v1 established tasks; v2 incorporated homepage, identity, owner administration, and privacy feedback; v3 records confirmed Colombia/recording/progressive-integration decisions and the first scoped implementation evidence; v4 adds the initial P0.5/P4.1 positioning research while keeping the proposed direction unapproved. Detailed decisions remain open for further feedback.
