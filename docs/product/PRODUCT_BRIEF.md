@@ -17,13 +17,17 @@ Source: owner feedback, roadmap v2, and repository assessment. This brief does n
 | D08 | Documentation/comments and Git commit messages in English; owner communication in Spanglish | Owner communication and Git feedback |
 | D09 | Do not describe the current product as a beta; its existing capabilities are considered part of the product and remain subject to continuous improvement | Owner feedback on P0.3 |
 | D10 | The homepage, member, and admin journeys are accepted as proposed in this brief | Owner feedback on P0.7 |
-| D11 | No external providers are currently selected; provider integrations need a privacy and operations policy before adoption | Owner feedback on P0.8 |
+| D11 | No external provider is approved for processing personal financial data yet. Source contains Gemini and optional configurable PaddleOCR outbound paths; production configuration and provider approval are unverified. These paths must remain fail-closed until reviewed. | Owner feedback on P0.8, source review, and default-off processing gates |
 | D12 | Operate with free resources only for now; no paid provider or infrastructure is authorized | Owner feedback |
 | D13 | Transfers move money between tracked accounts/pockets. There is no separate savings movement type; a purpose-named pocket is a piggy bank funded/emptied by transfers, which do not create income or spending | Owner's COP 20,000/COP 15,000 transfer example and clarification to remove the savings transaction type |
 | D14 | Account/pocket balance tracks money currently held; income, expenses, and transfers update it. Category budget is a separate monthly allocation funded by categorized income and positive prior-month rollover. EA yield uses the pocket's current balance, not a budget cap. | Owner's definitions of pocket balance, budget, yield, and rollover |
 | D15 | Show the exact negative available amount when expenses exceed assigned funds and make it reviewable instead of clamping to zero; do not hide or reject a real expense | Owner accepted displaying the negative and reviewing alternatives |
 | D16 | An account without pockets has one account category. An account with pockets has no account category; each pocket has its own independent category. Categories are assigned only through transactions: confirmed income assigns a missing category to its selected account or pocket, and transfers can assign a missing endpoint category inline. Expenses inherit the location's assigned category and are blocked unless both that category and a monthly location budget exist. Account and pocket settings display category and budget as read-only context. Transfers debit the source category/location allocation and credit the destination category/location allocation alongside balances. They do not create income or spending, and consolidated totals remain unchanged. | Owner feedback on category assignment, expense validation, and account/pocket context |
 | D17 | Available is calculated at the account or pocket level from that location's monthly budget, spending, net transfers, and its own estimated yield. The effective annual yield rate is configured and applied per pocket (or per standalone account when it has no pockets); categories never share or override a destination's rate. The category view and dashboard aggregate those same location values by each location's assigned category; a category with multiple locations displays their sum. They must not use an independent category total that disagrees with its underlying locations. | Owner feedback that category, pocket/account, and dashboard available amounts must remain coherent, including each destination's own EA rate |
+
+| D18 | Replace the current product name and logo from scratch. Build the wider identity around the selected name/logo, while critically assessing which existing visual assets merit adaptation rather than preserving or discarding them by default. | Owner feedback on identity direction |
+| D19 | Product language should be financially precise while remaining calm, empathetic, and nonjudgmental. | Owner feedback on tone |
+| D20 | Explore a read-only conversational financial assistant as a product opportunity. It is not approved for implementation or external-model processing; privacy, evidence, and free-resource constraints apply. | Owner proposal and current free-only/privacy requirements |
 
 ## Product definition
 
@@ -72,7 +76,7 @@ This is a release-readiness inventory, not permission to delete features or data
 
 The functional character should be precise, approachable, respectful, and easy to return to. The brand should be recognizable in task behavior as well as appearance.
 
-Preserve as product principles: human control over automated capture, Spanish interface, user-owned organization, and clear transaction states. Existing colors/name/logo are incumbent evidence, not final approved brand choices.
+Preserve as product principles: human control over automated capture, Spanish interface, user-owned organization, and clear transaction states. Replace the current name and logo; treat existing colors and typography only as candidates for adaptation into the new coherent identity.
 
 Evaluate creative directions against audience relevance, recognition, comprehension, emotional appeal, task success, and consistency between the homepage promise and actual use. P4 owns naming, visual selection, and the design system.
 
@@ -95,6 +99,6 @@ Still open: public access policy, support capacity/contact, exact retention sche
 | P0.5 | In review | Identity requirements above; final constraints/name unconfirmed |
 | P0.6 | In review | Operating assumptions above; budget/capacity not invented |
 | P0.7 | Confirmed | D10 and three journey definitions above |
-| P0.8 | Principle confirmed; policy pending | D11 and PRIVACY_DATA_MAP.md; no provider currently selected, policy required before adoption |
+| P0.8 | Principle confirmed; policy pending | D07, D11 and PRIVACY_DATA_MAP.md; Gemini/PaddleOCR are source-level outbound paths but no provider is approved/configuration-verified for personal data; default-off gates were added |
 
 P0 is in review, not complete. D01–D08 do not approve all proposals by association.

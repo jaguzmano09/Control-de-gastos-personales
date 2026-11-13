@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createEmailSource, toggleEmailSourceActive } from '@/lib/actions/email-sources'
+import { isGeminiPrivateDataProcessingApproved } from '@/lib/gemini/client'
 
 const inputClass =
   'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
@@ -7,9 +8,10 @@ const inputClass =
 export default async function CorreoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connected?: string; error?: string }>
+  searchParams: Promise<{ connected?: string; error?: string; paused?: string }>
 }) {
-  const { connected, error } = await searchParams
+  const { connected, error, paused } = await searchParams
+  const processingAvailable = isGeminiPrivateDataProcessingApproved()
   const supabase = await createClient()
 
   const [{ data: connectionData }, { data: sourcesData }, { data: accountsData }] = await Promise.all([
@@ -37,9 +39,15 @@ export default async function CorreoPage({
 
       {connected && <p className="mt-4 text-sm text-ledger-green">Gmail conectado correctamente.</p>}
       {error && <p className="mt-4 text-sm text-red-700">{decodeURIComponent(error)}</p>}
+      {paused && <p className="mt-4 text-sm text-ledger-muted">La sincronización de Gmail está pausada porque el procesamiento externo de contenido financiero no está aprobado.</p>}
 
       <section className="mt-7 rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
         <p className="text-sm text-ledger-text">Conexión con Gmail</p>
+        {!processingAvailable && (
+          <p role="status" className="mt-2 text-sm text-ledger-muted">
+            Sincronización pausada. No descargamos ni procesamos mensajes hasta aprobar la privacidad y retención del proveedor.
+          </p>
+        )}
         {connection ? (
           <p className="mt-1 text-xs text-ledger-muted">
             Estado: {connection.is_active ? 'activa' : 'inactiva'}
@@ -47,12 +55,15 @@ export default async function CorreoPage({
         ) : (
           <p className="mt-1 text-xs text-ledger-muted">Aún no has conectado tu Gmail.</p>
         )}
-        <a
-          href="/api/gmail/connect"
-          className="btn btn-primary mt-3"
-        >
-          {connection ? 'Reconectar Gmail' : 'Conectar Gmail'}
-        </a>
+        {processingAvailable ? (
+          <a href="/api/gmail/connect" className="btn btn-primary mt-3">
+            {connection ? 'Reconectar Gmail' : 'Conectar Gmail'}
+          </a>
+        ) : (
+          <button type="button" disabled className="btn btn-primary mt-3">
+            Gmail no disponible temporalmente
+          </button>
+        )}
       </section>
 
       <section className="mt-8">

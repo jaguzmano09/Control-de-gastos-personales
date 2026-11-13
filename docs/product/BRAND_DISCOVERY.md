@@ -1,6 +1,6 @@
 ﻿# Brand discovery — positioning and territories
 
-Status: Draft for owner review. No name, logo, or visual direction is approved by this document.
+Status: Draft reflecting owner direction. No replacement name, logo, or final visual direction is approved by this document.
 Roadmap: P0.5 and P4.1 exploration; naming and identity execution remain in P4.2–P4.8.
 Research date: 2026-11-13.
 
@@ -13,6 +13,8 @@ Research date: 2026-11-13.
 - Transfers are internal movements. They should move money and category allocation between locations without appearing as income or spending.
 - Availability is intended to reconcile from account/pocket locations into category and dashboard views. This accounting behavior is still under P2 verification and must not be presented as a proven public promise yet.
 - The product does not provide general automatic bank aggregation. Do not imply that it connects to every Colombian bank.
+- Owner direction: create the name and logo from scratch, then make the wider identity coherent around them. Inspect existing visual assets critically and preserve/adapt only what supports the selected identity.
+- Owner direction: financial language should be precise, calm, and empathetic, without making people feel judged.
 
 ## Initial market scan
 
@@ -22,10 +24,11 @@ This is a limited desk scan of public product descriptions, not a complete compe
 - Bolsillos App describes organizing money across banks, cash, and currencies, assigning money to named pockets, and recording expenses by voice. “All your money in one place” and “pockets” are already prominent market language.[^2]
 - Nequi's “Habla con tu plata” describes a period summary of spending, transfers, categories, and a financial profile.[^3]
 - Auri's App Store listing describes Colombian personal finance management across accounts/wallets, available balances, budgets, and voice or messaging-assisted entry. This is a developer-provided listing, not an independently tested product comparison.[^4]
+- FinanzApp's Google Play listing advertises a financial AI assistant as a Pro feature and labels it as in development. This is a developer-provided claim, not evidence of shipped quality or adoption; it does show that “has AI” alone is not a defensible differentiator.[^5]
 
 ### What this implies
 
-The platform should not claim to be unique because it has budgets, categories, pockets, reports, or automation. Those ideas already appear in current product descriptions. The stronger hypothesis is the coherence of the financial model: each movement belongs to a real tracked location, each location has a category allocation, and the category summary is derived from its underlying locations. That distinction is only credible after P2 verifies the calculations and user research confirms that people understand and value it.
+The platform should not claim to be unique because it has budgets, categories, pockets, reports, automation, or an AI assistant. Those ideas already appear in current product descriptions. The stronger hypothesis is the coherence of the financial model: each movement belongs to a real tracked location, each location has a category allocation, and the category summary is derived from its underlying locations. That distinction is only credible after P2 verifies the calculations and user research confirms that people understand and value it. A grounded conversational assistant could make this coherence easier to use, but its privacy-preserving scope and actual usefulness need separate validation.
 
 ## Recommended positioning draft
 
@@ -75,7 +78,7 @@ The identity makes the product feel practical and approachable for daily records
 
 **Risk:** “simple money management” is broad, and focusing only on ease could hide the product's account/pocket/category model.
 
-**Recommendation:** use A as the positioning center, with B as the tone. Treat C as an interface quality requirement, not the main distinction.
+**Recommendation:** use A as the positioning center, with B as the tone. Treat C as an interface quality requirement, not the main distinction. The owner has said “money in context” is appealing; validate the proposition in user-facing examples before treating it as final public positioning.
 
 ## Naming guardrails for P4.2
 
@@ -85,11 +88,17 @@ The identity makes the product feel practical and approachable for daily records
 - Screen candidates for confusingly similar products, domains, app stores, and Colombia's SIC trademark search before selecting one. A web search is preliminary screening, not legal clearance.
 - Do not change the current production name or logo until the owner approves a candidate and the migration scope is mapped across app metadata, PWA icons, email, legal text, domains, and social accounts.
 
+## Current identity audit
+
+The current name (“Control de gastos”) is descriptive but generic, and the wallet glyph is a familiar category symbol rather than a distinctive mark. Existing forest-green/ivory colors and serif display typography may provide useful warmth and continuity, but should be evaluated against the chosen concept rather than treated as commitments. Source inspection also found duplicated/conflicting palette definitions between global CSS and Tailwind, plus inconsistent product labels and theme colors in app/PWA metadata. These inconsistencies should be consolidated after a new identity direction is selected.
+
+**Direction confirmed:** name and logo are to be created from scratch. The broader system should then be designed coherently around that foundation. The current palette and typography are candidates for adaptation only if they strengthen recognition, legibility, and the intended personality. No replacement name, mark, palette, or typography has been approved.
+
 ## Owner review needed
 
-1. Is “money in context” — where money is held and which category it serves — a meaningful center for the identity?
-2. Should the voice feel more warm/conversational or more quiet/precise? The draft recommends warm and conversational copy with precise financial explanations.
-3. Which existing elements should remain recognizable: forest/ivory palette, serif headings, the current product label, or none of them?
+1. Review a concrete “money in context” proposition and confirm the wording before public claims.
+2. Confirm the calm, empathetic, precise, nonjudgmental voice in real interface examples.
+3. Review naming and logo options, then compare the current forest/ivory palette and serif typography as possible inputs to the coherent identity system.
 
 These choices should guide naming. Naming availability and a logo concept should follow, rather than having an untested name determine the product positioning.
 
@@ -99,3 +108,4 @@ These choices should guide naming. Naming availability and a logo concept should
 [^2]: Bolsillos App, product page: <https://www.bolsillos.app/>.
 [^3]: Nequi Help Center, “¿Qué es ‘Habla con tu plata’?”: <https://ayuda.nequi.com.co/hc/es/articles/38205273952781--Qu%C3%A9-es-Habla-con-tu-plata>.
 [^4]: Apple App Store, Auri: Finanzas Personales: <https://apps.apple.com/co/app/auri-finanzas-personales/id6773147800>.
+[^5]: Google Play, FinanzApp: <https://play.google.com/store/apps/details?id=com.joxibe.finanzapp>.

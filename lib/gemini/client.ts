@@ -4,6 +4,10 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-flash-latest'
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 const GEMINI_REQUEST_TIMEOUT_MS = 35_000
 
+export function isGeminiPrivateDataProcessingApproved() {
+  return process.env.GEMINI_PRIVATE_DATA_PROCESSING_APPROVED === 'true'
+}
+
 export type Extracted = {
   occurred_at: string
   amount: number
@@ -35,6 +39,10 @@ Si no puedes determinar un campo con seguridad, usa una cadena vacía para texto
 }
 
 async function callGemini(parts: object[], signal?: AbortSignal): Promise<Extracted> {
+  if (!isGeminiPrivateDataProcessingApproved()) {
+    throw new Error('Gemini private-data processing is not approved')
+  }
+
   if (!process.env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY no está configurada')
   }

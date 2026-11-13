@@ -1,6 +1,6 @@
 ﻿# Privacy commitments and initial data inventory
 
-Status: Initial P0.8 design inventory. Source and selected hosted grants/RPC metadata have been reviewed; provider settings, retention, and backup policies remain to be verified before release.
+Status: Initial P0.8 design inventory. Source and selected hosted grants/RPC metadata have been reviewed; provider settings, retention, and backup policies remain to be verified before release. Gemini and configurable PaddleOCR integrations exist in source, but no production provider configuration is approved or verified for personal financial data.
 
 ## Confirmed privacy boundary
 
@@ -30,9 +30,10 @@ This inventory records categories and field names, not actual records or secret 
 ## Processing boundaries
 
 - Supabase provides authentication/database processing; actual deployed access policies must be inspected rather than inferred from types.
-- Gemini may receive receipt images, OCR text, or bank-message text according to the active path.
-- PaddleOCR may receive receipt input when configured; its hosting/access/retention are not established by the code.
-- Tesseract is a local processing path but does not make other configured processing paths local.
+- Gemini integration can receive receipt images, OCR text, or allowlisted bank-message bodies. `GEMINI_PRIVATE_DATA_PROCESSING_APPROVED` must equal `true` before any request; otherwise calls fail before network transmission. Gmail connect and sync are also disabled by this gate.
+- PaddleOCR integration can receive receipt images and category names when configured. It now requires both `PADDLEOCR_URL` and `PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED=true`; its hosting, access, and retention are not established by source.
+- These gates default to off, but production environment state was not inspected; do not claim the deployed state is verified. Do not enable Gemini Free for personal financial data: Google's terms/pricing describe use of unpaid-service content to improve products and possible human review, and advise against submitting sensitive, confidential, or personal information. See [Gemini API terms](https://ai.google.dev/gemini-api/terms) and [pricing](https://ai.google.dev/gemini-api/docs/pricing).
+- Tesseract is a local processing path but does not make other configured processing paths local. When provider gates are off, configured PaddleOCR is skipped and Gemini calls are blocked; local OCR/parsing remains available where its extraction path succeeds.
 - Gmail access is optional; history responses are field-masked to message IDs, then the app reads only `From` headers before sender filtering. Message bodies are fetched and sent to Gemini only for allowlisted senders. The OAuth grant itself remains mailbox-wide `gmail.readonly`.
 - Hosting logs, network failures, URL parameters, caches, and backups can carry data even when the UI hides it.
 
@@ -65,6 +66,6 @@ Metric filters must not reveal a single person's activity through very small coh
 - Users can understand, disconnect, and request removal of optional-provider data through the implemented controls.
 - Retention/deletion/export and backup schedules are specified, implemented, and tested.
 - Administrative aggregate endpoints enforce the agreed reporting boundaries.
-- Documentation accurately distinguishes deployed protections from planned controls.
+- Documentation accurately distinguishes source-level default-off gates from deployed environment state and approved providers.
 
 Exact retention periods, support contact, provider policy settings, and reporting-group thresholds remain open. Resolve them before affected public features launch.

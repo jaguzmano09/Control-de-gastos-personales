@@ -4,13 +4,13 @@ Exploration date: 2026-11-11. Findings concern local source. No financial record
 
 ## Product and owner intent
 
-The owner accepted the roadmap and instructed development to begin. Priorities remain a compelling public homepage, distinctive useful/enjoyable experience, owner administration alongside personal use, and privacy. See [ROADMAP.md](ROADMAP.md), now Working v3. P0 deliverables are in review; scoped P1 fixes are locally verified. No remote data/schema change or owner role promotion has been performed.
+The owner accepted the roadmap and instructed development to begin. Priorities remain a compelling public homepage, distinctive useful/enjoyable experience, owner administration alongside personal use, and privacy. See [ROADMAP.md](ROADMAP.md), now Working v5. P0 deliverables are in review; scoped P1 fixes are locally verified. Historical remote privacy remediations and owner admin provisioning are recorded below and in implementation notes.
 
 Control de Gastos Personales began as a replacement for a personal spreadsheet. The owner wants public-use readiness, a critical assessment, coherent identity, and durable development context. Two independent assessment agents were authorized. The business model and final name remain unconfirmed.
 
 Owner preferences, explicitly requested on 2026-11-11: communicate in Spanglish; write code comments and documentation in English. Product UI remains Spanish unless separately changed.
 
-Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chose recording/organizing movements as the primary benefit and progressive Gmail/OCR availability after reliability checks. See [the P0 product brief](product/PRODUCT_BRIEF.md) for decisions D01-D08. Do not assume international or business-accounting support.
+Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chose recording/organizing movements as the primary benefit and progressive Gmail/OCR availability after reliability checks. New identity direction: create the product name and logo from scratch, then build a coherent identity around them; assess current colors/type as candidates only. Preferred positioning is “money in context,” with precise, calm, empathetic, nonjudgmental language. A read-only financial assistant is a discovery opportunity, not approved implementation. See [the P0 product brief](product/PRODUCT_BRIEF.md) for decisions D01-D20. Do not assume international or business-accounting support.
 
 ## Effective stack
 
@@ -24,6 +24,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 - `docs/implementation/MIGRATION_RECONCILIATION.md` records the empty hosted migration ledger, incomplete fresh-install history, and safe P1.2 sequence. Creating the non-production comparison project is blocked on the owner's Supabase organization ID and explicit approval of the returned cost.
 - Vercel: rollover cron on day 1 at 05:00 UTC; Gmail daily at 06:00 UTC.
 - Gemini extraction through REST; Tesseract.js shared worker/queue; Sharp preprocessing; optional PaddleOCR service.
+- Source-level default-off gates now prevent Gemini private-data calls and disable Gmail connect/sync unless `GEMINI_PRIVATE_DATA_PROCESSING_APPROVED=true`; optional PaddleOCR also requires `PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED=true`. Production environment values/provider settings were not inspected. Never enable Gemini Free for private financial data; see the privacy map and assistant proposal.
 - PWA manifest, icons, service worker, and offline page. This does not provide offline financial editing: the worker only implements a navigation fallback.
 - Original verification found public PWA assets redirecting to login (F13). The first P1 delivery corrected exact-path access before session/database work; GET/HEAD and private-path boundaries pass locally. Full installation/offline lifecycle remains unverified.
 
@@ -112,7 +113,7 @@ The `agent-browser` skill and CLI are installed globally for visual UI review (C
 
 ## Verification and unresolved areas
 
-Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records typecheck/build, six existing yield tests, and 19 foundation HTTP scenarios. Reproduce after a production build with node scripts/verify-foundation.cjs. Both cron endpoints reject missing/invalid configuration before work; authorized jobs were not executed. Lint still opens setup and is not passing. Original assessment results below remain historical context.
+Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records the first local P1 checks and the later provider privacy gate. At the latest documentation update, `npm.cmd run typecheck` is blocked by stale generated `.next/types/app/api/visual-auth-status/route.ts` references to a missing route; no tests/build were run for the provider-gate change. The earlier foundation HTTP evidence remains historical and does not verify these new gates. Original assessment results below remain historical context.
 
 The owner requests scoped Git commits/pushes when appropriate, with English Conventional Commit messages and documented validation. Preserve unrelated changes and shared history.
 

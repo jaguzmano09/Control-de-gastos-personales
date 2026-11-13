@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { refreshAccessToken, listHistory, getMessageMetadata, getMessage, extractSender, extractSenderAndText, normalizeSenderAddress } from '@/lib/gmail/client'
-import { extractTransactionFromText } from '@/lib/gemini/client'
+import { extractTransactionFromText, isGeminiPrivateDataProcessingApproved } from '@/lib/gemini/client'
 import { hasValidCronAuthorization } from '@/lib/security/cron-auth'
 
 export async function GET(request: NextRequest) {
@@ -12,6 +12,10 @@ export async function GET(request: NextRequest) {
 
   if (!hasValidCronAuthorization(request.headers.get('authorization'), cronSecret)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  if (!isGeminiPrivateDataProcessingApproved()) {
+    return NextResponse.json({ error: 'Email processing is unavailable' }, { status: 503 })
   }
 
   const supabase = createServiceRoleClient()

@@ -18,7 +18,7 @@ export async function extractWithConfiguredPaddleOcr(
   signal?: AbortSignal,
 ): Promise<Partial<Extracted> | null> {
   const endpoint = process.env.PADDLEOCR_URL
-  if (!endpoint) return null
+  if (!endpoint || process.env.PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED !== 'true') return null
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), PADDLEOCR_TIMEOUT_MS)

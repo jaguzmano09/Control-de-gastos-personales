@@ -43,3 +43,15 @@ Historical assessment files remain unchanged so the original findings stay trace
 The functional specification and README describe the new behavior and reproducible checks. Next.js documents middleware early continuation in its [version 15 reference](https://nextjs.org/docs/15/app/api-reference/file-conventions/middleware). Scheduled endpoint authentication is described in [Vercel's cron management documentation](https://vercel.com/docs/cron-jobs/manage-cron-jobs).
 
 No financial calculation semantics, visual identity, or administrative privileges changed in this delivery.
+
+## Follow-up privacy gate — 2026-11-13
+
+Source review found Gemini calls could send receipt images, extracted text, and allowlisted email bodies to Google, while an optional configured PaddleOCR endpoint could receive receipt images. Production provider configuration and approval were not verified. The owner has not approved external processing of personal financial data, and the project is constrained to free resources.
+
+- Added a default-off server-side approval gate before Gemini requests. Gmail connect and cron sync are unavailable while the gate is off; the Gmail page explains the paused state.
+- Configured PaddleOCR now requires a separate default-off approval flag as well as its endpoint URL.
+- No environment variables, Supabase data, or provider configuration were changed. No outbound provider request was made.
+- Do not enable Gemini Free for personal financial data; see [FINANCIAL_ASSISTANT_PROPOSAL.md](../product/FINANCIAL_ASSISTANT_PROPOSAL.md) and [PRIVACY_DATA_MAP.md](../product/PRIVACY_DATA_MAP.md).
+- Validation limitation: `npm.cmd run typecheck` is currently blocked by stale generated `.next/types/app/api/visual-auth-status/route.ts` references to a missing `app/api/visual-auth-status/route.js`. It did not report an error in the edited application source. No tests or build were run.
+
+This follow-up is a local source change only. It does not establish production flag state, provider approval, or deployment. Provider disclosure, retention, deletion, and release decisions remain open under P0.8/P6.
