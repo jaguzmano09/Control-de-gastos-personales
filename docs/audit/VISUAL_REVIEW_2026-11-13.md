@@ -9,7 +9,7 @@
 
 ## Summary
 
-No confirmed product-specific text clipping or horizontal page overflow was found on the publicly accessible pages within this review. The page document and body widths matched the tested viewport widths of 320, 390, and 768 CSS pixels. The homepage was also visually reviewed at a 1258-pixel desktop viewport.
+No confirmed product-specific text clipping or horizontal page overflow was found on the publicly accessible pages within this review. The page document and body widths matched the tested viewport widths of 320, 390, and 768 CSS pixels. The homepage was also visually reviewed at a 1258-pixel desktop viewport. One public-copy inconsistency was found: the current UI still uses “beta” wording despite the owner-confirmed D09 direction in the product brief.
 
 The `/cuentas` and `/transacciones/nueva` routes redirected to `/login`, so authenticated dashboard and transaction views were not visually reviewed. Review those views with an authorized test session before treating the visual audit as complete for the full product.
 
@@ -22,6 +22,21 @@ The `/cuentas` and `/transacciones/nueva` routes redirected to `/login`, so auth
 - Browser error check on the public homepage: no page errors reported. Console output contained React DevTools and Next.js Fast Refresh informational messages.
 
 ## Observation
+
+### ISSUE-001: Public copy still uses beta framing
+
+| Field | Value |
+|---|---|
+| Severity | Medium |
+| Category | Content |
+| URL | `/` (also visible on `/privacidad` and `/terminos`) |
+| Repro video | N/A — static copy |
+
+**Description:** The homepage describes integrations as “funciones beta” in its hero note and footer, while legal pages label themselves “Versión beta”. This conflicts with owner-confirmed D09: do not describe the current product as a beta; existing capabilities remain part of the product and continue to improve. Keep progressive integration availability, but describe it without beta framing.
+
+**Repro steps:** Open `/` at a narrow mobile width and inspect the copy below the two hero actions and in the footer. The hero copy is visible in [this 320-pixel screenshot](visual-review-2026-11-13-home-320-beta-copy.png). Open `/privacidad` or `/terminos` to see the version label.
+
+---
 
 The Next.js development-tools badge is fixed to the lower-left corner and overlaps page content in narrow mobile screenshots, including text on the public information pages. This badge belongs to the local development environment and is not part of the production UI; it is not counted as a product defect. Evidence: [annotated mobile support screenshot](visual-review-2026-11-13-support-320-annotated.png) and [unannotated screenshot](visual-review-2026-11-13-support-320-devtools.png).
 
