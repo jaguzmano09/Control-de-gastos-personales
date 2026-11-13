@@ -106,7 +106,9 @@ Forest green, ivory, dark text, white, and clay accents; serif headings and an I
 
 ## Skills and supporting material
 
-The review used Impeccable with two independent assessments, Supabase, webapp-testing, and local brand guidance at skill/brand/brand/SKILL.md. App Router patterns and the local cybersecurity guide were also explored. The repository catalog is skill/README.md; copies under skill/_installed/ should not be treated as distinct capabilities. Voice/messaging references live under skill/brand/brand/references/. No skills were installed or modified.
+The review used Impeccable with two independent assessments, Supabase, webapp-testing, and local brand guidance at skill/brand/brand/SKILL.md. App Router patterns and the local cybersecurity guide were also explored. The repository catalog is skill/README.md; copies under skill/_installed/ should not be treated as distinct capabilities. Voice/messaging references live under skill/brand/brand/references/.
+
+The `agent-browser` skill and CLI are installed globally for visual UI review (CLI 0.43.0; Chrome for Testing 157.0.8103.78). In PowerShell, invoke `agent-browser.cmd` to avoid execution-policy issues. In this managed Windows environment, set `AGENT_BROWSER_SOCKET_DIR` to a writable temporary directory (for example, `$env:TEMP\agent-browser-control-gastos`) before each invocation; launching Chrome may require elevated execution because the sandbox blocks its CDP channel. Load the CLI's `core` skill guide before using it. A mobile smoke review of `/privacidad` at 390×844 found matching viewport/document/body widths and no clipped text in the inspected DOM. The Next.js development-tools badge visually overlays the “Tus controles” heading in development mode. This did not verify authenticated dashboard or transaction views; inspect those during future UI changes, especially when adjusting long Spanish labels, responsive layouts, or dense account information.
 
 ## Verification and unresolved areas
 
