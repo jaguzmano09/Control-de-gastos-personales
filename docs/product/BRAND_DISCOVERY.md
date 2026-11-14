@@ -86,7 +86,7 @@ The owner selected **PlaENC** as the working name, expanded as **Plata en Contex
 
 A preliminary exact-name web search found existing construction businesses using **PLAENC** in South Korea and Brazil, but did not surface a direct personal-finance product in the results reviewed. This is a cross-category collision that requires formal SIC and relevant territory clearance before launch; the public search is not a legal availability check.[^13][^14]
 
-The owner selected connected allocations (Concept B) for refinement. The current mark and its color variants are drafts, not the final logo. The forest-green/moss/ivory/clay colors are placeholders for comparison, not a selected palette. Do not change the active product identity until the owner approves the final mark and migration plan.
+The owner selected connected allocations (Concept B) for refinement and authorized its implementation with PlaENC in the current application. The mark and its color variants remain subject to refinement before public launch. The forest-green/moss/ivory/clay colors are working values, not a finalized palette. Complete name clearance and identity review before inviting the public.
 
 The selected logo direction and its working palette, typography, voice, and rollout gates are consolidated in [`docs/brand/plaenc/README.md`](../brand/plaenc/README.md). The visual concepts are drafts, not an approved design system.
 

@@ -39,7 +39,7 @@ export function SidebarMenu({ userEmail, isAdmin = false }: { userEmail?: string
         <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
           <Logo className="h-10 w-10 shrink-0 drop-shadow-sm" />
           <span className="whitespace-nowrap font-serif text-lg font-semibold tracking-tight text-ledger-text sm:text-xl">
-            Control de gastos
+            PlaENC
           </span>
         </span>
         <div className="ml-auto hidden items-center gap-2 sm:flex">

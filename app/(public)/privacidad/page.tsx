@@ -1,4 +1,4 @@
-export const metadata = { title: 'Privacidad | Control de gastos' }
+export const metadata = { title: 'Privacidad' }
 
 export default function PrivacidadPage() {
   return <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16"><p className="eyebrow">Información legal</p><h1 className="page-title mt-3">Política de privacidad</h1><p className="mt-3 text-sm text-ledger-muted">Vigente desde el 8 de noviembre de 2026</p><div className="panel mt-8 space-y-7 p-6 leading-7 sm:p-8">

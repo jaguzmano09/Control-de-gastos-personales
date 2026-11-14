@@ -1,8 +1,8 @@
-export const metadata = { title: 'Términos de uso | Control de gastos' }
+export const metadata = { title: 'Términos de uso' }
 
 export default function TerminosPage() {
   return <LegalPage title="Términos de uso" intro="Vigente desde el 8 de noviembre de 2026">
-    <Section title="Uso de la plataforma"><p>Control de gastos ofrece herramientas para registrar, organizar y revisar información financiera personal. La información mostrada es de apoyo para tus decisiones y no constituye asesoría financiera, contable, tributaria o legal.</p></Section>
+    <Section title="Uso de la plataforma"><p>PlaENC ofrece herramientas para registrar, organizar y revisar información financiera personal. La información mostrada es de apoyo para tus decisiones y no constituye asesoría financiera, contable, tributaria o legal.</p></Section>
     <Section title="Tu responsabilidad"><p>Debes usar una cuenta propia, proteger tus credenciales y revisar los movimientos antes de confirmarlos. Las funciones de captura inteligente y correo pueden cometer errores; ningún resultado automático debe sustituir tu revisión.</p></Section>
     <Section title="Disponibilidad de las funciones"><p>Algunas funciones, incluidas la captura por foto y la sincronización de correo, pueden cambiar, limitarse o suspenderse mientras seguimos mejorándolas. Siempre podrás decidir si deseas usarlas.</p></Section>
     <Section title="Cambios"><p>Podemos actualizar estos términos para reflejar cambios del producto o requisitos aplicables. Cuando el cambio sea relevante, se solicitará una nueva aceptación antes de continuar con las funciones afectadas.</p></Section>

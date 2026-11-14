@@ -3,7 +3,7 @@ export function PublicFooter() {
     <footer className="border-t border-ledger-line/80 bg-white/70">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm sm:grid-cols-[1fr_auto] sm:px-6 lg:px-8">
         <div>
-          <p className="font-serif text-lg text-ledger-text">Control de gastos</p>
+          <p className="text-lg font-semibold tracking-tight text-ledger-text">PlaENC</p>
           <p className="mt-2 max-w-md leading-6 text-ledger-muted">Una herramienta personal para registrar, entender y organizar tu dinero con claridad.</p>
           <p className="mt-3 text-xs text-ledger-muted">Mejoramos continuamente. Correo y captura por foto se habilitan progresivamente.</p>
         </div>

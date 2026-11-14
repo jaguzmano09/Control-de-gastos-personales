@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <title>Control de gastos</title>
-  <rect width="512" height="512" rx="128" fill="#2F6F4E"/>
-  <path d="M108 174c0-31 25-56 56-56h185c31 0 55 25 55 56v174c0 31-24 56-55 56H164c-31 0-56-25-56-56V174Z" fill="#fff"/>
-  <path d="M108 196h243c31 0 53 24 53 55v54H328c-46 0-82-36-82-80s36-80 82-80h76v-2c0-15-12-27-27-27H164c-31 0-56 25-56 56v24Z" fill="#1D5138"/>
-  <circle cx="329" cy="225" r="20" fill="#fff"/>
-  <path d="M158 151h104" stroke="#2F6F4E" stroke-width="24" stroke-linecap="round"/>
+  <title>PlaENC</title>
+  <rect width="512" height="512" rx="112" fill="#F4F7F3"/>
+  <g fill="none" stroke="#1D5138" stroke-linecap="round" stroke-linejoin="round" stroke-width="46">
+    <path d="M68 132h116c64 0 68 64 140 64h80"/>
+    <path d="M68 256h327"/>
+    <path d="M68 380h116c64 0 68-64 140-64h80"/>
+  </g>
+  <g fill="#2F6F4E"><circle cx="68" cy="132" r="27"/><circle cx="68" cy="256" r="27"/><circle cx="68" cy="380" r="27"/></g>
+  <circle cx="430" cy="256" r="42" fill="#B96D4B"/>
 </svg>

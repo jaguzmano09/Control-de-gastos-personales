@@ -4,10 +4,10 @@ import type { Metadata, Viewport } from 'next'
 import { RegisterServiceWorker } from '@/components/RegisterServiceWorker'
 
 export const metadata: Metadata = {
-  title: 'Control de gastos',
-  description: 'Control personal de gastos, presupuestos y bolsillos',
+  title: { default: 'PlaENC', template: '%s | PlaENC' },
+  description: 'Registra tus movimientos y entiende tu plata en contexto.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Gastos' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'PlaENC' },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0F1A2B',
+  themeColor: '#1D5138',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

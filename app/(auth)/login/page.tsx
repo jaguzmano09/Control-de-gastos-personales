@@ -161,7 +161,7 @@ export default function LoginPage() {
       </section>
 
       <section className="relative z-10 bg-ledger-green px-4 py-14 text-white sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Nuestro propósito</p><h2 className="mt-3 font-serif text-3xl leading-tight sm:text-4xl">Hacer que el control financiero personal sea más claro, humano y práctico.</h2><p className="mt-4 text-sm leading-6 text-white/75">Control de gastos es un proyecto independiente creado para transformar movimientos cotidianos en información útil para quien la registra.</p></div>
+        <div className="mx-auto max-w-3xl text-center"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Nuestro propósito</p><h2 className="mt-3 font-serif text-3xl leading-tight sm:text-4xl">Hacer que el control financiero personal sea más claro, humano y práctico.</h2><p className="mt-4 text-sm leading-6 text-white/75">PlaENC es un proyecto independiente creado para transformar movimientos cotidianos en información útil para quien los registra.</p></div>
       </section>
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { NAV_ITEMS } from '@/lib/nav-items'
+import { Logo } from '@/components/Logo'
 import { signOut } from '@/lib/actions/auth'
 
 export function MobileNav({ userEmail }: { userEmail?: string }) {
@@ -15,7 +16,8 @@ export function MobileNav({ userEmail }: { userEmail?: string }) {
             <path d="M3 5h14M3 10h14M3 15h14" strokeLinecap="round" />
           </svg>
         </button>
-        <span className="font-serif text-lg text-ledger-text">Control de gastos</span>
+        <Logo className="size-8" />
+        <span className="text-lg font-semibold tracking-tight text-ledger-text">PlaENC</span>
       </div>
 
       {open && (

@@ -1,6 +1,6 @@
 # PlaENC identity
 
-Status: Owner-selected working name and logo direction. The production mark and full visual system remain in review.
+Status: PlaENC and the selected logo direction are implemented in the application shell, public pages, metadata, and PWA assets. Legal clearance, user recognition, and the full visual system remain open before public launch.
 
 ## Name
 
@@ -35,4 +35,4 @@ Voice: clear, calm, exact, and nonjudgmental. A working homepage line is “Regi
 1. Complete SIC/SIPI, domain, app-store, and social-handle clearance for relevant markets and classes.
 2. Validate pronunciation and recall with people in the intended audience.
 3. Refine the 16 px icon variant and check contrast, monochrome use, and final wordmark outlines.
-4. Approve the final palette and type system; then plan replacement of metadata, favicon/PWA assets, legal references, emails, and in-app name.
+4. Review the implemented mark and name across the interface, metadata, favicon/PWA assets, and public copy. Finalize the palette and type system before public launch.

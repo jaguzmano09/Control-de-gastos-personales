@@ -167,8 +167,8 @@ Objective: establish a recognizable, consistent product whose promises match imp
 ### Tasks
 
 - [ ] P4.1 — Agree on positioning, personality, product promise, and evidence supporting each public claim. The initial market scan and owner-selected working name/direction are documented in [BRAND_DISCOVERY.md](product/BRAND_DISCOVERY.md). “Money in context” remains a working recommendation; verify account/pocket/category calculations under P2 and get owner review before public claims.
-- [ ] P4.2 — Validate PlaENC pronunciation, spelling, and legal/domain/app-store availability; define the long name and short form. Do not migrate production identity before approval and rollout mapping.
-- [ ] P4.3 — Refine the selected connected-allocations (Concept B) logo direction and define the coherent visual system around it: palette, typography, numerical presentation, icon usage, spacing, and density. Assess current colors/type as optional inputs.
+- [ ] P4.2 — PlaENC is now used in the application shell, public pages, metadata, and PWA assets. Validate pronunciation, spelling, and legal/domain/app-store availability before public launch; finalize the long name and short form.
+- [ ] P4.3 — The selected connected-allocations (Concept B) mark is now used in the interface and generated app icons. Refine the symbol and define the coherent visual system: palette, typography, numerical presentation, icon usage, spacing, and density. Assess current colors/type as optional inputs.
 - [ ] P4.4 — Unify tokens and reusable patterns for inputs, buttons, financial figures, tables, alerts, review states, empty states, errors, and confirmations.
 - [ ] P4.5 — Redesign information architecture around frequent tasks; group advanced settings/integrations and reconcile duplicated navigation catalogs.
 - [ ] P4.6 — Define voice and terminology for product UI, transactional messages, public pages, support, and financial explanations. Product copy remains Spanish; working documentation/comments remain English.

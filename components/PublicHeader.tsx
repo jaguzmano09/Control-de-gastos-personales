@@ -6,7 +6,7 @@ export function PublicHeader() {
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <a href="/login" className="inline-flex items-center gap-2 rounded-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-ledger-green/20">
           <Logo className="h-9 w-9" />
-          <span className="font-serif text-lg font-semibold tracking-tight text-ledger-text">Control de gastos</span>
+          <span className="text-lg font-semibold tracking-tight text-ledger-text">PlaENC</span>
         </a>
         <nav aria-label="Navegación pública" className="hidden items-center gap-5 text-sm text-ledger-muted sm:flex">
           <a href="/login#como-funciona" className="rounded-lg px-2 py-2 transition hover:text-ledger-green focus:outline-none focus-visible:ring-2 focus-visible:ring-ledger-green/30">Cómo funciona</a>

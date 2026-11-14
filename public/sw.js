@@ -1,5 +1,5 @@
 const OFFLINE_URL = '/offline.html'
-const CACHE_NAME = 'control-gastos-shell-v1'
+const CACHE_NAME = 'plaenc-shell-v1'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll([OFFLINE_URL])))
