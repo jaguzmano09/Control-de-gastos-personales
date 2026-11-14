@@ -1,16 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { getMonthSummary, getPendingReviewCount } from '@/lib/data/dashboard'
-import { formatYearMonth } from '@/lib/date-utils'
+import { currentYearMonth, formatYearMonth } from '@/lib/date-utils'
 import { getCategoryLocationBudgets } from '@/lib/data/category-location-budgets'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 
-function firstDayOfMonth(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
-}
-
 function periodToMonthStart(period?: string) {
-  if (!period?.match(/^\d{4}-(0[1-9]|1[0-2])$/)) return firstDayOfMonth()
+  if (!period?.match(/^\d{4}-(0[1-9]|1[0-2])$/)) return `${currentYearMonth()}-01`
   return `${period}-01`
 }
 

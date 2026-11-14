@@ -126,7 +126,7 @@ Objective: make every displayed amount follow the same agreed rules.
 - [ ] P2.3 — Remove the savings transaction type from new-entry flows; use purpose-named pockets and internal transfers. Reconcile legacy savings rows without treating them as new income/spending.
 - [ ] P2.4 — Calculate configured EA yield from the pocket's total funded available balance across categories, with daily compounding and product-specific terms; keep estimates distinct from posted interest. Correct principal and account/pocket query scoping.
 - [ ] P2.5 — Make positive budget rollover an assignment of prior unspent category/location allocation, not a second pool of cash; make assignment transactional/retry-safe and show exact overspend rather than clamping to zero.
-- [ ] P2.6 — Consolidate shared financial rules across overview, budgets, yield, and month closing. Label selected-period net separately from cumulative/current balances.
+- [ ] P2.6 — Consolidate shared financial rules across overview, budgets, yield, and month closing. Dashboard period defaults, summary cutoff, and OCR fallback now use the shared Bogota date; boundary tests cover UTC/local month and year differences. Label selected-period net separately from cumulative/current balances.
 - [ ] P2.7 — Guarantee complete aggregation at supported volumes; avoid silently calculating from capped result sets.
 - [ ] P2.8 — Prepare a compatibility/reconciliation plan for existing personal records before changing accounting semantics.
 

@@ -1,15 +1,14 @@
-export function currentYearMonth() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+export function currentYearMonth(at = new Date()) {
+  return todayInBogota(at).slice(0, 7)
 }
 
-export function todayInBogota() {
+export function todayInBogota(at = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Bogota',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date())
+  }).format(at)
 }
 
 export function yearMonthToDate(yearMonth: string) {

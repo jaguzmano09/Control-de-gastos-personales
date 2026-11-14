@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { calculateDailyYield } from '@/lib/yield-calculation'
+import { todayInBogota } from '@/lib/date-utils'
 
 type DashboardClient = Awaited<ReturnType<typeof createClient>>
 
@@ -31,11 +32,6 @@ function getMonthRange(monthStart: string) {
   }
 }
 
-function getTodayDate() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-}
-
 function addOneDay(date: string) {
   const value = new Date(`${date}T00:00:00Z`)
   value.setUTCDate(value.getUTCDate() + 1)
@@ -52,7 +48,7 @@ function emptyAccountSummary(): AccountSummary {
 
 export async function getMonthSummary(supabase: DashboardClient, monthStart: string) {
   const { start, end: monthEnd } = getMonthRange(monthStart)
-  const today = getTodayDate()
+  const today = todayInBogota()
   const end = monthStart.slice(0, 7) === today.slice(0, 7)
     ? (addOneDay(today) < monthEnd ? addOneDay(today) : monthEnd)
     : monthEnd

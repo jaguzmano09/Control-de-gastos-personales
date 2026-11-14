@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { todayInBogota } from '@/lib/date-utils'
 import { matchCategorizationRule } from '@/lib/categorization/match'
 import { discardTesseractWorker, extractTextFromImagesWithTesseract } from '@/lib/ocr/tesseract'
 import { preprocessReceipt } from '@/lib/ocr/preprocess'
@@ -177,7 +178,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
 
   if (!extracted) {
     extracted = {
-      occurred_at: partialExtraction?.occurred_at || new Date().toISOString().slice(0, 10),
+      occurred_at: partialExtraction?.occurred_at || todayInBogota(),
       amount: partialExtraction?.amount && partialExtraction.amount > 0 ? partialExtraction.amount : 0,
       description: partialExtraction?.description || 'Compra pendiente de identificar',
       suggested_category: partialExtraction?.suggested_category || '',
