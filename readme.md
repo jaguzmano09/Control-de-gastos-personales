@@ -1,4 +1,4 @@
-# 💰 Control de Gastos Personales
+# PlaENC — Plata en contexto
 
 > A modern Progressive Web App for personal finance management, designed to centralize expenses, budgets, accounts, and intelligent transaction classification in a single platform.
 
@@ -10,7 +10,7 @@
 [![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-black?logo=vercel\&logoColor=white)](https://vercel.com/)
 
 **Live application:**
-https://control-de-gastos-personales-nine.vercel.app/
+https://plaenc.vercel.app/
 
 **Repository:**
 https://github.com/jaguzmano09/Control-de-gastos-personales
@@ -19,7 +19,7 @@ https://github.com/jaguzmano09/Control-de-gastos-personales
 
 ## 📌 Overview
 
-**Control de Gastos Personales** is a personal finance management application built as a Progressive Web App (PWA).
+**PlaENC** is a personal finance management application built as a Progressive Web App (PWA).
 
 The project was created to replace a traditional spreadsheet-based expense tracking workflow with a centralized web application capable of handling:
 
@@ -638,7 +638,7 @@ The rollover endpoint can be tested manually with:
 
 ```bash
 curl -i -H "Authorization: Bearer $CRON_SECRET" \
-  https://control-de-gastos-personales-nine.vercel.app/api/cron/rollover
+  https://plaenc.vercel.app/api/cron/rollover
 ```
 
 The endpoint processes the previous calendar month and writes only `rollover_amount`
@@ -650,7 +650,7 @@ redeploy before testing again.
 
 The current production deployment is:
 
-https://control-de-gastos-personales-nine.vercel.app/
+https://plaenc.vercel.app/
 
 ---
 
@@ -931,4 +931,4 @@ If you find the project interesting, consider giving it a ⭐ on GitHub.
 https://github.com/jaguzmano09/Control-de-gastos-personales
 
 **Live application:**
-https://control-de-gastos-personales-nine.vercel.app/
+https://plaenc.vercel.app/

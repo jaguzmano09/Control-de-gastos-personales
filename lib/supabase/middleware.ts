@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-const PUBLIC_PATHS = new Set(['/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
+const PUBLIC_PATHS = new Set(['/inicio', '/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
 const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html'])
 
 export async function updateSession(request: NextRequest) {
@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath = PUBLIC_PATHS.has(request.nextUrl.pathname)
 
   if (!user && !isPublicPath && !request.nextUrl.pathname.startsWith('/api/')) {
-    return redirectWithCookies('/login')
+    return redirectWithCookies(request.nextUrl.pathname === '/' ? '/inicio' : '/login')
   }
 
   if (user && request.nextUrl.pathname === '/login') {

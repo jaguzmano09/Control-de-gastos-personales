@@ -23,6 +23,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 - `docs/SECURITY_THREAT_MODEL.md` records the reviewed boundaries, current controls, and launch blockers. OCR raw text/provider diagnostics are no longer written to new `raw_data`; five historical OCR rows were scrubbed while preserving transaction columns. Backup expiry and migration-ledger reconciliation remain open.
 - `docs/implementation/MIGRATION_RECONCILIATION.md` records the hosted migration ledger, incomplete fresh-install history, and safe P1.2 sequence. The owner requires a zero-cost environment; no paid project or cost quote is authorized. Isolated migration verification must use a demonstrably free/local path or remain deferred.
 - Vercel: rollover cron on day 1 at 05:00 UTC; Gmail daily at 06:00 UTC.
+- The Vercel project is named `plaenc`; `plaenc.vercel.app` is a verified project alias and `NEXT_PUBLIC_SITE_URL` points to it. The previous `control-de-gastos-personales-nine.vercel.app` alias remains attached. Supabase Auth redirect allowlisting and Google OAuth callback registration for the new alias are not yet verified.
 - Gemini extraction through REST; Tesseract.js shared worker/queue; Sharp preprocessing; optional PaddleOCR service.
 - Source-level default-off gates now prevent Gemini private-data calls and disable Gmail connect/sync unless `GEMINI_PRIVATE_DATA_PROCESSING_APPROVED=true`; optional PaddleOCR also requires `PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED=true`. Production environment values/provider settings were not inspected. Never enable Gemini Free for private financial data; see the privacy map and assistant proposal.
 - PWA manifest, icons, service worker, and offline page. This does not provide offline financial editing: the worker only implements a navigation fallback.
@@ -32,7 +33,8 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 
 | Area | Routes | Responsibility |
 |---|---|---|
-| Access/presentation | /login | Landing plus client-side sign-in/sign-up |
+| Public homepage | /inicio | Acquisition page with an illustrative account/pocket/category example |
+| Access | /login | Client-side sign-in/sign-up; public supporting content |
 | Public information | /terminos, /privacidad, /seguridad, /soporte | Information and support channel |
 | Overview | / | Period, metrics, shortcuts, budgets, balances |
 | Transactions | /transacciones, /transacciones/nueva, /transacciones/[id] | List, create, edit, delete |
