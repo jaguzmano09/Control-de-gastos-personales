@@ -1,6 +1,6 @@
 ﻿# Brand discovery — positioning and territories
 
-Status: Draft reflecting owner direction. No replacement name, logo, or final visual direction is approved by this document.
+Status: Draft reflecting owner direction. PlaENC is the owner-selected working name; the final logo, legal clearance, and public rollout are not approved.
 Roadmap: P0.5 and P4.1 exploration; naming and identity execution remain in P4.2–P4.8.
 Research date: 2026-11-13.
 
@@ -108,9 +108,9 @@ These are collision examples, not recommendations:
 
 The scan is a quick public-web screen, not a complete search of company registries, app stores, domains, social handles, or trademark records. A candidate cannot be described as available or legally clear on this evidence.
 
-### Three creative routes for the next naming round
+### Creative territories considered before the working-name selection
 
-These are routes to generate names from, not approved names:
+These are the strategic routes that informed the subsequent PlaENC selection:
 
 1. **A place for each part of your money.** Name territory built around where money lives and what it is assigned to. Logo idea: a compact modular mark whose pieces meet at a clear center; avoid literal wallets, piggy banks, and bank symbols. Strongest fit with the proposed financial model; risk: can become a generic “organizing” brand.
 2. **A clear account of what happened.** Name territory built around a personal record that is easy to understand and correct. Logo idea: a distinctive open ledger line or a single edited stroke, not a spreadsheet grid. Strong fit with the core record-keeping job; risk: can sound like accounting software.
@@ -118,23 +118,27 @@ These are routes to generate names from, not approved names:
 
 ### Recommended naming method
 
-Develop a short Spanish-friendly coined-name longlist from routes 1 and 3, then screen pronunciation, spelling, unwanted meanings, web/app collisions, domains, handles, and SIC records. Keep a plain-language descriptor alongside the coined name so a new visitor immediately understands the product. The descriptor can be more literal than the masterbrand; distinctiveness and comprehension do not need to be forced into one word.
+Continue with pronunciation, spelling, unwanted-meaning, web/app collision, domain, handle, and SIC checks for PlaENC. Keep a plain-language descriptor alongside the coined name so a new visitor immediately understands the product. The descriptor can be more literal than the masterbrand; distinctiveness and comprehension do not need to be forced into one word.
 
-No replacement name or logo candidate has been approved. The current “Control de gastos” name and wallet mark remain in place until owner selection and a full identity migration plan.
+## Owner-selected working name: PlaENC
+
+The owner selected **PlaENC** as the working name, expanded as **Plata en Contexto**. Preserve this capitalization in the current exploration. Treat the expansion as explanatory copy, not as a validated tagline. Pronunciation and unaided recall need user checks. The name has not received trademark, domain, social-handle, or app-store clearance.
+
+Three SVG logo directions are available in [`docs/brand/plaenc/`](../brand/plaenc/README.md): an open-context monogram, connected allocations, and a wordmark-first identity. These are review concepts only. The current forest-green/moss/ivory/clay colors are placeholders for comparison, not a selected palette. Do not change the active product identity until the owner approves the final mark and migration plan.
 
 ## Current identity audit
 
 The current name (“Control de gastos”) is descriptive but generic, and the wallet glyph is a familiar category symbol rather than a distinctive mark. Existing forest-green/ivory colors and serif display typography may provide useful warmth and continuity, but should be evaluated against the chosen concept rather than treated as commitments. Source inspection also found duplicated/conflicting palette definitions between global CSS and Tailwind, plus inconsistent product labels and theme colors in app/PWA metadata. These inconsistencies should be consolidated after a new identity direction is selected.
 
-**Direction confirmed:** name and logo are to be created from scratch. The broader system should then be designed coherently around that foundation. The current palette and typography are candidates for adaptation only if they strengthen recognition, legibility, and the intended personality. No replacement name, mark, palette, or typography has been approved.
+**Direction confirmed:** PlaENC is the owner-selected working name. The final logo and broader identity should be developed coherently around it. The current palette and typography are candidates for adaptation only if they strengthen recognition, legibility, and the intended personality. No final mark, palette, or typography has been approved.
 
 ## Owner review needed
 
 1. Review a concrete “money in context” proposition and confirm the wording before public claims.
 2. Confirm the calm, empathetic, precise, nonjudgmental voice in real interface examples.
-3. Review naming and logo options, then compare the current forest/ivory palette and serif typography as possible inputs to the coherent identity system.
+3. Review PlaENC logo concepts, clarify pronunciation and wordmark casing, and compare the existing palette and typography as possible inputs to the coherent identity system.
 
-These choices should guide naming. Naming availability and a logo concept should follow, rather than having an untested name determine the product positioning.
+These choices should guide identity execution. The selected working name does not establish trademark availability or final public positioning.
 
 ## Sources
 

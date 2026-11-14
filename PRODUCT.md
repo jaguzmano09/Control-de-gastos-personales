@@ -18,7 +18,7 @@ Provide a private, understandable place to record, organize, find, and correct p
 
 The working direction is “money in context”: connect what happened, where the money is held, and which category allocation it affects. The owner likes this direction; the public proposition still needs validation against verified financial behavior and intended users.
 
-The current brand name and logo will be replaced from scratch. A coherent wider identity should be developed around the selected name and logo. Existing colors and typography are candidates for adaptation, not fixed commitments.
+The owner selected **PlaENC** (from “Plata en Contexto”) as the working name. Its pronunciation, legal availability, final logo, and public rollout are still unapproved. A coherent wider identity should be developed around the selected name and approved mark. Existing colors and typography are candidates for adaptation, not fixed commitments.
 
 ## Operating Context
 
@@ -39,7 +39,8 @@ The current brand name and logo will be replaced from scratch. A coherent wider 
 
 ## Brand Commitments
 
-- Create a new name and logo from scratch.
+- Use PlaENC as the owner-selected working name; complete pronunciation and name-clearance checks before public rollout.
+- Create the final logo from scratch after review of the exploratory logo concepts.
 - Build a coherent identity around the selected name/logo; review existing colors and typography as optional source material.
 - Preferred strategic territory: money in context, subject to validation.
 - Keep personal financial information private and user-controlled.
@@ -49,7 +50,7 @@ The current brand name and logo will be replaced from scratch. A coherent wider 
 - Existing source code contains a generic wallet glyph and inconsistent product labels/theme colors across metadata and PWA files.
 - Current design uses forest green, ivory, clay accents, serif display headings, and an Inter/system body stack. This visual language is not approved as the future brand.
 - Public market descriptions already use categories, budgets, pockets, tracking, voice/OCR, and AI assistants. These features alone are not proven differentiators.
-- No new brand name, logo, trademark clearance, domain availability, or user research is approved or established.
+- PlaENC is the working name selected by the owner; no final logo, trademark clearance, domain availability, or brand user research is established.
 
 ## Product Principles
 
