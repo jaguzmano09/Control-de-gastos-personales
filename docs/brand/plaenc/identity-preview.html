@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PlaENC — propuesta de identidad</title>
+    <style>
+      :root { color-scheme: light; --paper: #f4f7f3; --ink: #14251d; --pine: #1d5138; --moss: #2f6f4e; --clay: #b96d4b; --line: #dce7df; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, "Avenir Next", Arial, sans-serif; }
+      main { width: min(1080px, calc(100% - 48px)); margin: 0 auto; }
+      header { min-height: 470px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .7fr); align-items: center; gap: 48px; border-bottom: 1px solid var(--line); }
+      h1 { max-width: 640px; margin: 0; font-size: clamp(2.5rem, 6vw, 5rem); line-height: .98; letter-spacing: -.055em; font-weight: 620; }
+      .lead { max-width: 52ch; margin: 22px 0 0; font-size: 1.08rem; line-height: 1.6; color: #345645; }
+      .hero-mark { width: min(100%, 330px); justify-self: end; }
+      section { padding: 42px 0; border-bottom: 1px solid var(--line); }
+      h2 { margin: 0 0 20px; font-size: 1rem; letter-spacing: -.01em; font-weight: 650; }
+      .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+      .swatch { min-width: 0; }
+      .color { height: 72px; border-radius: 4px; border: 1px solid rgba(20,37,29,.08); }
+      .swatch p { margin: 10px 0 2px; font-size: .85rem; font-weight: 600; }
+      .swatch small { color: #345645; font-size: .76rem; }
+      .message { max-width: 720px; font-size: clamp(1.5rem, 3vw, 2.3rem); line-height: 1.18; letter-spacing: -.035em; }
+      .support { max-width: 62ch; color: #345645; font-size: 1rem; line-height: 1.65; }
+      .lockup { display: block; width: min(520px, 100%); height: auto; }
+      .scale { display: flex; align-items: end; gap: clamp(22px, 7vw, 56px); padding: 12px 0 4px; }
+      .scale figure { display: grid; justify-items: center; gap: 10px; margin: 0; }
+      .scale img { display: block; width: var(--size); height: var(--size); }
+      .scale figcaption { color: #345645; font-size: .75rem; font-variant-numeric: tabular-nums; }
+      .fine { padding: 20px 0 40px; color: #345645; font-size: .82rem; line-height: 1.55; }
+      @media (max-width: 720px) { header { min-height: 0; grid-template-columns: 1fr; gap: 28px; padding: 70px 0 42px; } .hero-mark { width: min(230px, 70%); justify-self: start; grid-row: 1; } .palette { grid-template-columns: repeat(2, 1fr); } .color { height: 54px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Registra tus movimientos. Entiende tu plata en contexto.</h1>
+          <p class="lead">Una propuesta de identidad para organizar lo que pasa entre tus cuentas, bolsillos y categorías con claridad y sin juicios.</p>
+        </div>
+        <img class="hero-mark" src="mark-b-allocation.svg" alt="Símbolo propuesto de PlaENC: tres movimientos que convergen en un punto." />
+      </header>
+      <section aria-labelledby="scale-heading">
+        <h2 id="scale-heading">Símbolo en distintos tamaños</h2>
+        <div class="scale" aria-label="Símbolo a 64, 32, 24 y 16 píxeles">
+          <figure><img src="mark-b-allocation.svg" alt="" style="--size:64px" /><figcaption>64 px</figcaption></figure>
+          <figure><img src="mark-b-allocation.svg" alt="" style="--size:32px" /><figcaption>32 px</figcaption></figure>
+          <figure><img src="mark-b-allocation.svg" alt="" style="--size:24px" /><figcaption>24 px</figcaption></figure>
+          <figure><img src="mark-b-allocation.svg" alt="" style="--size:16px" /><figcaption>16 px</figcaption></figure>
+        </div>
+      </section>
+      <section aria-labelledby="palette-heading">
+        <h2 id="palette-heading">Paleta de trabajo</h2>
+        <div class="palette">
+          <div class="swatch"><div class="color" style="background:#1d5138"></div><p>Pino</p><small>#1D5138</small></div>
+          <div class="swatch"><div class="color" style="background:#14251d"></div><p>Tinta</p><small>#14251D</small></div>
+          <div class="swatch"><div class="color" style="background:#2f6f4e"></div><p>Musgo</p><small>#2F6F4E</small></div>
+          <div class="swatch"><div class="color" style="background:#f4f7f3"></div><p>Papel</p><small>#F4F7F3</small></div>
+          <div class="swatch"><div class="color" style="background:#b96d4b"></div><p>Arcilla</p><small>#B96D4B</small></div>
+        </div>
+      </section>
+      <section aria-labelledby="lockup-heading">
+        <h2 id="lockup-heading">Wordmark y descriptor</h2>
+        <img class="lockup" src="concept-b-allocation.svg" alt="PlaENC — Plata en contexto. Propuesta de wordmark y símbolo." />
+      </section>
+      <section aria-labelledby="voice-heading">
+        <h2 id="voice-heading">Voz en el producto</h2>
+        <p class="message">Este movimiento quedó en Cuenta diaria · Bolsillo mercado y afecta la categoría Comida.</p>
+        <p class="support">La marca busca explicar qué pasó, dónde está el dinero y qué categoría cambia. La persona conserva el control de sus movimientos y sus datos.</p>
+      </section>
+      <p class="fine">Propuesta en revisión. El nombre no tiene clearance formal; los colores, la tipografía y el logo aún no son identidad final. La disponibilidad de las funciones y los mensajes de privacidad debe verificarse antes de publicar.</p>
+    </main>
+  </body>
+</html>

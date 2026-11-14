@@ -1,45 +1,38 @@
-# PlaENC — first identity exploration
+# PlaENC identity
 
-Status: PlaENC is the owner-selected working name. The owner selected Concept B as the direction to refine; this mark is still a draft, not an approved production logo.
+Status: Owner-selected working name and logo direction. The production mark and full visual system remain in review.
 
 ## Name
 
-**PlaENC** is the selected working name, formed from **Plata en Contexto**. Keep the owner's capitalization in this round. The pronunciation is still an open validation point; test whether Spanish-speaking users say it consistently after seeing it once and hearing it once.
+The owner selected **PlaENC**, expanded as **Plata en Contexto**. Keep this casing in the current draft. Pronunciation and unaided recall still need validation. The phrase is a descriptor, not a tested tagline.
 
-Use a plain-language descriptor beside the name during introduction. The current descriptor is **“Plata en contexto”**. It is explanatory copy, not a tagline proven through user research.
+A preliminary public search found exact-name construction businesses in South Korea and Brazil. It did not establish availability or a direct financial-product conflict. The official SIC/SIPI query was not completed. See the evidence and sources in [brand discovery](../../product/BRAND_DISCOVERY.md).
 
-### Preliminary name collision check
+## Selected logo direction
 
-An exact public-web search found construction businesses using **PLAENC** in South Korea and Brazil, but no personal-finance product surfaced in the limited results reviewed. Treat this as a cross-category collision to investigate, not as evidence that the name is available or blocked. Complete SIC, relevant territory, domain, app-store, and social-handle checks before public rollout. See the evidence recorded in [brand discovery](../../product/BRAND_DISCOVERY.md).
+The owner selected **connected allocations**: three paths converging on a shared point. It should suggest that financial details can be understood together; it must not imply automatic bank connections or a money transfer feature.
 
-## Logo concepts
+![PlaENC lockup draft: connected allocations](./concept-b-allocation.svg)
 
-These code-native SVGs are concept sketches intended for comparison, not production-ready marks:
+The [identity preview](./identity-preview.html) shows the lockup, icon scale, provisional colors, and product voice in one place. The icon also has [one-color](./mark-b-monochrome.svg) and [reverse](./mark-b-reverse.svg) drafts.
 
-- [Concept A — Open-context monogram](./concept-a-monogram.svg): not selected for this iteration.
+## Working system
 
-  ![PlaENC concept A: open-context monogram](./concept-a-monogram.svg)
+| Role | Draft color | Use |
+|---|---|---|
+| Pine | `#1D5138` | Main mark and primary actions |
+| Ink | `#14251D` | Wordmark and readable copy |
+| Moss | `#2F6F4E` | Supporting green |
+| Paper | `#F4F7F3` | Light surface |
+| Clay | `#B96D4B` | Non-text accent at the convergence point; avoid for small text |
 
-- [Concept B — Connected allocations](./concept-b-allocation.svg): selected by the owner for refinement. Three movements meet at one shared point, expressing how an account, pocket, and category can be read together. Its visual risk is still resemblance to generic routing/data-flow marks; the terminal point and route geometry are being refined to give it a more distinctive silhouette.
+These values reuse the current interface as a starting point; they are not an approved palette. Keep Inter as the current UI candidate while checking the actual served font. Final wordmark lettering must not depend on an unspecified browser fallback.
 
-  ![PlaENC concept B: connected allocations](./concept-b-allocation.svg)
+Voice: clear, calm, exact, and nonjudgmental. A working homepage line is “Registra tus movimientos. Entiende tu plata en contexto.” Do not make privacy or financial outcome promises until the relevant behavior is verified.
 
-  [Icon-only draft for small-size review](./mark-b-allocation.svg) · [Scale review page](./scale-review.html) · [One-color icon](./mark-b-monochrome.svg) · [Reverse icon](./mark-b-reverse.svg)
+## Before product rollout
 
-  ![PlaENC concept B: connected allocations](./concept-b-allocation.svg)
-
-- [Concept C — Wordmark first](./concept-c-wordmark.svg): not selected for this iteration.
-
-  ![PlaENC concept C: wordmark first](./concept-c-wordmark.svg)
-
-The current SVGs use the existing forest-green, moss, ivory, and clay colors only to make the concepts comparable. No palette, typeface, descriptor, or final logo has been approved. The legacy colors and typography remain candidates to reassess against the selected identity. The scale review is a visual inspection aid; it does not establish production legibility or trademark clearance.
-
-## Required critique before production
-
-1. Check pronunciation, spelling, recall, and perceived meaning with people in the initial audience. The wordmark tests a quieter distinction between “Pla” and “ENC”; compare it against a consistent-case spelling before settling the casing.
-2. Search exact and confusingly similar names across SIC records, app stores, domains, social handles, and relevant international products. The earlier public-web screen does not establish legal availability.
-3. Evaluate the icon-only draft at 16 px, 24 px, and 32 px; check silhouette, contrast, negative space, and legibility without the descriptor. The first render showed the 16 px version losing detail, so the draft strokes and anchor were enlarged; confirm that this improves legibility without making larger sizes too heavy. Its accent color is still provisional.
-4. Test the wordmark in lowercase, title case, and the owner-selected PlaENC casing. Preserve the expansion's meaning without assuming that all-caps letter styling is self-explanatory.
-5. After owner approval, define clear space, minimum size, color variants, app icon, favicon, PWA assets, and usage across the homepage and product.
-
-Do not replace the active product metadata, PWA icons, legal references, emails, domain, or in-app name until clearance and the identity migration are approved.
+1. Complete SIC/SIPI, domain, app-store, and social-handle clearance for relevant markets and classes.
+2. Validate pronunciation and recall with people in the intended audience.
+3. Refine the 16 px icon variant and check contrast, monochrome use, and final wordmark outlines.
+4. Approve the final palette and type system; then plan replacement of metadata, favicon/PWA assets, legal references, emails, and in-app name.

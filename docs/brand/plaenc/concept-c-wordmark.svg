@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 112" role="img" aria-labelledby="title desc">
-  <title id="title">PlaENC concept C: wordmark first</title>
-  <desc id="desc">A typographic-first identity uses the name itself as the signature, with a restrained divider and a Spanish descriptor.</desc>
-  <text x="32" y="62" fill="#14251d" font-family="Arial, sans-serif" font-size="46" font-weight="600" letter-spacing="-1.6"><tspan>Pla</tspan><tspan fill="#1d5138" font-size="39" letter-spacing="0.5">ENC</tspan></text>
-  <path d="M34 76h42" stroke="#b96d4b" stroke-width="3" stroke-linecap="round" />
-  <text x="34" y="99" fill="#1d5138" font-family="Arial, sans-serif" font-size="12" font-weight="500" letter-spacing="1.35">PLATA EN CONTEXTO</text>
-</svg>
