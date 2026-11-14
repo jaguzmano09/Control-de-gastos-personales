@@ -88,6 +88,40 @@ The identity makes the product feel practical and approachable for daily records
 - Screen candidates for confusingly similar products, domains, app stores, and Colombia's SIC trademark search before selecting one. A web search is preliminary screening, not legal clearance.
 - Do not change the current production name or logo until the owner approves a candidate and the migration scope is mapped across app metadata, PWA icons, email, legal text, domains, and social accounts.
 
+## Naming exploration — first screening round
+
+The owner confirmed that the brand should lead with the product available today: organizing personal finances and making money understandable in context. A conversational AI feature is a possible future extension, not the brand's central promise.
+
+### Early names screened out
+
+These are collision examples, not recommendations:
+
+| Name | Public result | Decision |
+|---|---|---|
+| Tersia | An active social/community app and company use this name. | Reject: strong exact-name collision, even though its category differs. |
+| Cifria | An active Spanish-language site uses the name for personal-finance calculators and content. | Reject: direct category collision. |
+| Claria | A Colombian App Store finance listing uses this exact name for organizing financial products and benefits. | Reject: direct market and pronunciation collision. |
+| Tesela | Multiple active organizations and products use the name across software and services. | Reject: crowded exact-name field. |
+| Contexta | Active information and AI products use the name. | Reject as a product name; retain “money in context” as a positioning hypothesis only. |
+| Lugara | An active private trip-tracking web app uses the name. | Reject: exact-name digital product collision. |
+| Nítida | The word is generic and appears in finance-app marketing copy; a former photo app also used it as a product name. | Reject as a distinctive masterbrand. |
+
+The scan is a quick public-web screen, not a complete search of company registries, app stores, domains, social handles, or trademark records. A candidate cannot be described as available or legally clear on this evidence.
+
+### Three creative routes for the next naming round
+
+These are routes to generate names from, not approved names:
+
+1. **A place for each part of your money.** Name territory built around where money lives and what it is assigned to. Logo idea: a compact modular mark whose pieces meet at a clear center; avoid literal wallets, piggy banks, and bank symbols. Strongest fit with the proposed financial model; risk: can become a generic “organizing” brand.
+2. **A clear account of what happened.** Name territory built around a personal record that is easy to understand and correct. Logo idea: a distinctive open ledger line or a single edited stroke, not a spreadsheet grid. Strong fit with the core record-keeping job; risk: can sound like accounting software.
+3. **Money, in its real-life context.** Name territory built around understanding how movements relate across accounts, pockets, categories, and months. Logo idea: two or three connected forms that remain legible at favicon size. Strongest expression of the preferred positioning; risk: can overpromise until P2 verifies reconciled figures and users understand the model.
+
+### Recommended naming method
+
+Develop a short Spanish-friendly coined-name longlist from routes 1 and 3, then screen pronunciation, spelling, unwanted meanings, web/app collisions, domains, handles, and SIC records. Keep a plain-language descriptor alongside the coined name so a new visitor immediately understands the product. The descriptor can be more literal than the masterbrand; distinctiveness and comprehension do not need to be forced into one word.
+
+No replacement name or logo candidate has been approved. The current “Control de gastos” name and wallet mark remain in place until owner selection and a full identity migration plan.
+
 ## Current identity audit
 
 The current name (“Control de gastos”) is descriptive but generic, and the wallet glyph is a familiar category symbol rather than a distinctive mark. Existing forest-green/ivory colors and serif display typography may provide useful warmth and continuity, but should be evaluated against the chosen concept rather than treated as commitments. Source inspection also found duplicated/conflicting palette definitions between global CSS and Tailwind, plus inconsistent product labels and theme colors in app/PWA metadata. These inconsistencies should be consolidated after a new identity direction is selected.
@@ -109,3 +143,10 @@ These choices should guide naming. Naming availability and a logo concept should
 [^3]: Nequi Help Center, “¿Qué es ‘Habla con tu plata’?”: <https://ayuda.nequi.com.co/hc/es/articles/38205273952781--Qu%C3%A9-es-Habla-con-tu-plata>.
 [^4]: Apple App Store, Auri: Finanzas Personales: <https://apps.apple.com/co/app/auri-finanzas-personales/id6773147800>.
 [^5]: Google Play, FinanzApp: <https://play.google.com/store/apps/details?id=com.joxibe.finanzapp>.
+[^6]: Tersia product website: <https://tersia.com/>.
+[^7]: Cifria about page: <https://cifria.es/quienes-somos/>.
+[^8]: Apple App Store, Claria: Beneficios: <https://apps.apple.com/co/app/claria-beneficios/id6796450134>.
+[^9]: Tesela product website: <https://tesela.io/>.
+[^10]: Contexta: <https://contexta.es/>; Contexta Negocios: <https://contexta.com.mx/>.
+[^11]: Lugara product website: <https://lugara.me/>.
+[^12]: Walletee product website: <https://walletee.app/es>.
