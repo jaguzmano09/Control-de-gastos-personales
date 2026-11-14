@@ -482,14 +482,18 @@ GEMINI_API_KEY=your_gemini_api_key
 PADDLEOCR_URL=your_optional_paddleocr_url
 GOOGLE_OAUTH_CLIENT_ID=your_google_client_id
 GOOGLE_OAUTH_CLIENT_SECRET=your_google_client_secret
-GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/api/gmail/callback
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
 CRON_SECRET=your_cron_secret
 ```
 
 `PADDLEOCR_URL` is optional when using the local Tesseract.js fallback. Gmail
 OAuth variables are required for the email integration, and `CRON_SECRET` is
 required by the scheduled endpoints.
+
+Register both production Gmail OAuth callback URLs in the Google OAuth client:
+`https://plaenc.vercel.app/api/gmail/callback` and
+`https://control-de-gastos-personales-nine.vercel.app/api/gmail/callback`.
+The app uses the origin of the request that started the flow. Local development
+uses `http://localhost:3000/api/gmail/callback` if that URI is registered.
 
 > ⚠️ Never commit `.env.local` or any secret key to Git.
 

@@ -2,8 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getProfile } from '@/lib/gmail/client'
 import { timingSafeEqual } from 'node:crypto'
+import { getTrustedSiteOrigin } from '@/lib/site-origin'
 
 export async function GET(request: NextRequest) {
+  const origin = getTrustedSiteOrigin(request.url)
+  if (!origin) return new Response('Unsupported site origin', { status: 400 })
   const code = request.nextUrl.searchParams.get('code')
   const state = request.nextUrl.searchParams.get('state')
   const storedState = request.cookies.get('gmail_oauth_state')?.value
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tokens = await exchangeCodeForTokens(code)
+    const tokens = await exchangeCodeForTokens(code, `${origin}/api/gmail/callback`)
     if (!tokens.refresh_token) {
       return clearStateCookie(NextResponse.redirect(
         new URL('/correo?error=No+se+recibi%C3%B3+refresh_token%2C+revoca+el+acceso+en+Google+y+reintenta', request.url)

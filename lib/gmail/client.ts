@@ -14,10 +14,10 @@ interface GmailMessage {
   payload?: GmailMessagePart
 }
 
-export function buildGoogleAuthUrl(state: string) {
+export function buildGoogleAuthUrl(state: string, redirectUri: string) {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_OAUTH_CLIENT_ID!,
-    redirect_uri: process.env.GOOGLE_OAUTH_REDIRECT_URI!,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: SCOPES.join(' '),
     access_type: 'offline',
@@ -27,7 +27,7 @@ export function buildGoogleAuthUrl(state: string) {
   return `${GOOGLE_OAUTH_URL}?${params.toString()}`
 }
 
-export async function exchangeCodeForTokens(code: string) {
+export async function exchangeCodeForTokens(code: string, redirectUri: string) {
   const res = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -35,7 +35,7 @@ export async function exchangeCodeForTokens(code: string) {
       code,
       client_id: process.env.GOOGLE_OAUTH_CLIENT_ID!,
       client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET!,
-      redirect_uri: process.env.GOOGLE_OAUTH_REDIRECT_URI!,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     }),
   })
