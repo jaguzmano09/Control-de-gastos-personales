@@ -6,15 +6,16 @@ import { RegisterServiceWorker } from '@/components/RegisterServiceWorker'
 export const metadata: Metadata = {
   title: { default: 'PlaENC', template: '%s | PlaENC' },
   description: 'Registra tus movimientos y entiende tu plata en contexto.',
-  manifest: '/manifest.webmanifest',
+  manifest: '/manifest.webmanifest?v=plaenc-b2',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'PlaENC' },
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/icons/favicon-16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.svg?v=plaenc-b2', type: 'image/svg+xml' },
+      { url: '/icons/favicon-16.png?v=plaenc-b2', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/favicon-32.png?v=plaenc-b2', sizes: '32x32', type: 'image/png' },
     ],
-    apple: '/icons/apple-touch-icon.png',
+    shortcut: '/favicon.ico?v=plaenc-b2',
+    apple: '/icons/apple-touch-icon.png?v=plaenc-b2',
   },
 }
 
