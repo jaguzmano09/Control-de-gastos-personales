@@ -114,8 +114,8 @@ export default async function CuentasPage({
         </div>
       </header>
 
-      {params.error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{decodeURIComponent(params.error)}</p>}
-      {params.success && <p role="status" className="mt-5 rounded-xl border border-ledger-green/20 bg-ledger-green/10 px-4 py-3 text-sm text-ledger-green">{decodeURIComponent(params.success)}</p>}
+      {params.error && <p role="alert" className="feedback feedback-error mt-5">{decodeURIComponent(params.error)}</p>}
+      {params.success && <p role="status" className="feedback feedback-success mt-5">{decodeURIComponent(params.success)}</p>}
 
       <div className="mt-7 space-y-5">
         {(accounts ?? []).map((account) => (

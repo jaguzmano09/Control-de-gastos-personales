@@ -303,7 +303,7 @@ export default async function TransaccionesPage({
         </Link>
       </form>
 
-      {transactionsError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      {transactionsError && <p role="alert" className="feedback feedback-error mt-4">
         No pudimos cargar los movimientos. Revisa los filtros o vuelve a intentarlo en unos segundos.
       </p>}
 

@@ -142,7 +142,7 @@ export function EditTransaccionForm({
   return (
     <div className="mt-8 space-y-8">
       {transaction.source !== 'manual' && transaction.source !== 'migration' && (
-        <p className="rounded-sm border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+        <p className="feedback feedback-warning">
           Esta transacción vino de {transaction.source === 'ocr' ? 'una foto (OCR)' : 'correo bancario'}. Editarla no vuelve a consultar la IA, solo guarda los valores que dejes aquí.
         </p>
       )}
@@ -208,7 +208,7 @@ export function EditTransaccionForm({
         </div>
         {type === 'Ingreso' && !sourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida se asignará a la cuenta o bolsillo al guardar este ingreso.</p>}
         {type === 'Gasto' && selectedLocationStatus && <LocationStatusSummary status={selectedLocationStatus} occurredAt={occurredAt} />}
-        {type === 'Gasto' && expenseBlockReason && <div role="alert" className="rounded-sm border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        {type === 'Gasto' && expenseBlockReason && <div role="alert" className="feedback feedback-warning">
           <p>{expenseBlockReason}</p>
           {statusLoadFailed && <button type="button" onClick={retryLocationStatuses} className="mt-2 font-medium underline underline-offset-2">Reintentar consulta</button>}
         </div>}
@@ -258,7 +258,7 @@ export function EditTransaccionForm({
           </select>
         </div>
 
-        {error && <p role="alert" className="text-sm text-red-700">{decodeURIComponent(error)}</p>}
+        {error && <p role="alert" className="feedback feedback-error">{decodeURIComponent(error)}</p>}
 
         <button type="submit" disabled={!canSave} className="btn btn-primary btn-full disabled:cursor-not-allowed disabled:opacity-55">
           {isLoadingStatuses ? 'Consultando presupuesto…' : expenseBlockReason ? 'Gasto no disponible para este destino' : 'Guardar cambios'}

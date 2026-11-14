@@ -184,7 +184,7 @@ export function NuevaTransaccionForm({
 
           {type === 'Ingreso' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida se asignará a la cuenta o bolsillo al guardar este ingreso.</p>}
           {type === 'Transferencia' && !assignedSourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al origen al confirmar.</p>}
-          {type === 'Gasto' && expenseBlockReason && <div role="alert" className="rounded-sm border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {type === 'Gasto' && expenseBlockReason && <div role="alert" className="feedback feedback-warning">
             <p>{expenseBlockReason}</p>
             {statusLoadFailed && <button type="button" onClick={retryLocationStatuses} className="mt-2 font-medium underline underline-offset-2">Reintentar consulta</button>}
           </div>}
@@ -233,7 +233,7 @@ export function NuevaTransaccionForm({
             </select>
           </div>
 
-          {error && <p role="alert" className="text-sm text-red-700">{decodeURIComponent(error)}</p>}
+          {error && <p role="alert" className="feedback feedback-error">{decodeURIComponent(error)}</p>}
 
           <button type="button" onClick={handleContinue} disabled={!canContinueExpense} className="btn btn-primary btn-full disabled:cursor-not-allowed disabled:opacity-55">
             {isLoadingStatuses ? 'Consultando presupuesto…' : expenseBlockReason ? 'Gasto no disponible para este destino' : 'Continuar'}
@@ -277,7 +277,7 @@ export function NuevaTransaccionForm({
           <input type="hidden" name="amount" value={amount} />
           <input type="hidden" name="is_necessary" value={isNecessary} />
 
-          {error && <p role="alert" className="text-sm text-red-700">{decodeURIComponent(error)}</p>}
+          {error && <p role="alert" className="feedback feedback-error">{decodeURIComponent(error)}</p>}
 
           <div className="flex gap-3">
             <button type="button" onClick={() => setStep('form')} className="btn btn-secondary flex-1">

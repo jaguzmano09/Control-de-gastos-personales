@@ -128,8 +128,8 @@ export default function LoginPage() {
                   <span>He leído y acepto los <a className="font-medium text-ledger-green underline underline-offset-2" href="/terminos" target="_blank">Términos de uso</a> y la <a className="font-medium text-ledger-green underline underline-offset-2" href="/privacidad" target="_blank">Política de privacidad</a>.</span>
                 </label>
               </>}
-              {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm leading-5 text-red-700">{error}</p>}
-              {message && <p role="status" className="rounded-xl border border-ledger-green/20 bg-ledger-green/5 px-3 py-2.5 text-sm leading-5 text-ledger-green">{message}</p>}
+              {error && <p role="alert" className="feedback feedback-error">{error}</p>}
+              {message && <p role="status" className="feedback feedback-success">{message}</p>}
               <button className="btn btn-primary btn-full min-h-12" disabled={loading}>{loading ? 'Procesando...' : mode === 'login' ? 'Entrar a mi espacio' : 'Crear mi cuenta'}</button>
             </form>
             {mode === 'login' && <p className="mt-5 text-center text-sm text-ledger-muted">¿Aún no tienes cuenta? <button type="button" onClick={() => selectMode('signup')} className="font-semibold text-ledger-green underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ledger-green/30">Crear cuenta</button></p>}

@@ -98,6 +98,22 @@ a { color: inherit; text-decoration: none; }
     @apply text-2xl font-semibold tabular-nums tracking-tight text-ledger-text sm:text-3xl;
   }
 
+  .feedback {
+    @apply rounded-xl border px-4 py-3 text-sm leading-6;
+  }
+
+  .feedback-error {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+
+  .feedback-warning {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+
+  .feedback-success {
+    @apply border-ledger-green/20 bg-ledger-green/5 text-ledger-green-dark;
+  }
+
   .data-table {
     @apply min-w-[760px] w-full text-sm;
   }
