@@ -4,9 +4,9 @@ Exploration date: 2026-11-11. Findings concern local source. No financial record
 
 ## Product and owner intent
 
-The owner accepted the roadmap and instructed development to begin. Priorities remain a compelling public homepage, distinctive useful/enjoyable experience, owner administration alongside personal use, and privacy. See [ROADMAP.md](ROADMAP.md), now Working v5. P0 deliverables are in review; scoped P1 fixes are locally verified. Historical remote privacy remediations and owner admin provisioning are recorded below and in implementation notes.
+The owner accepted the roadmap and instructed development to begin. Priorities remain a compelling public homepage, distinctive useful/enjoyable experience, owner administration alongside personal use, and privacy. See [ROADMAP.md](ROADMAP.md), now Working v6. P0 deliverables are in review; scoped P1 fixes are locally verified. Historical remote privacy remediations and owner admin provisioning are recorded below and in implementation notes.
 
-Control de Gastos Personales began as a replacement for a personal spreadsheet. The owner wants public-use readiness, a critical assessment, coherent identity, and durable development context. Two independent assessment agents were authorized. The business model and final name remain unconfirmed.
+Control de Gastos Personales began as a replacement for a personal spreadsheet. The owner wants public-use readiness, a critical assessment, coherent identity, and durable development context. PlaENC is the selected working name and connected allocations (Concept B) the selected logo direction; legal clearance, final identity, rollout, and business model remain open.
 
 Owner preferences, explicitly requested on 2026-11-11: communicate in Spanglish; write code comments and documentation in English. Product UI remains Spanish unless separately changed.
 
@@ -21,7 +21,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 - Both privileged cron routes fail closed if `CRON_SECRET` is missing and compare bearer credentials with a timing-safe helper. Their error responses no longer return database details; rollover responses expose aggregate counts rather than private account IDs or financial amounts. Gmail OAuth logs contain no raw provider or database errors.
 - Admin role enforcement is server-side in `/admin` and `admin_product_event_metrics`; profile RLS permits users to read their own role, with no client role update path. The sole verified Auth user has been promoted through the privileged database process; the account UUID is not stored here. Non-production admin-isolation checks remain pending.
 - `docs/SECURITY_THREAT_MODEL.md` records the reviewed boundaries, current controls, and launch blockers. OCR raw text/provider diagnostics are no longer written to new `raw_data`; five historical OCR rows were scrubbed while preserving transaction columns. Backup expiry and migration-ledger reconciliation remain open.
-- `docs/implementation/MIGRATION_RECONCILIATION.md` records the empty hosted migration ledger, incomplete fresh-install history, and safe P1.2 sequence. Creating the non-production comparison project is blocked on the owner's Supabase organization ID and explicit approval of the returned cost.
+- `docs/implementation/MIGRATION_RECONCILIATION.md` records the hosted migration ledger, incomplete fresh-install history, and safe P1.2 sequence. The owner requires a zero-cost environment; no paid project or cost quote is authorized. Isolated migration verification must use a demonstrably free/local path or remain deferred.
 - Vercel: rollover cron on day 1 at 05:00 UTC; Gmail daily at 06:00 UTC.
 - Gemini extraction through REST; Tesseract.js shared worker/queue; Sharp preprocessing; optional PaddleOCR service.
 - Source-level default-off gates now prevent Gemini private-data calls and disable Gmail connect/sync unless `GEMINI_PRIVATE_DATA_PROCESSING_APPROVED=true`; optional PaddleOCR also requires `PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED=true`. Production environment values/provider settings were not inspected. Never enable Gemini Free for private financial data; see the privacy map and assistant proposal.
@@ -86,7 +86,7 @@ RPCs: accept_current_documents, admin_product_event_metrics, record_product_even
 - Rollover: cron processes targets and updates next-period budgets/reviews. Manual assignment currently overwrites category rollover and updates review status separately.
 - Consent: login hardcodes document versions; DB owns active versions, a trigger creates profiles/registration acceptances, and an RPC renews acceptance. UI consent routing alone does not enforce acceptance at every API/database mutation.
 - Events: migration/RPC/admin view exist; no product-flow instrumentation calls were found.
-- Owner administration is an accepted future requirement: the same identity should retain its complete personal workspace and access a server-authorized metrics area. Existing role/aggregate-RPC foundations do not establish that the owner's account is provisioned or that the required metrics exist. Define aggregate visibility and small-cohort safeguards before implementing analytics; admin status does not authorize routine access to others' private financial data.
+- Owner administration is an accepted requirement. The sole verified Auth user has been promoted to admin; preserve the full personal workspace and restrict the server-authorized metrics area to approved aggregates. Cross-role isolation and small-cohort safeguards still need verification; admin status does not authorize routine access to others' private financial data.
 
 ## Entry points by change
 
@@ -103,24 +103,18 @@ Compatibility exports are intentional: lib/types/database.types.ts reexports src
 
 ## Existing design
 
-Forest green, ivory, dark text, white, and clay accents; serif headings and an Inter/system body stack without explicit Inter loading. Rounded cards, shadows, gradients, drawer navigation. CSS variables and Tailwind colors partially overlap; local inputs differ, and metadata/manifest use several product names. This is an emerging visual system, not an approved brand. No PRODUCT.md or DESIGN.md existed before the review.
-
-## Skills and supporting material
-
-The review used Impeccable with two independent assessments, Supabase, webapp-testing, and local brand guidance at skill/brand/brand/SKILL.md. App Router patterns and the local cybersecurity guide were also explored. The repository catalog is skill/README.md; copies under skill/_installed/ should not be treated as distinct capabilities. Voice/messaging references live under skill/brand/brand/references/.
-
-The `agent-browser` skill and CLI are installed globally for visual UI review (CLI 0.43.0; Chrome for Testing 157.0.8103.78). In PowerShell, invoke `agent-browser.cmd` to avoid execution-policy issues. In this managed Windows environment, set `AGENT_BROWSER_SOCKET_DIR` to a writable temporary directory (for example, `$env:TEMP\agent-browser-control-gastos`) before each invocation; launching Chrome may require elevated execution because the sandbox blocks its CDP channel. Load the CLI's `core` skill guide before using it. A mobile smoke review of `/privacidad` at 390×844 found matching viewport/document/body widths and no clipped text in the inspected DOM. The Next.js development-tools badge visually overlays the “Tus controles” heading in development mode. This did not verify authenticated dashboard or transaction views; inspect those during future UI changes, especially when adjusting long Spanish labels, responsive layouts, or dense account information.
+The in-app interface still uses forest green, ivory, dark text, white, and clay accents; serif headings and an Inter/system body stack; rounded cards, shadows, gradients, and drawer navigation. CSS variables and Tailwind colors partially overlap, local inputs differ, and metadata/manifest use several product names. PlaENC and connected allocations (Concept B) are selected directions, but the full identity and its integration into the interface remain in progress. See [the current brand draft](brand/plaenc/README.md).
 
 ## Verification and unresolved areas
 
-Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records the first local P1 checks and the later provider privacy gate. At the latest documentation update, `npm.cmd run typecheck` is blocked by stale generated `.next/types/app/api/visual-auth-status/route.ts` references to a missing route; no tests/build were run for the provider-gate change. The earlier foundation HTTP evidence remains historical and does not verify these new gates. Original assessment results below remain historical context.
+Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records the first local P1 checks and the later provider privacy gate. Remote CI passed on commit `ff65cfc`; an earlier local typecheck was blocked by stale generated `.next/types` references. The local failure is historical; see the roadmap for current evidence. The foundation HTTP evidence does not verify every provider or privacy gate. Original assessment results below remain historical context.
 
 The owner requests scoped Git commits/pushes when appropriate, with English Conventional Commit messages and documented validation. Preserve unrelated changes and shared history.
 
-Typecheck and all six existing yield tests passed. Lint opened an interactive setup prompt and did not complete. Production build passed with Next.js 15.5.28 and 27 generated pages. Browser/detector evidence and limitations are recorded in the assessment and docs/audit/.
+The initial 2026-11-11 typecheck, yield tests, and production build passed; lint setup was incomplete at that time. CI and later UI review supersede parts of this snapshot. See the implementation records and the dated visual review for current evidence.
 
 The coordinating agent inspected login screenshots at desktop/mobile sizes: no horizontal overflow or captured page errors in those two cases. Public information routes responded successfully. Assessment B found one typography warning; it is not an accessibility verdict. Authenticated flows remain unverified.
 
-Unverified: empty-user setup with accounts/categories, password recovery, two-user isolation, backup restore, actual OAuth/Gemini/Paddle operation, and load capacity. No versioned CI workflow was found. These limitations do not establish the absence of external deployment controls.
+Unverified: empty-user setup with accounts/categories, password recovery, two-user isolation, backup restore, actual OAuth/Gemini/Paddle operation, and load capacity. The checked-in CI workflow has passed remotely; passing CI does not establish these end-to-end properties or the absence of external deployment controls.
 
 Keep this document current as evidence changes. Do not include personal account values, tokens, or email contents.

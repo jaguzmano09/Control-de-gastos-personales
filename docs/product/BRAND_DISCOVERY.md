@@ -1,7 +1,7 @@
-﻿# Brand discovery — positioning and territories
+# Brand discovery — positioning and territories
 
-Status: Draft reflecting owner direction. PlaENC is the owner-selected working name; the final logo, legal clearance, and public rollout are not approved.
-Roadmap: P0.5 and P4.1 exploration; naming and identity execution remain in P4.2–P4.8.
+Status: Draft reflecting owner direction. PlaENC is the owner-selected working name and connected allocations (Concept B) the selected logo direction. Final identity, legal clearance, and public rollout are not approved.
+Roadmap: Positioning validation remains in P4.1; final naming clearance, identity system, and rollout remain in P4.2–P4.8.
 Research date: 2026-11-13.
 
 ## Product facts that can shape the brand
@@ -80,46 +80,6 @@ The identity makes the product feel practical and approachable for daily records
 
 **Recommendation:** use A as the positioning center, with B as the tone. Treat C as an interface quality requirement, not the main distinction. The owner has said “money in context” is appealing; validate the proposition in user-facing examples before treating it as final public positioning.
 
-## Naming guardrails for P4.2
-
-- Do not use “Bolsillo(s)” as the main distinctive element. It is a familiar financial term and an existing Colombian app brand.
-- Avoid names implying a regulated bank, automatic connection to every institution, guaranteed returns, or financial advice.
-- Prefer a short, pronounceable Spanish name that works aloud and in text, with a clear long name/short form system.
-- Screen candidates for confusingly similar products, domains, app stores, and Colombia's SIC trademark search before selecting one. A web search is preliminary screening, not legal clearance.
-- Do not change the current production name or logo until the owner approves a candidate and the migration scope is mapped across app metadata, PWA icons, email, legal text, domains, and social accounts.
-
-## Naming exploration — first screening round
-
-The owner confirmed that the brand should lead with the product available today: organizing personal finances and making money understandable in context. A conversational AI feature is a possible future extension, not the brand's central promise.
-
-### Early names screened out
-
-These are collision examples, not recommendations:
-
-| Name | Public result | Decision |
-|---|---|---|
-| Tersia | An active social/community app and company use this name. | Reject: strong exact-name collision, even though its category differs. |
-| Cifria | An active Spanish-language site uses the name for personal-finance calculators and content. | Reject: direct category collision. |
-| Claria | A Colombian App Store finance listing uses this exact name for organizing financial products and benefits. | Reject: direct market and pronunciation collision. |
-| Tesela | Multiple active organizations and products use the name across software and services. | Reject: crowded exact-name field. |
-| Contexta | Active information and AI products use the name. | Reject as a product name; retain “money in context” as a positioning hypothesis only. |
-| Lugara | An active private trip-tracking web app uses the name. | Reject: exact-name digital product collision. |
-| Nítida | The word is generic and appears in finance-app marketing copy; a former photo app also used it as a product name. | Reject as a distinctive masterbrand. |
-
-The scan is a quick public-web screen, not a complete search of company registries, app stores, domains, social handles, or trademark records. A candidate cannot be described as available or legally clear on this evidence.
-
-### Creative territories considered before the working-name selection
-
-These are the strategic routes that informed the subsequent PlaENC selection:
-
-1. **A place for each part of your money.** Name territory built around where money lives and what it is assigned to. Logo idea: a compact modular mark whose pieces meet at a clear center; avoid literal wallets, piggy banks, and bank symbols. Strongest fit with the proposed financial model; risk: can become a generic “organizing” brand.
-2. **A clear account of what happened.** Name territory built around a personal record that is easy to understand and correct. Logo idea: a distinctive open ledger line or a single edited stroke, not a spreadsheet grid. Strong fit with the core record-keeping job; risk: can sound like accounting software.
-3. **Money, in its real-life context.** Name territory built around understanding how movements relate across accounts, pockets, categories, and months. Logo idea: two or three connected forms that remain legible at favicon size. Strongest expression of the preferred positioning; risk: can overpromise until P2 verifies reconciled figures and users understand the model.
-
-### Recommended naming method
-
-Continue with pronunciation, spelling, unwanted-meaning, web/app collision, domain, handle, and SIC checks for PlaENC. Keep a plain-language descriptor alongside the coined name so a new visitor immediately understands the product. The descriptor can be more literal than the masterbrand; distinctiveness and comprehension do not need to be forced into one word.
-
 ## Owner-selected working name: PlaENC
 
 The owner selected **PlaENC** as the working name, expanded as **Plata en Contexto**. Preserve this capitalization in the current exploration. Treat the expansion as explanatory copy, not as a validated tagline. Pronunciation and unaided recall need user checks. The name has not received trademark, domain, social-handle, or app-store clearance.
@@ -132,9 +92,9 @@ The selected logo direction and its working palette, typography, voice, and roll
 
 ## Current identity audit
 
-The current name (“Control de gastos”) is descriptive but generic, and the wallet glyph is a familiar category symbol rather than a distinctive mark. Existing forest-green/ivory colors and serif display typography may provide useful warmth and continuity, but should be evaluated against the chosen concept rather than treated as commitments. Source inspection also found duplicated/conflicting palette definitions between global CSS and Tailwind, plus inconsistent product labels and theme colors in app/PWA metadata. These inconsistencies should be consolidated after a new identity direction is selected.
+The current in-app name (“Control de gastos”) is descriptive but generic, and the wallet glyph is a familiar category symbol rather than a distinctive mark. Existing forest-green/ivory colors and serif display typography may provide useful warmth and continuity, but should be evaluated against the chosen concept rather than treated as commitments. Source inspection also found duplicated/conflicting palette definitions between global CSS and Tailwind, plus inconsistent product labels and theme colors in app/PWA metadata. Consolidate these inconsistencies during the approved identity migration.
 
-**Direction confirmed:** PlaENC is the owner-selected working name. The final logo and broader identity should be developed coherently around it. The current palette and typography are candidates for adaptation only if they strengthen recognition, legibility, and the intended personality. No final mark, palette, or typography has been approved.
+**Direction confirmed:** PlaENC is the owner-selected working name and connected allocations (Concept B) the selected mark direction. Refine the mark and broader identity coherently around it. The current palette and typography are candidates for adaptation only if they strengthen recognition, legibility, and the intended personality. No final mark, palette, or typography has been approved.
 
 ## Owner review needed
 

@@ -188,9 +188,9 @@ Webpack cache-serialization warnings did not prevent the build. Its internal lin
 - No live detector overlay was injected. The deterministic result and ordinary browser checks are the evidence; do not claim an overlay or rendered contrast analysis.
 - The temporary production server was terminated in the script's finally block. Browser contexts were closed.
 
-Artifacts: docs/audit/impeccable-detector-2026-11-11.json, browser-evidence-2026-11-11.json, login-1440.png, login-390.png, and the reproducible browser-evidence.cjs script. Public screenshots must not be extrapolated to authenticated financial workflows.
+The raw detector/browser JSON, machine-specific browser script, and screenshots were removed after their findings and limitations were summarized here. Public-page evidence must not be extrapolated to authenticated financial workflows. Later fixes and checks are recorded in the implementation progress and dated visual-review documents.
 
-## Unresolved product decisions
+## Unresolved product decisions at the time of this review
 
 1. Initial audience and primary job.
 2. Commercial name and whether to retain the existing visual direction.
@@ -198,4 +198,4 @@ Artifacts: docs/audit/impeccable-detector-2026-11-11.json, browser-evidence-2026
 4. Accounting semantics for savings/transfers/opening balance, estimated yield, and business timezone.
 5. Support and operations ownership.
 
-Questions skipped: audience/name questions were already presented to the owner; these remain open, and no redesign is executed without them.
+These are historical open questions from 2026-11-11. Subsequent owner decisions are recorded in the product brief and roadmap; do not treat this list as the current decision state.
