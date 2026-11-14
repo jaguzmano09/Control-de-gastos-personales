@@ -14,7 +14,7 @@ const steps = [
 export default function HomePage() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-ledger-line bg-[#F4F7F3]">
+      <section className="relative overflow-hidden border-b border-ledger-line bg-ledger-paper">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1fr_.9fr] lg:gap-16 lg:px-8 lg:py-28">
           <div>
             <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-ledger-green/20 bg-white px-3 py-1.5 text-sm font-medium text-ledger-green">

@@ -24,6 +24,7 @@ The [identity preview](./identity-preview.html) shows the lockup, icon scale, pr
 | Ink | `#14251D` | Wordmark and readable copy |
 | Moss | `#2F6F4E` | Supporting green |
 | Paper | `#F4F7F3` | Light surface |
+| Muted | `#4D6054` | Secondary copy on light surfaces |
 | Clay | `#B96D4B` | Non-text accent at the convergence point; avoid for small text |
 
 These values reuse the current interface as a starting point; they are not an approved palette. Keep Inter as the current UI candidate while checking the actual served font. Final wordmark lettering must not depend on an unspecified browser fallback.

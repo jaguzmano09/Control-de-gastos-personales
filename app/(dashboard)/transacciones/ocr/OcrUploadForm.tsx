@@ -8,8 +8,7 @@ import { createTransactionFromReceipt } from '@/lib/actions/ocr'
 type Account = { id: string; name: string; has_wallets: boolean }
 type Wallet = { id: string; name: string; account_id: string }
 
-const inputClass =
-  'mt-1 w-full rounded-sm border border-black/10 bg-white px-3 py-2 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+const inputClass = 'input mt-1 w-full'
 
 function SubmitButton() {
   const { pending } = useFormStatus()

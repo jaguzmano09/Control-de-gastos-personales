@@ -5,17 +5,12 @@ const config: Config = {
 	theme: {
 		extend: {
 			colors: {
-				ink: "#17231f",
-				moss: "#496b55",
-				paper: "#f7f5ef",
-				clay: "#c9744c",
-				"ledger-ink": "#0F1A2B",
-				"ledger-paper": "#F7F5F0",
-				"ledger-green": "#2F6F4E",
-				"ledger-green-dark": "#1D5138",
-				"ledger-line": "#DCE7DF",
-				"ledger-text": "#1B1F23",
-				"ledger-muted": "#6B7280",
+				"ledger-paper": "rgb(var(--paper) / <alpha-value>)",
+				"ledger-green": "rgb(var(--moss) / <alpha-value>)",
+				"ledger-green-dark": "rgb(var(--pine) / <alpha-value>)",
+				"ledger-line": "rgb(var(--line) / <alpha-value>)",
+				"ledger-text": "rgb(var(--ink) / <alpha-value>)",
+				"ledger-muted": "rgb(var(--muted) / <alpha-value>)",
 			},
 		},
 	},

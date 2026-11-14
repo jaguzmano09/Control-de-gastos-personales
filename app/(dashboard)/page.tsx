@@ -18,8 +18,7 @@ function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 }
 
-const inputClass =
-  'rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+const inputClass = 'input'
 
 type DashboardCategory = { id: string; name: string }
 type DashboardWallet = { id: string; name: string; account_id: string; accounts: { name: string } | null }

@@ -105,7 +105,7 @@ Compatibility exports are intentional: lib/types/database.types.ts reexports src
 
 ## Existing design
 
-The application shell, public pages, metadata, favicon, and PWA assets now use PlaENC and the connected allocations (Concept B) mark. The broader interface still uses forest green, ivory, dark text, white, and clay accents; serif headings and an Inter/system body stack. CSS variables and Tailwind colors partially overlap, and local inputs differ. The full visual system remains in progress. See [the current brand draft](brand/plaenc/README.md).
+The application shell, public pages, metadata, favicon, and PWA assets use PlaENC and the connected allocations (Concept B) mark. The interface uses a working pine/moss/paper palette, serif headings, and an Inter/system body stack. Shared Tailwind colors resolve through CSS tokens, and core financial forms use the common input style. Alerts, review states, errors, and confirmations still need consolidation. See [the current brand draft](brand/plaenc/README.md).
 
 ## Verification and unresolved areas
 

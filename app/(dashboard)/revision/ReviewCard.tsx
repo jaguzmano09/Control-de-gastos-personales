@@ -19,8 +19,7 @@ type Transaction = {
   source: string
 }
 
-const inputClass =
-  'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+const inputClass = 'input mt-1 w-full'
 
 function ConfidenceBadge({ confidence }: { confidence: number | null }) {
   if (confidence === null) return null

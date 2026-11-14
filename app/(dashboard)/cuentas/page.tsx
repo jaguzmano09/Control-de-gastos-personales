@@ -15,8 +15,7 @@ import { currentYearMonth, yearMonthToDate } from '@/lib/date-utils'
 import { MonthSelector } from '@/components/MonthSelector'
 import { updateWalletBudgetThreshold } from '@/lib/actions/budgets'
 
-const inputClass =
-  'mt-1 w-full rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+const inputClass = 'input mt-1 w-full'
 
 type Account = { id: string; name: string; category_id: string | null; has_wallets: boolean; is_active: boolean }
 type Wallet = {
@@ -192,7 +191,7 @@ export default async function CuentasPage({
               )}
               <form action={createWallet} className="mt-5 flex flex-col gap-2 rounded-xl border border-dashed border-ledger-green/30 bg-ledger-green/[0.03] p-3 sm:flex-row">
                 <input type="hidden" name="account_id" value={account.id} />
-                <input name="name" placeholder="Nombre del nuevo bolsillo" required className={`${inputClass} mt-0 flex-1`} />
+                <input name="name" placeholder="Nombre del nuevo bolsillo" required className={`${inputClass} !mt-0 min-w-0 flex-1`} />
                 <button type="submit" className="btn btn-primary btn-sm shrink-0">
                   {account.has_wallets ? 'Agregar' : 'Crear bolsillo'}
                 </button>

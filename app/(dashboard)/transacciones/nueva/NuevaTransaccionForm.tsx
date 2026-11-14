@@ -8,8 +8,7 @@ import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
-const inputClass =
-  'mt-1 w-full rounded-sm border border-black/10 bg-white px-3 py-2 text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+const inputClass = 'input mt-1 w-full'
 
 type Category = { id: string; name: string }
 type Account = { id: string; name: string; category_id: string | null; has_wallets: boolean }

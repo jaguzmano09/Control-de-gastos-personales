@@ -37,7 +37,6 @@ type List = {
   shopping_list_items: Item[]
 }
 
-const inputClass = 'input min-w-0 flex-1'
 const units = ['und', 'kg', 'g', 'lb', 'l', 'ml']
 const money = (value: number | null) => value == null ? '—' : `$${value.toFixed(2)}`
 

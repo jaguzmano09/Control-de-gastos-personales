@@ -53,8 +53,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Ahorro', 'Inversion']
 
-const selectClass =
-  'mt-1 min-h-11 rounded-xl border border-ledger-line bg-white px-3 text-sm text-ledger-text outline-none transition hover:border-ledger-green/40 focus:border-ledger-green focus:ring-4 focus:ring-ledger-green/10'
+const selectClass = 'input mt-1'
 
 function getMonthRange(period: string) {
   const [year, month] = period.split('-')

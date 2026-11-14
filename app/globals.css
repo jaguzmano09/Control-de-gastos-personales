@@ -20,11 +20,11 @@
   }
 
   .btn-primary {
-    @apply bg-ledger-green text-white shadow-[0_8px_20px_rgba(47,111,78,0.2)] hover:-translate-y-0.5 hover:bg-ledger-green-dark hover:shadow-[0_12px_26px_rgba(47,111,78,0.27)] focus:ring-ledger-green/25;
+    @apply bg-ledger-green text-white shadow-[0_8px_20px_rgba(47,111,78,0.2)] hover:bg-ledger-green-dark hover:shadow-[0_12px_26px_rgba(47,111,78,0.27)] focus:ring-ledger-green/25;
   }
 
   .btn-secondary {
-    @apply border border-ledger-line bg-white text-ledger-text shadow-sm hover:-translate-y-0.5 hover:border-ledger-green/40 hover:bg-ledger-green/5 hover:text-ledger-green focus:ring-ledger-green/20;
+    @apply border border-ledger-line bg-white text-ledger-text shadow-sm hover:border-ledger-green/40 hover:bg-ledger-green/5 hover:text-ledger-green focus:ring-ledger-green/20;
   }
 
   .btn-danger {
@@ -41,13 +41,12 @@
 }
 
 :root {
-  --paper: #f4f7f3;
-  --ink: #14251d;
-  --moss: #2f6f4e;
-  --moss-dark: #1d5138;
-  --line: #dce7df;
-  --surface: #ffffff;
-  --surface-soft: #f8faf8;
+  --paper: 244 247 243;
+  --ink: 20 37 29;
+  --moss: 47 111 78;
+  --pine: 29 81 56;
+  --line: 220 231 223;
+  --muted: 77 96 84;
   --shadow-card: 0 12px 30px rgba(20, 37, 29, .06);
   --shadow-card-hover: 0 18px 40px rgba(20, 37, 29, .11);
 }
@@ -58,8 +57,8 @@ body {
   background:
     radial-gradient(circle at 8% 0%, rgba(47, 111, 78, .12), transparent 30rem),
     radial-gradient(circle at 92% 12%, rgba(192, 154, 77, .1), transparent 24rem),
-    var(--paper);
-  color: var(--ink);
+    rgb(var(--paper));
+  color: rgb(var(--ink));
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -67,7 +66,7 @@ button, input, select { font: inherit; }
 a { color: inherit; text-decoration: none; }
 .shell { min-height: 100vh; }
 .panel {
-  border: 1px solid var(--line);
+  border: 1px solid rgb(var(--line));
   background: rgba(255, 255, 255, .86);
   border-radius: 1.5rem;
   box-shadow: var(--shadow-card);
@@ -76,15 +75,15 @@ a { color: inherit; text-decoration: none; }
 
 @layer components {
   .surface-card {
-    @apply rounded-2xl border border-ledger-line bg-white/90 shadow-[0_10px_28px_rgba(20,37,29,0.055)] transition duration-200;
+    @apply rounded-2xl border border-ledger-line bg-white/90 shadow-[0_10px_28px_rgba(20,37,29,0.055)] transition-colors duration-200;
   }
 
   .surface-card:hover {
-    @apply -translate-y-1 border-ledger-green/20 shadow-[0_18px_38px_rgba(20,37,29,0.1)];
+    @apply border-ledger-green/20;
   }
 
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-ledger-green;
+    @apply text-xs font-semibold text-ledger-green;
   }
 
   .page-title {
@@ -92,11 +91,11 @@ a { color: inherit; text-decoration: none; }
   }
 
   .section-label {
-    @apply text-[11px] font-bold uppercase tracking-[0.18em] text-ledger-muted;
+    @apply text-xs font-semibold text-ledger-muted;
   }
 
   .metric-value {
-    @apply text-2xl font-semibold tracking-tight text-ledger-text sm:text-3xl;
+    @apply text-2xl font-semibold tabular-nums tracking-tight text-ledger-text sm:text-3xl;
   }
 
   .data-table {
@@ -108,7 +107,7 @@ a { color: inherit; text-decoration: none; }
   }
 
   .data-table th {
-    @apply whitespace-nowrap px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-ledger-muted;
+    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold text-ledger-muted;
   }
 
   .data-table td {

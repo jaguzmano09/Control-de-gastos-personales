@@ -9,8 +9,7 @@ function formatCOP(amount: number) {
   return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
 }
 
-const inputClass =
-  'mt-1 w-20 rounded-sm border border-black/10 bg-white px-2 py-1.5 text-sm text-ledger-text outline-none focus:border-ledger-green focus:ring-1 focus:ring-ledger-green'
+const inputClass = 'input mt-1 w-20'
 
 export default async function PresupuestoCategoriasPage({
   searchParams,
