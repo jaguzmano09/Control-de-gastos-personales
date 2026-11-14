@@ -44,7 +44,7 @@ export default async function DashboardHomePage({
     pendingCount,
     locationBudgetsByCategory,
   ] = await Promise.all([
-    supabase.from('categories').select('id, name').eq('is_active', true),
+    supabase.from('categories').select('id, name'),
     supabase.from('wallets').select('id, name, account_id, accounts(name)').eq('is_active', true),
     supabase.from('accounts').select('id, name, is_active').eq('is_active', true).order('name'),
     supabase.from('category_budgets').select('category_id, alert_threshold_percent').eq('period_month', monthStart),

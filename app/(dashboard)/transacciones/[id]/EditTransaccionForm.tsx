@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { formatYearMonth } from '@/lib/date-utils'
 import { updateTransaction, deleteTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
 import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
+import { getTransferLocationError } from '@/lib/finance/transfer'
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
@@ -104,6 +105,10 @@ export function EditTransaccionForm({
     ? sourceCategoryId
     : type === 'Ingreso' || type === 'Transferencia' ? sourceCategoryId || categoryId : categoryId
   const destinationCategoryForSubmission = destinationCategoryId || destinationCategoryChoice
+  const transferBlockReason = type === 'Transferencia' ? getTransferLocationError(
+    { accountId, walletId, hasWallets: selectedAccount?.has_wallets ?? false },
+    { accountId: destinationAccountId, walletId: destinationWalletId, hasWallets: destinationAccount?.has_wallets ?? false },
+  ) : null
   const expenseBlockReason = type !== 'Gasto' ? ''
     : !selectedAccount ? 'Selecciona una cuenta.'
       : selectedAccount.has_wallets && !walletId ? 'Elige un bolsillo de esta cuenta para consultar su categoría y presupuesto.'
@@ -112,7 +117,7 @@ export function EditTransaccionForm({
             : !selectedLocationStatus?.category_id ? `No se puede guardar el gasto: ${selectedLocationStatus?.location_name ?? (sourceWallet ? `${selectedAccount.name} / ${sourceWallet.name}` : selectedAccount.name)} no tiene una categoría ni un presupuesto categorizado para este mes. Registra primero un ingreso o una transferencia para asignarlos.`
               : !selectedLocationStatus.budget_assigned ? `No se puede guardar el gasto: ${selectedLocationStatus.location_name} tiene la categoría ${selectedLocationStatus.category_name ?? ''}, pero no tiene presupuesto asignado para este mes.`
                 : ''
-  const canSave = type !== 'Gasto' || (!expenseBlockReason && !isLoadingStatuses)
+  const canSave = (type !== 'Gasto' || (!expenseBlockReason && !isLoadingStatuses)) && !transferBlockReason
 
   function optionDetails(status?: ExpenseLocationStatusWithYield) {
     if (!status) return 'Sin categoría o presupuesto'
@@ -237,6 +242,7 @@ export function EditTransaccionForm({
           </div>
           {!sourceCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al origen al guardar.</p>}
           {!destinationCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al destino al guardar.</p>}
+          {transferBlockReason && <p role="alert" className="feedback feedback-warning">{transferBlockReason}</p>}
         </>}
 
         <div>
@@ -261,7 +267,7 @@ export function EditTransaccionForm({
         {error && <p role="alert" className="feedback feedback-error">{decodeURIComponent(error)}</p>}
 
         <button type="submit" disabled={!canSave} className="btn btn-primary btn-full disabled:cursor-not-allowed disabled:opacity-55">
-          {isLoadingStatuses ? 'Consultando presupuesto…' : expenseBlockReason ? 'Gasto no disponible para este destino' : 'Guardar cambios'}
+          {isLoadingStatuses ? 'Consultando presupuesto…' : expenseBlockReason ? 'Gasto no disponible para este destino' : transferBlockReason ? 'Completa la transferencia' : 'Guardar cambios'}
         </button>
       </form>
 

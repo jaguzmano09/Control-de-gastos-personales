@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom'
 import { formatYearMonth } from '@/lib/date-utils'
 import { createManualTransaction, refreshExpenseLocationStatuses } from '@/lib/actions/transactions'
 import type { ExpenseLocationStatusWithYield } from '@/lib/data/expense-location-status'
+import { getTransferLocationError } from '@/lib/finance/transfer'
 
 const TYPES = ['Gasto', 'Ingreso', 'Transferencia', 'Inversion'] as const
 
@@ -93,6 +94,10 @@ export function NuevaTransaccionForm({
     ? assignedSourceCategoryId
     : type === 'Transferencia' || type === 'Ingreso' ? assignedSourceCategoryId || categoryId : categoryId
   const destinationCategoryForSubmission = assignedDestinationCategoryId || destinationCategoryChoice
+  const transferBlockReason = type === 'Transferencia' ? getTransferLocationError(
+    { accountId, walletId, hasWallets: selectedAccount?.has_wallets ?? false },
+    { accountId: destinationAccountId, walletId: destinationWalletId, hasWallets: destinationAccount?.has_wallets ?? false },
+  ) : null
   const expenseBlockReason = type !== 'Gasto' ? ''
     : !selectedAccount ? 'Selecciona una cuenta.'
       : selectedAccount.has_wallets && !walletId ? 'Elige un bolsillo de esta cuenta para consultar su categoría y presupuesto.'
@@ -120,7 +125,7 @@ export function NuevaTransaccionForm({
     if (!occurredAt || !accountId || !amount || Number(amount) <= 0) return
     if (!canContinueExpense) return
     if ((type === 'Gasto' || type === 'Ingreso') && !sourceCategoryForSubmission) return
-    if (type === 'Transferencia' && (!sourceCategoryForSubmission || !destinationCategoryForSubmission || !destinationAccountId)) return
+    if (type === 'Transferencia' && (transferBlockReason || !sourceCategoryForSubmission || !destinationCategoryForSubmission)) return
     setStep('confirm')
   }
 
@@ -212,6 +217,7 @@ export function NuevaTransaccionForm({
             </div>
             {!assignedDestinationCategoryId && <p className="text-xs text-ledger-muted">La categoría elegida quedará asignada al destino al confirmar.</p>}
             {selectedDestinationLocationStatus && <LocationStatusSummary status={selectedDestinationLocationStatus} currentPeriodMonth={currentPeriodMonth} transactionType={type} role="destination" isLoading={isLoadingStatuses} hasError={statusLoadFailed} />}
+            {transferBlockReason && <p role="alert" className="feedback feedback-warning">{transferBlockReason}</p>}
           </>}
 
           <div>
@@ -235,8 +241,8 @@ export function NuevaTransaccionForm({
 
           {error && <p role="alert" className="feedback feedback-error">{decodeURIComponent(error)}</p>}
 
-          <button type="button" onClick={handleContinue} disabled={!canContinueExpense} className="btn btn-primary btn-full disabled:cursor-not-allowed disabled:opacity-55">
-            {isLoadingStatuses ? 'Consultando presupuesto…' : expenseBlockReason ? 'Gasto no disponible para este destino' : 'Continuar'}
+          <button type="button" onClick={handleContinue} disabled={!canContinueExpense || !!transferBlockReason} className="btn btn-primary btn-full disabled:cursor-not-allowed disabled:opacity-55">
+            {isLoadingStatuses ? 'Consultando presupuesto…' : expenseBlockReason ? 'Gasto no disponible para este destino' : transferBlockReason ? 'Completa la transferencia' : 'Continuar'}
           </button>
         </>
       ) : (

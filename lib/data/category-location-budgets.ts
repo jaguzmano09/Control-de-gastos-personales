@@ -28,8 +28,8 @@ export async function getCategoryLocationBudgets(
   summaryPromise: Promise<MonthSummary>,
 ) {
   const [{ data: accounts, error: accountsError }, { data: wallets, error: walletsError }, { data: budgets, error: budgetsError }, summary] = await Promise.all([
-    supabase.from('accounts').select('id, category_id, has_wallets').eq('is_active', true),
-    supabase.from('wallets').select('id, category_id').eq('is_active', true),
+    supabase.from('accounts').select('id, category_id, has_wallets'),
+    supabase.from('wallets').select('id, category_id'),
     supabase.from('wallet_budgets').select('wallet_id, account_id, assigned_amount, rollover_amount, total_budget').eq('period_month', periodMonth),
     summaryPromise,
   ])

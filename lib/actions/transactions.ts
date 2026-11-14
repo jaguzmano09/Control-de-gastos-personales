@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getExpenseLocationStatusesWithYield } from '@/lib/data/expense-location-status'
+import { isSameTransferLocation } from '@/lib/finance/transfer'
 import type { Database } from '@/lib/types/database.types'
 
 type TransactionType = Database['public']['Enums']['transaction_type']
@@ -40,6 +41,10 @@ export async function createManualTransaction(formData: FormData) {
     || ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !category_id)
     || (type === 'Transferencia' && (!destination_account_id || !destination_category_id))) {
     redirect('/transacciones/nueva?error=' + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
+  }
+
+  if (type === 'Transferencia' && isSameTransferLocation(account_id, wallet_id, destination_account_id!, destination_wallet_id)) {
+    redirect('/transacciones/nueva?error=' + encodeURIComponent('El origen y el destino deben ser ubicaciones diferentes.'))
   }
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -124,6 +129,10 @@ export async function updateTransaction(formData: FormData) {
     || ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !category_id)
     || (type === 'Transferencia' && (!destination_account_id || !destination_category_id))) {
     redirect(`/transacciones/${id}?error=` + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
+  }
+
+  if (type === 'Transferencia' && isSameTransferLocation(account_id, wallet_id, destination_account_id!, destination_wallet_id)) {
+    redirect(`/transacciones/${id}?error=` + encodeURIComponent('El origen y el destino deben ser ubicaciones diferentes.'))
   }
 
   const { error } = await supabase

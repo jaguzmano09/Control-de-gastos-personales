@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { calculateDailyYield } from '@/lib/yield-calculation'
 import { todayInBogota } from '@/lib/date-utils'
+import { applyTransferDelta } from '@/lib/finance/transfer'
 
 type DashboardClient = Awaited<ReturnType<typeof createClient>>
 
@@ -72,7 +73,7 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
         .from('wallet_budgets')
         .select('account_id, wallet_id, rollover_amount')
         .eq('period_month', monthStart),
-      supabase.from('wallets').select('id, account_id').eq('is_active', true),
+      supabase.from('wallets').select('id, account_id'),
       supabase.from('yield_configs').select('id, account_id, wallet_id, start_date, is_active'),
       supabase.from('yield_rates').select('config_id, ea_percent, valid_from').order('valid_from'),
     ])
@@ -167,10 +168,9 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
       }
     }
     if (t.type === 'Transferencia') {
-      if (t.category_id) gastoByCategory.set(t.category_id, (gastoByCategory.get(t.category_id) ?? 0) - amount)
-      if (t.destination_category_id) gastoByCategory.set(t.destination_category_id, (gastoByCategory.get(t.destination_category_id) ?? 0) + amount)
-      if (t.wallet_id) transferByWallet.set(t.wallet_id, (transferByWallet.get(t.wallet_id) ?? 0) - amount)
-      if (t.destination_wallet_id) transferByWallet.set(t.destination_wallet_id, (transferByWallet.get(t.destination_wallet_id) ?? 0) + amount)
+      applyTransferDelta(gastoByCategory, t.category_id, t.destination_category_id, amount)
+      applyTransferDelta(transferByWallet, t.wallet_id, t.destination_wallet_id, amount)
+      applyTransferDelta(balanceByWallet, t.wallet_id, t.destination_wallet_id, amount)
     }
     if (t.type === 'Gasto' && t.wallet_id) {
       gastoByWallet.set(t.wallet_id, (gastoByWallet.get(t.wallet_id) ?? 0) + amount)
@@ -186,7 +186,6 @@ export async function getMonthSummary(supabase: DashboardClient, monthStart: str
     }
     if (t.type === 'Transferencia' && t.destination_wallet_id) {
       walletIdsWithMovement.add(t.destination_wallet_id)
-      balanceByWallet.set(t.destination_wallet_id, (balanceByWallet.get(t.destination_wallet_id) ?? 0) + amount)
     }
   }
 

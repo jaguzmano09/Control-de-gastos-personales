@@ -25,11 +25,12 @@ export default async function PresupuestoCategoriasPage({
   const locationBudgetsPromise = getCategoryLocationBudgets(supabase, periodMonth, summaryPromise)
 
   const [{ data: categories }, { data: budgets }, locationBudgets] = await Promise.all([
-    supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
+    supabase.from('categories').select('id, name, is_active').order('name'),
     supabase.from('category_budgets').select('category_id, alert_threshold_percent').eq('period_month', periodMonth),
     locationBudgetsPromise,
   ])
   const budgetByCategory = new Map((budgets ?? []).map((b) => [b.category_id, b]))
+  const visibleCategories = (categories ?? []).filter((category) => category.is_active || locationBudgets.has(category.id))
 
   return (
     <div className="max-w-6xl">
@@ -49,14 +50,14 @@ export default async function PresupuestoCategoriasPage({
 
       <div className="mt-7 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
         <div className="grid divide-y divide-black/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <SummaryCard label="Categorías" value={(categories ?? []).length.toString()} detail="activas" />
+          <SummaryCard label="Categorías" value={(categories ?? []).filter((category) => category.is_active).length.toString()} detail="activas" />
           <SummaryCard label="Con presupuesto" value={Array.from(locationBudgets.values()).filter((budget) => budget.budget > 0).length.toString()} detail="este mes" />
           <SummaryCard label="Con alertas" value={(budgets ?? []).filter((budget) => budget.alert_threshold_percent !== null && locationBudgets.has(budget.category_id)).length.toString()} detail="configuradas" />
         </div>
       </div>
 
       <div className="mt-7 grid gap-5 lg:grid-cols-2">
-        {(categories ?? []).map((category) => {
+        {visibleCategories.map((category) => {
           const budget = budgetByCategory.get(category.id)
           const allocation = locationBudgets.get(category.id)
           const assigned = allocation?.assigned ?? 0
@@ -74,7 +75,7 @@ export default async function PresupuestoCategoriasPage({
             <div key={category.id} className="surface-card overflow-hidden">
               <div className="flex items-start justify-between gap-4 border-b border-ledger-line/70 bg-gradient-to-br from-white via-white to-ledger-green/5 p-5">
                 <div>
-                  <p className="text-base font-semibold text-ledger-text">{category.name}</p>
+                  <p className="text-base font-semibold text-ledger-text">{category.name}{!category.is_active && <span className="ml-2 text-xs font-normal text-ledger-muted">Archivada</span>}</p>
                   <p className="mt-1 text-xs text-ledger-muted">{allocation?.locations ? `${allocation.locations} cuenta(s) o bolsillo(s) · ${percent.toFixed(0)}% utilizado` : 'Sin cuenta o bolsillo asociado'}</p>
                 </div>
                 <div className="text-right">
