@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PlaENC — connected allocation mark review</title>
+    <style>
+      :root { color-scheme: light; --paper: #f4f7f3; --ink: #14251d; --green: #1d5138; --moss: #2f6f4e; --clay: #b96d4b; --rule: #dce7df; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, "Avenir Next", Arial, sans-serif; }
+      main { width: min(920px, calc(100% - 40px)); margin: 56px auto 72px; }
+      h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.1rem); letter-spacing: -.045em; font-weight: 620; }
+      p { max-width: 62ch; line-height: 1.6; }
+      .intro { margin: 12px 0 40px; color: #345645; }
+      h2 { margin: 38px 0 14px; font-size: 1rem; font-weight: 650; }
+      .samples { display: flex; align-items: end; gap: clamp(22px, 7vw, 56px); padding: 20px 0 18px; border-bottom: 1px solid var(--rule); }
+      figure { display: grid; justify-items: center; gap: 10px; margin: 0; min-width: 24px; }
+      figure img { display: block; width: var(--size); height: var(--size); }
+      figcaption { color: #345645; font-size: .75rem; font-variant-numeric: tabular-nums; }
+      .lockup { display: block; width: min(520px, 100%); height: auto; margin: 28px 0; }
+      .dark { display: flex; align-items: center; width: fit-content; min-height: 128px; padding: 24px; background: var(--green); }
+      .dark img { width: 80px; height: 80px; }
+      .note { margin-top: 22px; color: #345645; font-size: .9rem; }
+      @media (max-width: 480px) { main { margin-top: 36px; } .samples { gap: 22px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PlaENC</h1>
+      <p class="intro">Connected allocations: three movements meeting at one shared point. These are draft identity assets for review, not production exports.</p>
+      <h2>Icon scale and silhouette</h2>
+      <div class="samples" aria-label="Connected allocation mark at four sizes">
+        <figure><img src="mark-b-allocation.svg" alt="" style="--size:64px" /><figcaption>64 px</figcaption></figure>
+        <figure><img src="mark-b-allocation.svg" alt="" style="--size:32px" /><figcaption>32 px</figcaption></figure>
+        <figure><img src="mark-b-allocation.svg" alt="" style="--size:24px" /><figcaption>24 px</figcaption></figure>
+        <figure><img src="mark-b-allocation.svg" alt="" style="--size:16px" /><figcaption>16 px</figcaption></figure>
+      </div>
+      <h2>Primary draft lockup</h2>
+      <img class="lockup" src="concept-b-allocation.svg" alt="PlaENC — Plata en contexto, connected allocation logo draft" />
+      <h2>One-color and reverse checks</h2>
+      <div class="samples" aria-label="Monochrome mark on a light background">
+        <figure><img src="mark-b-monochrome.svg" alt="" style="--size:48px" /><figcaption>Single color</figcaption></figure>
+      </div>
+      <div class="dark" role="img" aria-label="Reverse color mark on a forest-green surface">
+        <img src="mark-b-reverse.svg" alt="" />
+      </div>
+      <p class="note">The color values are inherited from the current interface as placeholders. Name clearance, pronunciation, final typography, and production-size export remain open.</p>
+    </main>
+  </body>
+</html>

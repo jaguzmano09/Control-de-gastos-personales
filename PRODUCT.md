@@ -40,6 +40,7 @@ The owner selected **PlaENC** (from “Plata en Contexto”) as the working name
 ## Brand Commitments
 
 - Use PlaENC as the owner-selected working name; complete pronunciation and name-clearance checks before public rollout.
+- Refine the owner-selected connected-allocations logo direction (Concept B); do not treat the current SVG as a final mark.
 - Create the final logo from scratch after review of the exploratory logo concepts.
 - Build a coherent identity around the selected name/logo; review existing colors and typography as optional source material.
 - Preferred strategic territory: money in context, subject to validation.

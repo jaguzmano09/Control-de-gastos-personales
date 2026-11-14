@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 112" role="img" aria-labelledby="title desc">
   <title id="title">PlaENC concept B: connected allocations</title>
-  <desc id="desc">Three distinct paths meet at a shared point, suggesting transactions related to an account, pocket, and category.</desc>
-  <g fill="none" stroke="#1d5138" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
-    <path d="M22 30h30c12 0 12 14 25 14h24" />
-    <path d="M22 54h79" />
-    <path d="M22 78h30c12 0 12-14 25-14h24" />
+  <desc id="desc">Three movements converge on one shared point, suggesting the context that connects an account, pocket, and category.</desc>
+  <g fill="none" stroke="#1d5138" stroke-linecap="round" stroke-linejoin="round" stroke-width="8">
+    <path d="M22 30h24c14 0 15 14 31 14h17" />
+    <path d="M22 56h72" />
+    <path d="M22 82h24c14 0 15-14 31-14h17" />
   </g>
-  <circle cx="22" cy="30" r="5" fill="#2f6f4e" />
-  <circle cx="22" cy="54" r="5" fill="#b96d4b" />
-  <circle cx="22" cy="78" r="5" fill="#2f6f4e" />
-  <circle cx="101" cy="54" r="6" fill="#1d5138" />
-  <text x="132" y="61" fill="#14251d" font-family="Arial, sans-serif" font-size="43" font-weight="600" letter-spacing="-1.35"><tspan>Pla</tspan><tspan fill="#1d5138" font-size="37" letter-spacing="0.4">ENC</tspan></text>
-  <text x="134" y="88" fill="#1d5138" font-family="Arial, sans-serif" font-size="13" font-weight="500" letter-spacing="1.35">PLATA EN CONTEXTO</text>
+  <circle cx="22" cy="30" r="5.5" fill="#2f6f4e" />
+  <circle cx="22" cy="56" r="5.5" fill="#2f6f4e" />
+  <circle cx="22" cy="82" r="5.5" fill="#2f6f4e" />
+  <circle cx="94" cy="56" r="8" fill="#b96d4b" />
+  <text x="132" y="61" fill="#14251d" font-family="Inter, Avenir Next, Helvetica, sans-serif" font-size="43" font-weight="600" letter-spacing="-1.35"><tspan>Pla</tspan><tspan fill="#1d5138" font-size="37" font-weight="500" letter-spacing="0.4">ENC</tspan></text>
+  <text x="134" y="88" fill="#1d5138" font-family="Inter, Avenir Next, Helvetica, sans-serif" font-size="14" font-weight="500" letter-spacing="0.2">Plata en contexto</text>
 </svg>
