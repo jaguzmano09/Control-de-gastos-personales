@@ -1,10 +1,14 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { getCanonicalPageUrl } from "@/lib/site-origin"
 
 const PUBLIC_PATHS = new Set(['/inicio', '/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
 const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html'])
 
 export async function updateSession(request: NextRequest) {
+  const canonicalPage = getCanonicalPageUrl(request.url, request.method)
+  if (canonicalPage) return NextResponse.redirect(canonicalPage, 307)
+
   // Public installation assets must remain available without a session or database access.
   if (PUBLIC_ASSET_PATHS.has(request.nextUrl.pathname)) {
     return NextResponse.next({ request })
