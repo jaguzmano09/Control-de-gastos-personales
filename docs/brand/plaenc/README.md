@@ -10,7 +10,7 @@ A preliminary public search found exact-name construction businesses in South Ko
 
 ## Selected logo direction
 
-The owner selected **connected allocations**: three paths converging on a shared point. It should suggest that financial details can be understood together; it must not imply automatic bank connections or a money transfer feature.
+The owner selected **connected allocations**: three paths converging on a shared point. The mark geometry now makes all three paths meet at the terminal point, including the in-app SVG and generated favicon/PWA assets. It should suggest that financial details can be understood together; it must not imply automatic bank connections or a money transfer feature.
 
 ![PlaENC lockup draft: connected allocations](./concept-b-allocation.svg)
 

@@ -2,9 +2,9 @@
   <title id="title">PlaENC concept B: connected allocations</title>
   <desc id="desc">Three movements converge on one shared point, suggesting the context that connects an account, pocket, and category.</desc>
   <g fill="none" stroke="#1d5138" stroke-linecap="round" stroke-linejoin="round" stroke-width="8">
-    <path d="M22 30h24c14 0 15 14 31 14h17" />
+    <path d="M22 30h19c20 0 25 26 53 26" />
     <path d="M22 56h72" />
-    <path d="M22 82h24c14 0 15-14 31-14h17" />
+    <path d="M22 82h19c20 0 25-26 53-26" />
   </g>
   <circle cx="22" cy="30" r="5.5" fill="#2f6f4e" />
   <circle cx="22" cy="56" r="5.5" fill="#2f6f4e" />

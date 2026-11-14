@@ -2,9 +2,9 @@
   <title id="title">PlaENC connected allocation mark</title>
   <desc id="desc">Three incoming paths converge on one warm accent point.</desc>
   <g fill="none" stroke="#1d5138" stroke-linecap="round" stroke-linejoin="round" stroke-width="12">
-    <path d="M16 28h24c14 0 15 14 31 14h17" />
-    <path d="M16 56h70" />
-    <path d="M16 84h24c14 0 15-14 31-14h17" />
+    <path d="M16 28h22c24 0 30 28 55 28" />
+    <path d="M16 56h77" />
+    <path d="M16 84h22c24 0 30-28 55-28" />
   </g>
   <circle cx="16" cy="28" r="7" fill="#2f6f4e" />
   <circle cx="16" cy="56" r="7" fill="#2f6f4e" />

@@ -2,9 +2,9 @@
   <title>PlaENC</title>
   <rect width="512" height="512" rx="112" fill="#F4F7F3"/>
   <g fill="none" stroke="#1D5138" stroke-linecap="round" stroke-linejoin="round" stroke-width="46">
-    <path d="M68 132h116c64 0 68 64 140 64h80"/>
-    <path d="M68 256h327"/>
-    <path d="M68 380h116c64 0 68-64 140-64h80"/>
+    <path d="M68 132h105c110 0 140 124 250 124"/>
+    <path d="M68 256h355"/>
+    <path d="M68 380h105c110 0 140-124 250-124"/>
   </g>
   <g fill="#2F6F4E"><circle cx="68" cy="132" r="27"/><circle cx="68" cy="256" r="27"/><circle cx="68" cy="380" r="27"/></g>
   <circle cx="430" cy="256" r="42" fill="#B96D4B"/>
