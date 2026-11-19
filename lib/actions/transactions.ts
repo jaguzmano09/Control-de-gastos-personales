@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getExpenseLocationStatusesWithYield } from '@/lib/data/expense-location-status'
 import { isSameTransferLocation } from '@/lib/finance/transfer'
+import { validTransactionFields } from '@/lib/finance/validate-transaction'
 import type { Database } from '@/lib/types/database.types'
 
 type TransactionType = Database['public']['Enums']['transaction_type']
@@ -37,7 +38,7 @@ export async function createManualTransaction(formData: FormData) {
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
   const purchaseDraftId = (formData.get('purchase_draft_id') as string) || null
 
-  if (!occurred_at || !type || !account_id || !amount || amount <= 0 || type === 'Ahorro'
+  if (!validTransactionFields(occurred_at, type, amount, description) || !account_id || type === 'Ahorro'
     || ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !category_id)
     || (type === 'Transferencia' && (!destination_account_id || !destination_category_id))) {
     redirect('/transacciones/nueva?error=' + encodeURIComponent('Completa fecha, tipo, cuenta y un monto válido.'))
@@ -123,7 +124,7 @@ export async function updateTransaction(formData: FormData) {
   const isNecessaryRaw = formData.get('is_necessary') as string | null
   const is_necessary = !isNecessaryRaw ? null : isNecessaryRaw === 'true'
 
-  if (!id || !occurred_at || !type || !account_id || !amount || amount <= 0
+  if (!id || !validTransactionFields(occurred_at, type, amount, description) || !account_id
     || (type === 'Ahorro' && existingTransaction.type !== 'Ahorro')
     || (type === 'Ahorro' && !savings_operation)
     || ((type === 'Gasto' || type === 'Ingreso' || type === 'Transferencia') && !category_id)
