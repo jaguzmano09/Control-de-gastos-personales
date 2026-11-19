@@ -134,6 +134,8 @@ Execution record: P2.2 is In progress. Accounts without pockets own one category
 
 Regression follow-up: the transactions list pins each embedded account, wallet, and category relation to its source foreign key so transfer-destination foreign keys cannot make PostgREST joins ambiguous. Query failures and genuinely empty filter results have distinct UI states. Account and pocket monthly status has a compact, responsive summary with clear readiness states.
 
+Legacy transfer audit (2026-11-19): a read-only aggregate query on the connected production project found 18 transfer rows, including 17 confirmed rows missing at least one destination account, source category, or destination category. Reconcile these records without inferring missing endpoints. The local Docker daemon was unavailable, so isolated authenticated database tests remain outstanding.
+
 ### Deliverables and exit criteria
 
 A business test matrix with exact expected amounts covering transfers, savings, multiple accounts, pending/duplicate/discarded exclusion, overspending, month boundaries, rate changes, repeated closing, failed writes, and concurrent assignment. The same scenario produces matching figures across all relevant views. Existing records have a reviewed migration or compatibility strategy.
