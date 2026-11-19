@@ -62,7 +62,7 @@ export async function createManualTransaction(formData: FormData) {
       p_is_necessary: is_necessary as boolean,
       p_submission_id: submission_id as string,
     })
-    if (error) redirect('/transacciones/nueva?purchase_draft_id=' + purchaseDraftId + '&error=' + encodeURIComponent(error.message))
+    if (error) redirect('/transacciones/nueva?purchase_draft_id=' + purchaseDraftId + '&error=' + encodeURIComponent('No pudimos registrar la compra. Revisa los datos e inténtalo de nuevo.'))
     revalidatePath('/transacciones')
     revalidatePath('/')
     revalidatePath('/mercado')
@@ -94,7 +94,7 @@ export async function createManualTransaction(formData: FormData) {
       revalidatePath('/')
       redirect('/transacciones')
     }
-    redirect('/transacciones/nueva?error=' + encodeURIComponent(error.message))
+    redirect('/transacciones/nueva?error=' + encodeURIComponent('No pudimos registrar el movimiento. Revisa los datos e inténtalo de nuevo.'))
   }
 
   revalidatePath('/transacciones')
@@ -141,7 +141,7 @@ export async function updateTransaction(formData: FormData) {
     .eq('id', id)
 
   if (error) {
-    redirect(`/transacciones/${id}?error=` + encodeURIComponent(error.message))
+    redirect(`/transacciones/${id}?error=` + encodeURIComponent('No pudimos guardar el movimiento. Revisa los datos e inténtalo de nuevo.'))
   }
 
   revalidatePath('/transacciones')

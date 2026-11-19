@@ -45,7 +45,7 @@ export default function LoginPage() {
 
     if (mode === 'login') {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (signInError) setError(signInError.message)
+      if (signInError) setError(signInError.status === 429 ? 'Demasiados intentos. Espera un momento y vuelve a intentarlo.' : 'No pudimos iniciar sesión. Verifica tus datos e inténtalo de nuevo.')
       else window.location.assign('/')
       setLoading(false)
       return
@@ -64,7 +64,7 @@ export default function LoginPage() {
     })
 
     if (signUpError) {
-      setError(signUpError.message)
+      setError(signUpError.status === 429 ? 'Demasiados intentos. Espera un momento y vuelve a intentarlo.' : 'No pudimos crear la cuenta. Revisa tus datos e inténtalo de nuevo.')
     } else if (data.session) {
       window.location.assign('/')
     } else {
