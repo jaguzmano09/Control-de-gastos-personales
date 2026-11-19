@@ -34,6 +34,7 @@ export async function updateSession(request: NextRequest) {
   function redirectWithCookies(path: string) {
     const redirectResponse = NextResponse.redirect(new URL(path, request.url))
     response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
+    redirectResponse.headers.set('Cache-Control', 'private, no-store')
     return redirectResponse
   }
 
@@ -66,5 +67,6 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  if (!isPublicPath) response.headers.set('Cache-Control', 'private, no-store')
   return response
 }
