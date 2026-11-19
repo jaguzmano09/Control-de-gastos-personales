@@ -92,7 +92,7 @@ export async function createYieldConfig(formData: FormData) {
     if (configError.code === '23505') {
       fail('Este objetivo ya tiene una configuración de alto rendimiento. Agrega una nueva tasa desde su historial.')
     }
-    fail(configError.message)
+    fail('No pudimos completar la operación. Inténtalo de nuevo.')
   }
   const configId = config?.id
   const requiredConfigId = configId as string
@@ -109,7 +109,7 @@ export async function createYieldConfig(formData: FormData) {
     if (rateError.code === '23505') {
       fail('Ya existe una tasa registrada para esa fecha. Usa una fecha diferente.')
     }
-    fail(rateError.message)
+    fail('No pudimos completar la operación. Inténtalo de nuevo.')
   }
 
   revalidatePath('/cuentas')
@@ -141,7 +141,7 @@ export async function updateYieldRate(formData: FormData) {
     if (error.code === '23505') {
       fail('Ya existe una tasa registrada para esa fecha. Usa una fecha diferente.')
     }
-    fail(error.message)
+    fail('No pudimos completar la operación. Inténtalo de nuevo.')
   }
 
   revalidatePath('/cuentas')
@@ -166,7 +166,7 @@ export async function deleteYieldRate(formData: FormData) {
     .eq('id', rateId)
     .eq('user_id', user.id)
     .maybeSingle()
-  if (rateError) fail(rateError.message)
+  if (rateError) fail('No pudimos completar la operación. Inténtalo de nuevo.')
   const configId = rate?.config_id
   const requiredConfigId = configId as string
   if (!configId) fail('No se encontró la tasa de rendimiento')
@@ -176,7 +176,7 @@ export async function deleteYieldRate(formData: FormData) {
     .select('id', { count: 'exact', head: true })
     .eq('config_id', requiredConfigId)
     .eq('user_id', user.id)
-  if (countError) fail(countError.message)
+  if (countError) fail('No pudimos completar la operación. Inténtalo de nuevo.')
   if ((count ?? 0) <= 1) {
     fail('No puedes eliminar la única tasa de esta configuración')
   }
@@ -186,7 +186,7 @@ export async function deleteYieldRate(formData: FormData) {
     .delete()
     .eq('id', rateId)
     .eq('user_id', user.id)
-  if (error) fail(error.message)
+  if (error) fail('No pudimos completar la operación. Inténtalo de nuevo.')
 
   revalidatePath('/cuentas')
   revalidatePath('/')

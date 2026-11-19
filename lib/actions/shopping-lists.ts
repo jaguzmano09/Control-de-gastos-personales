@@ -33,7 +33,7 @@ export async function createStore(formData: FormData) {
 
   const { error } = await supabase.from('stores').insert({ user_id: user.id, name, name_key: normalizeName(name) })
   if (error) {
-    const message = error.code === '23505' ? 'Esa tienda ya existe' : error.message
+    const message = error.code === '23505' ? 'Esa tienda ya existe' : 'No pudimos completar la operación. Inténtalo de nuevo.'
     redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(message)}`)
   }
   revalidatePath(SHOPPING_PATH)
@@ -51,7 +51,7 @@ export async function updateStore(formData: FormData) {
     .update({ name, name_key: normalizeName(name) })
     .eq('id', id)
   if (error) {
-    const message = error.code === '23505' ? 'Esa tienda ya existe' : error.message
+    const message = error.code === '23505' ? 'Esa tienda ya existe' : 'No pudimos completar la operación. Inténtalo de nuevo.'
     redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(message)}`)
   }
   revalidatePath(SHOPPING_PATH)
@@ -62,7 +62,7 @@ export async function deleteStore(formData: FormData) {
   const { supabase } = await getUser()
   const id = requiredText(formData, 'id')
   const { error } = await supabase.from('stores').delete().eq('id', id)
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -79,7 +79,7 @@ export async function createShoppingList(formData: FormData) {
     store_id: storeId,
     status: 'activa',
   })
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -95,7 +95,7 @@ export async function updateShoppingList(formData: FormData) {
     .from('shopping_lists')
     .update({ name, store_id: storeId })
     .eq('id', id)
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -104,7 +104,7 @@ export async function deleteShoppingList(formData: FormData) {
   const { supabase } = await getUser()
   const id = requiredText(formData, 'id')
   const { error } = await supabase.from('shopping_lists').delete().eq('id', id)
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -154,7 +154,7 @@ export async function addShoppingListItem(formData: FormData) {
     estimated_unit_price: estimated ? Number(estimated) : latestPrice?.unit_price ?? null,
     position: (lastItem?.position ?? -1) + 1,
   })
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(`${SHOPPING_PATH}?success=${encodeURIComponent(`"${name}" se agregó a la lista`)}&success_list_id=${encodeURIComponent(listId)}`)
 }
@@ -182,7 +182,7 @@ export async function updateShoppingListItem(formData: FormData) {
     is_checked: isChecked,
     group_name: requiredText(formData, 'group_name') || null,
   }).eq('id', id)
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -198,7 +198,7 @@ export async function toggleShoppingListItem(formData: FormData) {
     .update({ is_checked: isChecked })
     .eq('id', id)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'No pudimos completar la operación. Inténtalo de nuevo.' }
   revalidatePath(SHOPPING_PATH)
   return { error: null }
 }
@@ -207,7 +207,7 @@ export async function deleteShoppingListItem(formData: FormData) {
   const { supabase } = await getUser()
   const id = requiredText(formData, 'id')
   const { error } = await supabase.from('shopping_list_items').delete().eq('id', id)
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -227,7 +227,7 @@ export async function duplicateShoppingList(formData: FormData) {
     .insert({ user_id: user.id, name: `${source.name} (copia)`, store_id: source.store_id, status: 'activa' })
     .select('id')
     .single()
-  if (error || !newList) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error?.message ?? 'No se pudo duplicar')}`)
+  if (error || !newList) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No se pudo duplicar la lista.')}`)
 
   const { data: items } = await supabase
     .from('shopping_list_items')
@@ -263,7 +263,7 @@ export async function duplicateShoppingList(formData: FormData) {
         }
       }),
     )
-    if (itemsError) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(itemsError.message)}`)
+    if (itemsError) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   }
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
@@ -274,7 +274,7 @@ export async function completeShoppingList(formData: FormData) {
   const id = requiredText(formData, 'id')
   const observedOn = requiredText(formData, 'observed_on') || undefined
   const { error } = await supabase.rpc('complete_shopping_list', { p_list_id: id, p_observed_on: observedOn })
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -283,7 +283,7 @@ export async function reopenShoppingList(formData: FormData) {
   const { supabase } = await getUser()
   const id = requiredText(formData, 'id')
   const { error } = await supabase.rpc('reopen_shopping_list', { p_list_id: id })
-  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(error.message)}`)
+  if (error) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   revalidatePath(SHOPPING_PATH)
   redirect(SHOPPING_PATH)
 }
@@ -307,12 +307,12 @@ export async function createShoppingPurchaseDraft(formData: FormData) {
     user_id: user.id,
     description: `Compra de mercado: ${listNames.join(', ')}`,
   }).select('id').single()
-  if (draftError || !draft) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(draftError?.message ?? 'No se pudo crear el borrador')}`)
+  if (draftError || !draft) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No se pudo crear el borrador.')}`)
 
   const { error: linesError } = await supabase.from('shopping_purchase_draft_lines').insert(items.map((item) => ({
     draft_id: draft.id, item_id: item.id, list_id: item.list_id, name: item.name,
     quantity: item.quantity, unit: item.unit, actual_unit_price: item.actual_unit_price,
   })))
-  if (linesError) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent(linesError.message)}`)
+  if (linesError) redirect(`${SHOPPING_PATH}?error=${encodeURIComponent('No pudimos completar la operación. Inténtalo de nuevo.')}`)
   redirect(`/transacciones/nueva?purchase_draft_id=${draft.id}`)
 }
