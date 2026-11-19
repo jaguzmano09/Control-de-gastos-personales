@@ -39,7 +39,7 @@ export async function exchangeCodeForTokens(code: string, redirectUri: string) {
       grant_type: 'authorization_code',
     }),
   })
-  if (!res.ok) throw new Error(`Error obteniendo tokens: ${await res.text()}`)
+  if (!res.ok) throw new Error(`Error obteniendo tokens: ${res.status}`)
   return res.json() as Promise<{ access_token: string; refresh_token?: string; expires_in: number }>
 }
 
@@ -54,13 +54,13 @@ export async function refreshAccessToken(refreshToken: string) {
       grant_type: 'refresh_token',
     }),
   })
-  if (!res.ok) throw new Error(`Error refrescando token: ${await res.text()}`)
+  if (!res.ok) throw new Error(`Error refrescando token: ${res.status}`)
   return res.json() as Promise<{ access_token: string; expires_in: number }>
 }
 
 export async function getProfile(accessToken: string) {
   const res = await fetch(`${GMAIL_API_BASE}/profile`, { headers: { Authorization: `Bearer ${accessToken}` } })
-  if (!res.ok) throw new Error(`Error obteniendo perfil: ${await res.text()}`)
+  if (!res.ok) throw new Error(`Error obteniendo perfil: ${res.status}`)
   return res.json() as Promise<{ historyId: string }>
 }
 
@@ -73,7 +73,7 @@ export async function listHistory(accessToken: string, startHistoryId: string) {
   const res = await fetch(`${GMAIL_API_BASE}/history?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
-  if (!res.ok) throw new Error(`Error listando history: ${await res.text()}`)
+  if (!res.ok) throw new Error(`Error listando history: ${res.status}`)
   return res.json()
 }
 
@@ -81,7 +81,7 @@ export async function getMessage(accessToken: string, messageId: string) {
   const res = await fetch(`${GMAIL_API_BASE}/messages/${messageId}?format=full`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
-  if (!res.ok) throw new Error(`Error obteniendo mensaje: ${await res.text()}`)
+  if (!res.ok) throw new Error(`Error obteniendo mensaje: ${res.status}`)
   return res.json()
 }
 
