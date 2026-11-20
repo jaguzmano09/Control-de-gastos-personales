@@ -61,6 +61,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
   if (!matchesImageSignature(originalBuffer, file.type)) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('El contenido no corresponde al tipo de imagen seleccionado.'))
   }
+  const { data: allowed, error: quotaError } = await supabase.rpc('consume_ocr_quota')
+  if (quotaError) redirect('/transacciones/ocr?error=' + encodeURIComponent('No pudimos verificar el límite de procesamiento. Inténtalo más tarde.'))
+  if (!allowed) redirect('/transacciones/ocr?error=' + encodeURIComponent('Alcanzaste el límite de comprobantes. Inténtalo de nuevo más tarde.'))
   let imageVariants: Array<{ buffer: Buffer; mimeType: string; label: string }> = [
     { buffer: originalBuffer, mimeType: file.type, label: 'original' },
   ]

@@ -40,6 +40,9 @@ export async function POST(request: Request) {
   if (!matchesImageSignature(new Uint8Array(bytes), file.type)) {
     return NextResponse.json({ error: 'El contenido no corresponde al tipo de imagen seleccionado.' }, { status: 400 })
   }
+  const { data: allowed, error: quotaError } = await supabase.rpc('consume_ocr_quota')
+  if (quotaError) return NextResponse.json({ error: 'No pudimos verificar el límite de procesamiento. Inténtalo más tarde.' }, { status: 503 })
+  if (!allowed) return NextResponse.json({ error: 'Alcanzaste el límite de comprobantes. Inténtalo de nuevo más tarde.' }, { status: 429 })
 
   try {
     const result = await extractTransactionFromImage(

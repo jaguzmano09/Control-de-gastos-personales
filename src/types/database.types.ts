@@ -1112,6 +1112,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_ocr_quota: { Args: Record<PropertyKey, never>; Returns: boolean }
       accept_current_documents: { Args: never; Returns: undefined }
       admin_product_event_metrics: {
         Args: { p_since?: string }
