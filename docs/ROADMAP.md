@@ -235,7 +235,7 @@ Objective: support real users and recover from failures without relying on ad ho
 
 ### Tasks
 
-- [ ] P7.1 — Establish a private support and security-reporting channel; separate personal-data requests from public GitHub issues.
+- [ ] P7.1 — Establish a private support and security-reporting channel; separate personal-data requests from public GitHub issues. Progress: the support page now identifies GitHub Issues as public and does not direct data requests there. A working private channel remains a launch requirement.
 - [ ] P7.2 — Implement the approved data-export and deletion/request flows, including integration tokens, retained data, and operational responsibilities.
 - [ ] P7.3 — Align privacy/terms/security content with actual providers, data flows, retention, user controls, and released functionality; obtain applicable qualified review.
 - [ ] P7.4 — Instrument real activation and feature events without financial amounts, descriptions, email content, receipts, or secrets.
