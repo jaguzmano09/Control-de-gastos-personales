@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { getCanonicalPageUrl } from "@/lib/site-origin"
 
-const PUBLIC_PATHS = new Set(['/inicio', '/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
+const PUBLIC_PATHS = new Set(['/inicio', '/login', '/terminos', '/privacidad', '/seguridad', '/soporte', '/cuenta-eliminada'])
 const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html', '/robots.txt', '/sitemap.xml'])
 
 export async function updateSession(request: NextRequest) {
@@ -40,6 +40,32 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicPath = PUBLIC_PATHS.has(request.nextUrl.pathname)
   const isSignedInSupportPage = user !== null && request.nextUrl.pathname === '/soporte'
+
+  if (user) {
+    const { data: deletionJob, error: deletionCheckError } = await supabase
+      .from('account_deletion_jobs')
+      .select('status')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (deletionCheckError) {
+      if (request.nextUrl.pathname === '/eliminar-cuenta') {
+        response.headers.set('Cache-Control', 'private, no-store')
+        return response
+      }
+      return redirectWithCookies('/eliminar-cuenta?error=No+pudimos+verificar+el+estado+de+la+eliminaci%C3%B3n')
+    }
+
+    if (deletionJob?.status === 'data_removed' && request.nextUrl.pathname !== '/eliminar-cuenta') {
+      if (request.nextUrl.pathname.startsWith('/api/')) {
+        return new NextResponse(JSON.stringify({ error: 'Account closure is pending.' }), {
+          status: 410,
+          headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow, noarchive' },
+        })
+      }
+      return redirectWithCookies('/eliminar-cuenta')
+    }
+  }
 
   if (!user && !isPublicPath && !request.nextUrl.pathname.startsWith('/api/')) {
     return redirectWithCookies(request.nextUrl.pathname === '/' ? '/inicio' : '/login')

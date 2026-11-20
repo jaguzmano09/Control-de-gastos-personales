@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_jobs: {
+        Row: { started_at: string; status: string; user_id: string }
+        Insert: { started_at?: string; status: string; user_id: string }
+        Update: { started_at?: string; status?: string; user_id?: string }
+        Relationships: []
+      }
       accounts: {
         Row: {
           category_id: string | null
@@ -1118,6 +1124,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      prepare_account_deletion: { Args: { p_user_id: string }; Returns: undefined }
       consume_ocr_quota: { Args: Record<PropertyKey, never>; Returns: boolean }
       accept_current_documents: { Args: never; Returns: undefined }
       admin_product_event_metrics: {

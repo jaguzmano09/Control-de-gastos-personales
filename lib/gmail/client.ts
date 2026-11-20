@@ -1,5 +1,6 @@
 const GOOGLE_OAUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke'
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me'
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -41,6 +42,21 @@ export async function exchangeCodeForTokens(code: string, redirectUri: string) {
   })
   if (!res.ok) throw new Error(`Error obteniendo tokens: ${res.status}`)
   return res.json() as Promise<{ access_token: string; refresh_token?: string; expires_in: number }>
+}
+
+export async function revokeGoogleOAuthToken(token: string) {
+  try {
+    const response = await fetch(GOOGLE_REVOKE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token }),
+      signal: AbortSignal.timeout(10_000),
+      cache: 'no-store',
+    })
+    return response.ok
+  } catch {
+    return false
+  }
 }
 
 export async function refreshAccessToken(refreshToken: string) {
