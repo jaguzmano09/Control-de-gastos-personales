@@ -24,6 +24,7 @@ export async function extractWithConfiguredPaddleOcr(
   const timeout = setTimeout(() => controller.abort(), PADDLEOCR_TIMEOUT_MS)
   const abort = () => controller.abort()
   signal?.addEventListener('abort', abort, { once: true })
+  if (signal?.aborted) abort()
 
   try {
     const response = await fetch(endpoint, {
@@ -35,15 +36,17 @@ export async function extractWithConfiguredPaddleOcr(
         categories: categoryNames,
       }),
       signal: controller.signal,
+      redirect: 'error',
+      cache: 'no-store',
     })
     if (!response.ok) throw new Error(`PaddleOCR error: ${response.status}`)
     const result = await response.json() as PaddleResponse
     return {
-      occurred_at: result.occurred_at ?? '',
-      amount: typeof result.amount === 'number' ? result.amount : 0,
-      description: result.description ?? '',
-      suggested_category: result.suggested_category ?? '',
-      confidence: typeof result.confidence === 'number' ? result.confidence : 0,
+      occurred_at: typeof result.occurred_at === 'string' ? result.occurred_at.slice(0, 20) : '',
+      amount: typeof result.amount === 'number' && Number.isFinite(result.amount) ? result.amount : 0,
+      description: typeof result.description === 'string' ? result.description.trim().slice(0, 240) : '',
+      suggested_category: typeof result.suggested_category === 'string' ? result.suggested_category.trim().slice(0, 80) : '',
+      confidence: typeof result.confidence === 'number' && Number.isFinite(result.confidence) ? Math.max(0, Math.min(1, result.confidence)) : 0,
     }
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {

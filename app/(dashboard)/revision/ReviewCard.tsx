@@ -17,6 +17,7 @@ type Transaction = {
   wallet_id: string | null
   ai_confidence: number | null
   source: string
+  raw_data: { engine?: string } | null
 }
 
 const inputClass = 'input mt-1 w-full'
@@ -25,7 +26,7 @@ function ConfidenceBadge({ confidence }: { confidence: number | null }) {
   if (confidence === null) return null
   const percent = Math.round(confidence * 100)
   const color = confidence >= 0.85 ? 'text-ledger-green' : confidence >= 0.6 ? 'text-amber-600' : 'text-red-700'
-  return <span className={`text-xs ${color}`}>{percent}% de confianza</span>
+  return <span className={`text-xs ${color}`}>{percent}% de confianza en la lectura</span>
 }
 
 export function ReviewCard({ transaction, categories, accounts, wallets }: {
@@ -53,6 +54,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
         <div className="flex shrink-0 items-center gap-3"><ConfidenceBadge confidence={transaction.ai_confidence} /><span className="text-xs text-ledger-muted">Revisar</span></div>
       </summary>
       <div className="border-t border-black/10 p-4">
+      {transaction.source === 'ocr' && transaction.raw_data?.engine === 'processing' && <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">La lectura automática no guardó resultados. Puedes completar los campos manualmente; este borrador no afecta tus saldos ni presupuestos hasta que lo confirmes.</p>}
       <form action={confirmTransaction} className="grid grid-cols-2 gap-3">
         <input type="hidden" name="id" value={transaction.id} />
 

@@ -16,6 +16,7 @@ interface PendingTransaction {
   wallet_id: string | null
   ai_confidence: number | null
   source: string
+  raw_data: { engine?: string } | null
 }
 
 interface DuplicateTransaction {
@@ -65,7 +66,7 @@ export default async function RevisionPage() {
     supabase
       .from('transactions')
       .select(
-        'id, occurred_at, description, amount, type, category_id, account_id, wallet_id, ai_confidence, source'
+        'id, occurred_at, description, amount, type, category_id, account_id, wallet_id, ai_confidence, source, raw_data'
       )
       .eq('status', 'pendiente_revision')
       .order('ai_confidence', { ascending: true, nullsFirst: false }),

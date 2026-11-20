@@ -5,19 +5,27 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { todayInBogota } from '@/lib/date-utils'
 import { matchesImageSignature } from '@/lib/ocr/image-signature'
-import { matchCategorizationRule } from '@/lib/categorization/match'
 import { discardTesseractWorker, extractTextFromImagesWithTesseract } from '@/lib/ocr/tesseract'
-import { preprocessReceipt } from '@/lib/ocr/preprocess'
+import { preprocessReceipt, validateReceiptImage } from '@/lib/ocr/preprocess'
 import { extractWithConfiguredPaddleOcr } from '@/lib/ocr/paddle'
 import { parseOcrText } from '@/lib/ocr/parse'
 import {
   extractTransactionFromImage,
   extractTransactionFromImageWithOcr,
+  isGeminiPrivateDataProcessingApproved,
   isUsableExtraction,
   type Extracted,
 } from '@/lib/gemini/client'
 
-const MAX_OCR_PROCESSING_MS = 180_000
+const MAX_OCR_PROCESSING_MS = 55_000
+const MAX_OCR_UPLOAD_BYTES = 4 * 1024 * 1024
+
+function isValidIsoDate(value: string | undefined): value is string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+}
 
 export async function createTransactionFromReceipt(formData: FormData) {
   const supabase = await createClient()
@@ -31,8 +39,12 @@ export async function createTransactionFromReceipt(formData: FormData) {
     : uploadFile instanceof File && uploadFile.size > 0
       ? uploadFile
       : null
-  const account_id = formData.get('account_id') as string
-  const wallet_id = (formData.get('wallet_id') as string) || null
+  const accountValue = formData.get('account_id')
+  const walletValue = formData.get('wallet_id')
+  const submissionValue = formData.get('submission_id')
+  const account_id = typeof accountValue === 'string' ? accountValue : ''
+  const wallet_id = typeof walletValue === 'string' && walletValue ? walletValue : null
+  const submission_id = typeof submissionValue === 'string' ? submissionValue : ''
 
   if (!file) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('Selecciona una imagen o toma una foto del comprobante.'))
@@ -41,29 +53,86 @@ export async function createTransactionFromReceipt(formData: FormData) {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('El archivo seleccionado no es una imagen válida.'))
   }
-  if (file.size > 10 * 1024 * 1024) {
-    redirect('/transacciones/ocr?error=' + encodeURIComponent('La imagen no puede superar los 10 MB.'))
+  if (file.size > MAX_OCR_UPLOAD_BYTES) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('La imagen no puede superar los 4 MB después de comprimirla.'))
   }
 
   if (!account_id) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('Selecciona una cuenta para registrar la transacción.'))
   }
 
-  const { data: categories, error: categoriesError } = await supabase
-    .from('categories')
-    .select('id, name')
-    .eq('is_active', true)
-  if (categoriesError) {
-    redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudieron cargar las categorías. Intenta nuevamente.'))
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(submission_id)) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('No pudimos iniciar el procesamiento. Actualiza la página e inténtalo nuevamente.'))
   }
+
+  const { data: existing } = await supabase.from('transactions')
+    .select('id, status')
+    .eq('user_id', user.id)
+    .eq('submission_id', submission_id)
+    .maybeSingle()
+  if (existing) redirect(existing.status === 'pendiente_revision' ? '/revision' : '/transacciones')
+
+  const { data: account } = await supabase.from('accounts')
+    .select('id, category_id, has_wallets')
+    .eq('id', account_id)
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+  if (!account) redirect('/transacciones/ocr?error=' + encodeURIComponent('La cuenta seleccionada ya no está disponible. Actualiza la página.'))
+
+  const { data: accountWallets, error: accountWalletsError } = await supabase.from('wallets')
+    .select('id, category_id')
+    .eq('account_id', account_id)
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+  if (accountWalletsError) redirect('/transacciones/ocr?error=' + encodeURIComponent('No pudimos verificar la cuenta seleccionada. Inténtalo más tarde.'))
+
+  const hasWallets = account.has_wallets || (accountWallets?.length ?? 0) > 0
+  if (hasWallets && !wallet_id) redirect('/transacciones/ocr?error=' + encodeURIComponent('Selecciona el bolsillo de esta cuenta.'))
+  if (!hasWallets && wallet_id) redirect('/transacciones/ocr?error=' + encodeURIComponent('La cuenta seleccionada no utiliza bolsillos.'))
+  const wallet = wallet_id ? accountWallets?.find((item) => item.id === wallet_id) : null
+  if (wallet_id && !wallet) redirect('/transacciones/ocr?error=' + encodeURIComponent('El bolsillo seleccionado no pertenece a esta cuenta.'))
+  const assignedCategoryId = wallet?.category_id ?? account.category_id
+  const memberAllowedExternalProcessing = formData.get('allow_external_processing') === 'on'
+  const allowGemini = memberAllowedExternalProcessing && isGeminiPrivateDataProcessingApproved()
+  const allowPaddle = memberAllowedExternalProcessing
+    && Boolean(process.env.PADDLEOCR_URL)
+    && process.env.PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED === 'true'
 
   const originalBuffer = Buffer.from(await file.arrayBuffer())
   if (!matchesImageSignature(originalBuffer, file.type)) {
     redirect('/transacciones/ocr?error=' + encodeURIComponent('El contenido no corresponde al tipo de imagen seleccionado.'))
   }
+  try {
+    await validateReceiptImage(originalBuffer, file.type)
+  } catch {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('La imagen está dañada o supera el límite de resolución permitido.'))
+  }
+
+  // Check retries before charging quota; the unique index remains the race-safe backstop.
   const { data: allowed, error: quotaError } = await supabase.rpc('consume_ocr_quota')
   if (quotaError) redirect('/transacciones/ocr?error=' + encodeURIComponent('No pudimos verificar el límite de procesamiento. Inténtalo más tarde.'))
   if (!allowed) redirect('/transacciones/ocr?error=' + encodeURIComponent('Alcanzaste el límite de comprobantes. Inténtalo de nuevo más tarde.'))
+
+  const { error: draftError } = await supabase.from('transactions').insert({
+    user_id: user.id,
+    occurred_at: todayInBogota(),
+    type: 'Gasto',
+    category_id: assignedCategoryId,
+    account_id,
+    wallet_id,
+    description: 'Comprobante pendiente de lectura',
+    amount: 0,
+    source: 'ocr',
+    status: 'pendiente_revision',
+    submission_id,
+    ai_confidence: 0,
+    raw_data: { engine: 'processing' },
+  })
+  if (draftError) {
+    if (draftError.code === '23505') redirect('/revision')
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudo iniciar la revisión del comprobante. Inténtalo de nuevo.'))
+  }
   let imageVariants: Array<{ buffer: Buffer; mimeType: string; label: string }> = [
     { buffer: originalBuffer, mimeType: file.type, label: 'original' },
   ]
@@ -80,7 +149,6 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let partialExtraction: Partial<Extracted> | undefined
   let extractionEngine: string | undefined
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
-  const categoryNames = (categories ?? []).map((category) => category.name)
   const processingDeadline = Date.now() + MAX_OCR_PROCESSING_MS
   const hasTimeRemaining = () => Date.now() < processingDeadline
   const geminiVariants = [
@@ -94,12 +162,14 @@ export async function createTransactionFromReceipt(formData: FormData) {
     for (const variant of geminiVariants) {
       if (!hasTimeRemaining()) break
       try {
-        const paddleResult = await extractWithConfiguredPaddleOcr(
-          variant.buffer,
-          variant.mimeType,
-          categoryNames,
-          processingController.signal,
-        )
+        let paddleResult: Awaited<ReturnType<typeof extractWithConfiguredPaddleOcr>> = null
+        if (allowPaddle) {
+          try {
+            paddleResult = await extractWithConfiguredPaddleOcr(variant.buffer, variant.mimeType, [], processingController.signal)
+          } catch {
+            paddleResult = null
+          }
+        }
         if (paddleResult) {
           if (isUsableExtraction(paddleResult)) {
             extracted = {
@@ -116,12 +186,8 @@ export async function createTransactionFromReceipt(formData: FormData) {
           extractionEngine = `paddleocr-${variant.label}`
         }
 
-        const geminiResult = await extractTransactionFromImage(
-          variant.buffer.toString('base64'),
-          variant.mimeType,
-          categoryNames,
-          processingController.signal,
-        )
+        if (!allowGemini) continue
+        const geminiResult = await extractTransactionFromImage(variant.buffer.toString('base64'), variant.mimeType, [], processingController.signal)
         if (isUsableExtraction(geminiResult)) {
           extracted = geminiResult
           extractionEngine = `gemini-vision-${variant.label}`
@@ -140,15 +206,16 @@ export async function createTransactionFromReceipt(formData: FormData) {
       try {
         ocrResult = await extractTextFromImagesWithTesseract(
           imageVariants.filter((variant) => variant.label !== 'original').map((variant) => variant.buffer),
+          processingController.signal,
         )
-        if (ocrResult.text && hasTimeRemaining()) {
+        if (allowGemini && ocrResult.text && hasTimeRemaining()) {
           try {
             const geminiResult = await extractTransactionFromImageWithOcr(
               imageVariants.find((variant) => variant.label === 'enhanced')?.buffer.toString('base64')
                 ?? originalBuffer.toString('base64'),
               'image/jpeg',
               ocrResult.text,
-              categoryNames,
+              [],
               processingController.signal,
             )
             if (isUsableExtraction(geminiResult)) {
@@ -184,19 +251,23 @@ export async function createTransactionFromReceipt(formData: FormData) {
   }
 
   if (!extracted) {
+    const partialAmount = partialExtraction?.amount
     extracted = {
-      occurred_at: partialExtraction?.occurred_at || todayInBogota(),
-      amount: partialExtraction?.amount && partialExtraction.amount > 0 ? partialExtraction.amount : 0,
-      description: partialExtraction?.description || 'Compra pendiente de identificar',
+      occurred_at: isValidIsoDate(partialExtraction?.occurred_at) ? partialExtraction.occurred_at : todayInBogota(),
+      amount: typeof partialAmount === 'number' && Number.isFinite(partialAmount) && partialAmount > 0 && partialAmount <= Number.MAX_SAFE_INTEGER ? partialAmount : 0,
+      description: typeof partialExtraction?.description === 'string' && partialExtraction.description.trim()
+        ? partialExtraction.description.slice(0, 240)
+        : 'Compra pendiente de identificar',
       suggested_category: partialExtraction?.suggested_category || '',
-      confidence: partialExtraction?.confidence || 0,
+      confidence: partialAmount && partialAmount > 0 && isValidIsoDate(partialExtraction?.occurred_at)
+        && typeof partialExtraction?.description === 'string' && partialExtraction.description.trim()
+        && typeof partialExtraction.confidence === 'number' && Number.isFinite(partialExtraction.confidence)
+        ? Math.max(0, Math.min(1, partialExtraction.confidence))
+        : partialAmount && partialAmount > 0 ? 0.25 : 0,
     }
     extractionEngine = extractionEngine ?? 'manual-review'
   }
 
-  // Rules-first: una regla aprendida/manual tiene prioridad sobre la sugerencia de Gemini.
-  const rule = await matchCategorizationRule(supabase, user!.id, extracted!.description)
-  const category = categories?.find((c) => c.name.toLowerCase() === extracted!.suggested_category.toLowerCase())
   const extractionConfidence = extractionEngine === 'tesseract-local'
     ? Math.max(
       Math.min(extracted!.confidence, ocrResult.confidence / 100),
@@ -207,32 +278,20 @@ export async function createTransactionFromReceipt(formData: FormData) {
       : extracted!.amount > 0
         ? 0.35
         : 0
+  const safeConfidence = Number.isFinite(extractionConfidence) ? Math.max(0, Math.min(1, extractionConfidence)) : 0
 
-  const { error } = await supabase.from('transactions').insert({
-    user_id: user!.id,
+  const { error } = await supabase.from('transactions').update({
     occurred_at: extracted!.occurred_at,
-    type: 'Gasto',
-    category_id: rule?.category_id ?? category?.id ?? null,
-    account_id,
-    wallet_id,
+    category_id: assignedCategoryId,
     description: extracted!.description,
     amount: extracted!.amount,
-    source: 'ocr',
-    status: 'pendiente_revision',
-    ai_confidence: rule ? 1 : extractionConfidence,
+    ai_confidence: safeConfidence,
     raw_data: {
       engine: extractionEngine,
     },
-  })
+  }).eq('user_id', user.id).eq('submission_id', submission_id).eq('status', 'pendiente_revision')
 
-  if (error) redirect('/transacciones/ocr?error=' + encodeURIComponent('No se pudo guardar el movimiento extraído. Inténtalo de nuevo.'))
-
-  if (rule) {
-    await supabase
-      .from('categorization_rules')
-      .update({ times_used: rule.times_used + 1, last_used_at: new Date().toISOString() })
-      .eq('id', rule.id)
-  }
+  if (error) redirect('/revision?error=' + encodeURIComponent('El comprobante sigue en revisión. Completa los datos manualmente.'))
 
   revalidatePath('/revision')
   redirect('/revision')

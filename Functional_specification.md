@@ -140,7 +140,7 @@ The OCR workflow is:
 ```text
 Image
   ↓
-Session, type, and size validation (maximum 10 MB)
+Session, image signature and decoded resolution validation (maximum 4 MB, 20 megapixels)
   ↓
 Preprocessing
   ↓
@@ -153,9 +153,19 @@ Structured classification and extraction
 Transaction pending review
 ```
 
-The system attempts to use the available time efficiently and stores the
-engine used and extraction errors in `raw_data` when applicable. Gemini may use
-OCR text as its primary source and correct obvious errors.
+The browser reduces oversized images before upload. The Server Action body limit
+is 4.5 MB and the OCR page function is capped at 60 seconds to match the hosting
+limits. A pending transaction draft is created before image processing and uses
+the existing `(user_id, submission_id)` unique index for retry idempotency. If
+processing times out, the draft remains available for manual review.
+
+Images are processed by PlaENC's application servers. An external provider may
+receive the image only when that provider is approved by a server-side gate and
+the member explicitly opts in for that upload. OCR does not send user-defined
+category names to external providers. Results stay pending until the member
+reviews and confirms them; only the extraction engine and bounded confidence
+value are persisted in `raw_data`, never the image, OCR text, or provider logs.
+Colombian day/month/year dates and ISO dates are validated against the calendar.
 
 The image must not be persisted as an unnecessary secret or financial record.
 The resulting transaction must always be editable before confirmation.

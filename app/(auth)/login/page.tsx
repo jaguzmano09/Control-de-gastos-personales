@@ -7,7 +7,7 @@ import { TurnstileChallenge } from '@/components/TurnstileChallenge'
 type Mode = 'login' | 'signup'
 
 const TERMS_VERSION = '2026-11-08'
-const PRIVACY_VERSION = '2026-11-20.1'
+const PRIVACY_VERSION = '2026-11-20.2'
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 export default function LoginPage() {

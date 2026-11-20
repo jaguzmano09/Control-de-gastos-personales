@@ -6,12 +6,22 @@ export type PreprocessedImage = {
   label: 'enhanced' | 'threshold'
 }
 
+const MAX_IMAGE_PIXELS = 20_000_000
+
+export async function validateReceiptImage(image: Buffer, mimeType: string) {
+  const metadata = await sharp(image, { limitInputPixels: MAX_IMAGE_PIXELS }).metadata()
+  const expectedFormat = mimeType === 'image/jpeg' ? 'jpeg' : mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : ''
+  if (!metadata.width || !metadata.height || metadata.width * metadata.height > MAX_IMAGE_PIXELS || metadata.format !== expectedFormat) {
+    throw new Error('Unsupported receipt image')
+  }
+}
+
 export async function preprocessReceipt(image: Buffer): Promise<PreprocessedImage[]> {
-  const base = sharp(image, { failOn: 'none' }).rotate().resize({
+  const base = sharp(image, { limitInputPixels: MAX_IMAGE_PIXELS }).rotate().resize({
     width: 2200,
     height: 3200,
     fit: 'inside',
-    withoutEnlargement: false,
+    withoutEnlargement: true,
   })
 
   const enhanced = await base

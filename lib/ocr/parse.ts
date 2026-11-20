@@ -64,13 +64,24 @@ function findAmount(lines: string[]) {
 }
 
 function findDate(text: string) {
-  const numericDate = text.match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/)
-  if (numericDate) return `${numericDate[1]}-${numericDate[2].padStart(2, '0')}-${numericDate[3].padStart(2, '0')}`
+  const toIsoDate = (year: number, month: number, day: number) => {
+    if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return ''
+    const date = new Date(Date.UTC(year, month - 1, day))
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return ''
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  }
+
+  const isoDate = text.match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/)
+  if (isoDate) return toIsoDate(Number(isoDate[1]), Number(isoDate[2]), Number(isoDate[3]))
+
+  // Colombian receipts commonly print dates as day/month/year.
+  const colombianDate = text.match(/\b(\d{1,2})[./-](\d{1,2})[./-](20\d{2})\b/)
+  if (colombianDate) return toIsoDate(Number(colombianDate[3]), Number(colombianDate[2]), Number(colombianDate[1]))
 
   const writtenDate = text.match(/\b(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(20\d{2})\b/i)
   if (!writtenDate) return ''
   const month = MONTHS[writtenDate[2].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()]
-  return month ? `${writtenDate[3]}-${month}-${writtenDate[1].padStart(2, '0')}` : ''
+  return month ? toIsoDate(Number(writtenDate[3]), Number(month), Number(writtenDate[1])) : ''
 }
 
 function findDescription(lines: string[]) {
@@ -95,13 +106,13 @@ export function parseOcrText(text: string) {
   const occurred_at = findDate(text)
   const description = findDescription(lines)
   const confidence = amount > 0
-    ? occurred_at && description ? 0.75 : occurred_at || description ? 0.55 : 0.35
+    ? occurred_at && description ? 0.75 : 0.35
     : 0
 
   return {
     occurred_at,
     amount,
-    description,
+    description: description.slice(0, 240),
     suggested_category: '',
     confidence,
   }

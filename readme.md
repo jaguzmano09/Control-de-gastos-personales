@@ -136,15 +136,20 @@ This allows the system to gradually improve its suggestions based on the user's 
 
 ### 🧾 OCR Receipt Processing
 
-Users can upload a receipt image from the dashboard. The OCR pipeline can
-preprocess the image, use Tesseract.js locally and optionally use PaddleOCR,
-then send the extracted text or image to Gemini for structured transaction
-data. The result is created as `pending_review`; editing or confirming it is
-always a user decision.
+Members can upload a receipt image from the dashboard. The browser reduces
+oversized images, and PlaENC's application servers validate format, signature,
+and a 20-megapixel ceiling before preprocessing. Tesseract.js is the default
+server-side path. An external OCR/AI provider receives an image only when its
+server-side gate is enabled and the member explicitly opts in for that upload;
+OCR requests do not send the member's category names. A pending review draft is
+created before processing so a function timeout leaves an editable manual item.
+The existing per-member quota limits attempts to 10 per hour.
 
-The OCR endpoint validates authentication, file type and a 10 MB size limit.
-Receipt images are not stored as financial records; the extracted data is
-stored in the transaction's `raw_data` when applicable.
+Uploads are limited to 4 MB after optional browser resizing, within Vercel's
+4.5 MB function payload ceiling and Next.js Server Action body limit. OCR results
+remain pending until the member reviews them. Receipt images, OCR text, and
+provider diagnostics are not persisted; the transaction keeps only a bounded
+confidence score and extraction-engine label in `raw_data`.
 
 ---
 

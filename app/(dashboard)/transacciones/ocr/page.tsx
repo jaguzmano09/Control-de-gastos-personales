@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { OcrUploadForm } from './OcrUploadForm'
+import { isGeminiPrivateDataProcessingApproved } from '@/lib/gemini/client'
+import { randomUUID } from 'node:crypto'
+
+export const maxDuration = 60
 
 export default async function OcrPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams
@@ -11,6 +15,10 @@ export default async function OcrPage({ searchParams }: { searchParams: Promise<
   ])
 
   const loadError = accountsError ?? walletsError
+  const externalProviders = [
+    ...(isGeminiPrivateDataProcessingApproved() ? ['Google Gemini'] : []),
+    ...(process.env.PADDLEOCR_URL && process.env.PADDLEOCR_PRIVATE_DATA_PROCESSING_APPROVED === 'true' ? ['el servicio OCR configurado por PlaENC'] : []),
+  ]
 
   return (
     <div className="max-w-2xl">
@@ -18,12 +26,14 @@ export default async function OcrPage({ searchParams }: { searchParams: Promise<
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Captura inteligente</p>
       <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Registrar por foto</h1>
       <p className="mt-1 text-sm text-ledger-muted">
-        Sube la foto de una factura o recibo — la IA extrae los datos y queda pendiente de tu revisión.
+        Sube la foto de un recibo. Los servidores de PlaENC preparan un borrador para que lo revises antes de que afecte tus finanzas.
       </p>
       </header>
       <OcrUploadForm
         accounts={accounts ?? []}
         wallets={wallets ?? []}
+        submissionId={randomUUID()}
+        externalProviders={externalProviders}
         error={error ?? (loadError ? 'No se pudieron cargar las cuentas. Intenta actualizar la página.' : undefined)}
       />
     </div>
