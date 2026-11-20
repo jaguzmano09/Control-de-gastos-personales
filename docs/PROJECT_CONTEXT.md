@@ -46,6 +46,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 | Account | /configuracion, /consentimiento | Settings placeholder and document renewal |
 | Administration | /admin | Roles and aggregate metrics, without intended access to others' finances |
 | Private support | /soporte, /admin | Authenticated members submit support/privacy/security requests; own history stays private, while an admin-only inbox exposes only submitted messages |
+| Data export | /configuracion, /api/privacy/export | Authenticated JSON export scopes reads to the current member, uses owner-checked RPCs for telemetry/support, excludes Gmail tokens, and returns private no-store headers |
 
 ## Data flow and trust boundaries
 
@@ -91,6 +92,7 @@ RPCs include accept_current_documents, admin_product_event_metrics, record_produ
 - Events: migration/RPC/admin view exist; no product-flow instrumentation calls were found.
 - Owner administration is an accepted requirement. The sole verified Auth user has been promoted to admin; preserve the full personal workspace and restrict the server-authorized metrics area to approved aggregates. Cross-role isolation and small-cohort safeguards still need verification; admin status does not authorize routine access to others' private financial data.
 - Support channel (2026-11-20): `/soporte` requires sign-in to submit and view requests; login safely returns users to the requested local path. The database binds submissions to `auth.uid()`, limits each account to five submissions per 24 hours, and offers owner-only history plus role-checked admin inbox/replies. Direct table privileges are revoked and RLS is enabled without policies; all four `SECURITY DEFINER` RPCs have an empty search path and reject anonymous execution. Privacy text/version is updated. Catalog privileges were checked remotely; synthetic multi-user UI isolation is still unverified.
+- Personal export (2026-11-20): `/api/privacy/export` uses the cookie-authenticated Supabase client, explicit owner filters, row pagination, and no-store download headers. Support and product events are read through `auth.uid()` RPCs; shopping purchase lines are filtered by the member's owned draft/list/item IDs. Gmail export includes only the `is_active` flag; OAuth tokens and abuse counters are excluded. The output is not one atomic database snapshot and contains no provider mailbox contents. Account deletion remains request-only until cascading relations, token revocation, and synthetic-user verification are reviewed.
 
 ## Entry points by change
 

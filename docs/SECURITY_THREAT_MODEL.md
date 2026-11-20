@@ -39,6 +39,12 @@ The login and registration form renders a Turnstile widget using `NEXT_PUBLIC_TU
 - The form requires sign-in, labels GitHub as public, and cautions against including financial account details. The admin inbox exposes only messages intentionally submitted to support; it is not a financial-data access path.
 - Remaining evidence: verify owner A, owner B, and admin browser flows, role revocation, and response isolation in a synthetic environment. No such multi-user test project is available on the free plan yet. Support data cascades with account deletion, while backup expiry/restore remains undefined.
 
+### Personal data export
+
+- `/api/privacy/export` uses the cookie-authenticated Supabase client, explicit per-member filters, RLS, and owner-checked RPCs for product events and support messages. It does not use the service-role client. Purchase-draft lines are additionally restricted to IDs returned from the member's own draft, list, and item queries.
+- Gmail export selects only `is_active`; current column grants block access to OAuth tokens. The JSON download returns `private, no-store`, `noindex`, `nosniff`, CSP sandbox, and no-referrer headers. It excludes token values and internal abuse counters.
+- Data is read independently per table, not in one database snapshot. Export completeness, simultaneous-update behavior, rate/resource limits, and two-account isolation still need synthetic verification. The route intentionally returns a generic error rather than a partial export if any required read fails.
+
 | Priority | Risk | Required work |
 |---|---|---|
 | Critical | Hosted migration history is empty while production contains schema and manual privacy corrections. A baseline or replay can drift or alter access unexpectedly. | Reconcile a schema-only baseline and migration ledger in a separate project first; never replay historical data migrations against the current project without a reviewed plan. |

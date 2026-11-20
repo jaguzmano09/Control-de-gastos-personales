@@ -1174,11 +1174,15 @@ export type Database = {
         Returns: undefined
       }
       list_my_support_requests: {
-        Args: never
+        Args: { p_limit?: number; p_offset?: number }
         Returns: { admin_response: string | null; created_at: string; id: string; message: string; request_type: string; responded_at: string | null; status: string; subject: string; updated_at: string }[]
       }
       reopen_shopping_list: { Args: { p_list_id: string }; Returns: undefined }
       submit_support_request: { Args: { p_message: string; p_request_type: string; p_subject: string }; Returns: string }
+      export_my_product_events: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: { event_name: string; occurred_at: string }[]
+      }
     }
     Enums: {
       rule_match_type: "contains" | "exact" | "regex"

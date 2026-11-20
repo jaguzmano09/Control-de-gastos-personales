@@ -8,7 +8,7 @@ export default async function SoportePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: requests, error } = user
-    ? await supabase.rpc('list_my_support_requests')
+    ? await supabase.rpc('list_my_support_requests', { p_offset: 0, p_limit: 50 })
     : { data: null, error: null }
 
   return <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
