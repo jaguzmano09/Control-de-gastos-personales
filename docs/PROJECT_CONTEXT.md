@@ -61,7 +61,7 @@ Service role bypasses RLS: check explicit ownership constraints in callbacks and
 
 ## Data model
 
-Generated types describe 23 tables and six RPCs. They represent the expected contract, not an inspection of the current server.
+Generated types now describe 25 public tables and include the support/export RPCs. They represent the expected contract; verify the hosted schema and grants before assuming equivalence.
 
 | Family | Tables | Relationships/use |
 |---|---|---|
@@ -73,7 +73,7 @@ Generated types describe 23 tables and six RPCs. They represent the expected con
 | Shopping | stores, shopping_lists, shopping_list_items, price_history, shopping_purchase_drafts, shopping_purchase_draft_lines | Estimates, actual prices, history, consolidation |
 | Public foundations and support | user_profiles, document_versions, user_document_acceptances, product_events, support_requests | Role, versioned acceptance, aggregate telemetry, authenticated private support requests |
 
-RPCs include accept_current_documents, admin_product_event_metrics, record_product_event, complete_shopping_list, reopen_shopping_list, confirm_shopping_purchase, and four support functions: submit_support_request, list_my_support_requests, admin_support_requests, admin_reply_support_request.
+RPCs include accept_current_documents, admin_product_event_metrics, record_product_event, complete_shopping_list, reopen_shopping_list, confirm_shopping_purchase, four support functions (submit_support_request, list_my_support_requests, admin_support_requests, admin_reply_support_request), and export_my_product_events.
 
 ## Invariants and workflows
 
@@ -113,7 +113,7 @@ The application shell, public pages, metadata, favicon, and PWA assets use PlaEN
 
 ## Verification and unresolved areas
 
-Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records initial local P1 checks and provider privacy gates. The latest production deployment observed in Vercel is still commit `836e4e8` (before the private in-product form); local build/typecheck and visual review of the public `/soporte` state pass for this working change. See the roadmap for verified and remaining release gates. The foundation HTTP evidence does not verify every provider or privacy gate. Original assessment results below remain historical context.
+Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records initial local P1 checks and provider privacy gates. Vercel reports commit `1fcbc42` as the latest READY production deployment. Local typecheck/build passed, the public `/soporte` state was reviewed at desktop/mobile sizes, and the export endpoint returned unauthenticated 401 with private no-store headers locally. Vercel URL fetching of the export route was blocked by deployment authentication, so no live authenticated export was inspected. See the roadmap for remaining release gates. Original assessment results below remain historical context.
 
 The owner requests scoped Git commits/pushes when appropriate, with English Conventional Commit messages and documented validation. Preserve unrelated changes and shared history.
 

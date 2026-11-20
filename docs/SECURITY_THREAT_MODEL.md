@@ -44,6 +44,7 @@ The login and registration form renders a Turnstile widget using `NEXT_PUBLIC_TU
 - `/api/privacy/export` uses the cookie-authenticated Supabase client, explicit per-member filters, RLS, and owner-checked RPCs for product events and support messages. It does not use the service-role client. Purchase-draft lines are additionally restricted to IDs returned from the member's own draft, list, and item queries.
 - Gmail export selects only `is_active`; current column grants block access to OAuth tokens. The JSON download returns `private, no-store`, `noindex`, `nosniff`, CSP sandbox, and no-referrer headers. It excludes token values and internal abuse counters.
 - Data is read independently per table, not in one database snapshot. Export completeness, simultaneous-update behavior, rate/resource limits, and two-account isolation still need synthetic verification. The route intentionally returns a generic error rather than a partial export if any required read fails.
+- Account-deletion prerequisite from the live FK catalog: `product_events.user_id` uses `ON DELETE SET NULL`, which would retain event names/timestamps unless explicitly purged. Transactions restrict account/wallet deletion and purchase-draft lines restrict list/item deletion; deletion must be ordered and account for those dependencies. Gmail database cascade alone does not revoke the provider's OAuth grant.
 
 | Priority | Risk | Required work |
 |---|---|---|
