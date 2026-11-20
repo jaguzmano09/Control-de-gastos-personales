@@ -45,6 +45,7 @@ Confirmed audience: individuals in Colombia, COP, America/Bogota. The owner chos
 | Shopping | /mercado | Stores, lists, items, price memory, purchase drafts |
 | Account | /configuracion, /consentimiento | Settings placeholder and document renewal |
 | Administration | /admin | Roles and aggregate metrics, without intended access to others' finances |
+| Private support | /soporte, /admin | Authenticated members submit support/privacy/security requests; own history stays private, while an admin-only inbox exposes only submitted messages |
 
 ## Data flow and trust boundaries
 
@@ -69,9 +70,9 @@ Generated types describe 23 tables and six RPCs. They represent the expected con
 | Automation | categorization_rules, email_sources, gmail_connections | Rules, monitored senders, server-side OAuth credentials |
 | Yield | yield_configs, yield_rates | Account XOR wallet target, activation, E.A. rate history |
 | Shopping | stores, shopping_lists, shopping_list_items, price_history, shopping_purchase_drafts, shopping_purchase_draft_lines | Estimates, actual prices, history, consolidation |
-| Public-beta foundations | user_profiles, document_versions, user_document_acceptances, product_events | Role, versioned acceptance, aggregate telemetry |
+| Public foundations and support | user_profiles, document_versions, user_document_acceptances, product_events, support_requests | Role, versioned acceptance, aggregate telemetry, authenticated private support requests |
 
-RPCs: accept_current_documents, admin_product_event_metrics, record_product_event, complete_shopping_list, reopen_shopping_list, confirm_shopping_purchase.
+RPCs include accept_current_documents, admin_product_event_metrics, record_product_event, complete_shopping_list, reopen_shopping_list, confirm_shopping_purchase, and four support functions: submit_support_request, list_my_support_requests, admin_support_requests, admin_reply_support_request.
 
 ## Invariants and workflows
 
@@ -89,6 +90,7 @@ RPCs: accept_current_documents, admin_product_event_metrics, record_product_even
 - Consent: login hardcodes document versions; DB owns active versions, a trigger creates profiles/registration acceptances, and an RPC renews acceptance. UI consent routing alone does not enforce acceptance at every API/database mutation.
 - Events: migration/RPC/admin view exist; no product-flow instrumentation calls were found.
 - Owner administration is an accepted requirement. The sole verified Auth user has been promoted to admin; preserve the full personal workspace and restrict the server-authorized metrics area to approved aggregates. Cross-role isolation and small-cohort safeguards still need verification; admin status does not authorize routine access to others' private financial data.
+- Support channel (2026-11-20): `/soporte` requires sign-in to submit and view requests; login safely returns users to the requested local path. The database binds submissions to `auth.uid()`, limits each account to five submissions per 24 hours, and offers owner-only history plus role-checked admin inbox/replies. Direct table privileges are revoked and RLS is enabled without policies; all four `SECURITY DEFINER` RPCs have an empty search path and reject anonymous execution. Privacy text/version is updated. Catalog privileges were checked remotely; synthetic multi-user UI isolation is still unverified.
 
 ## Entry points by change
 
@@ -109,7 +111,7 @@ The application shell, public pages, metadata, favicon, and PWA assets use PlaEN
 
 ## Verification and unresolved areas
 
-Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records the first local P1 checks and the later provider privacy gate. Remote CI passed on commit `ff65cfc`; an earlier local typecheck was blocked by stale generated `.next/types` references. The local failure is historical; see the roadmap for current evidence. The foundation HTTP evidence does not verify every provider or privacy gate. Original assessment results below remain historical context.
+Current delivery: [FOUNDATION_PROGRESS.md](implementation/FOUNDATION_PROGRESS.md) records initial local P1 checks and provider privacy gates. The latest production deployment observed in Vercel is still commit `836e4e8` (before the private in-product form); local build/typecheck and visual review of the public `/soporte` state pass for this working change. See the roadmap for verified and remaining release gates. The foundation HTTP evidence does not verify every provider or privacy gate. Original assessment results below remain historical context.
 
 The owner requests scoped Git commits/pushes when appropriate, with English Conventional Commit messages and documented validation. Preserve unrelated changes and shared history.
 

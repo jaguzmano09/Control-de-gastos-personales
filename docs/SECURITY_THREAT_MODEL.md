@@ -33,6 +33,12 @@ The login and registration form renders a Turnstile widget using `NEXT_PUBLIC_TU
 
 ## Open risks before public launch
 
+### Private support channel
+
+- `support_requests` is RLS-enabled with no policies and no direct table privileges for `anon` or `authenticated`; access is function-only. Four `SECURITY DEFINER` functions use an empty `search_path`, revoke execution from `PUBLIC`/`anon`, and grant authenticated execution only. Submission binds `user_id` to `auth.uid()` and enforces five requests per account per rolling 24 hours. Member history filters by `auth.uid()`; inbox and replies check the current profile's trusted `admin` role in the database. Admin replies validate request status, response length, and request ID. Catalog checks confirmed these properties after deployment.
+- The form requires sign-in, labels GitHub as public, and cautions against including financial account details. The admin inbox exposes only messages intentionally submitted to support; it is not a financial-data access path.
+- Remaining evidence: verify owner A, owner B, and admin browser flows, role revocation, and response isolation in a synthetic environment. No such multi-user test project is available on the free plan yet. Support data cascades with account deletion, while backup expiry/restore remains undefined.
+
 | Priority | Risk | Required work |
 |---|---|---|
 | Critical | Hosted migration history is empty while production contains schema and manual privacy corrections. A baseline or replay can drift or alter access unexpectedly. | Reconcile a schema-only baseline and migration ledger in a separate project first; never replay historical data migrations against the current project without a reviewed plan. |

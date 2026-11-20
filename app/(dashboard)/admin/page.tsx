@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { SupportInbox, type AdminSupportRequest } from '@/components/admin/SupportInbox'
 
 type ProductEventMetric = {
   event_name: string
@@ -37,6 +38,7 @@ export default async function AdminPage() {
   const { data: metrics, error } = await supabase.rpc('admin_product_event_metrics', {
     p_since: since.toISOString(),
   })
+  const { data: supportRequests, error: supportError } = await supabase.rpc('admin_support_requests')
   const eventMetrics = (metrics ?? []) as ProductEventMetric[]
 
   return (
@@ -60,6 +62,10 @@ export default async function AdminPage() {
           <section className="overflow-hidden rounded-2xl border border-ledger-line bg-white shadow-[0_10px_28px_rgba(20,37,29,0.055)]">
             <div className="border-b border-ledger-line/70 px-5 py-4"><p className="section-label">Actividad del producto</p><h2 className="mt-1 font-serif text-2xl text-ledger-text">Eventos de los últimos 30 días</h2></div>
             {eventMetrics.length > 0 ? <div className="divide-y divide-ledger-line/70">{eventMetrics.map((metric) => <div key={metric.event_name} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center sm:gap-8"><p className="font-medium text-ledger-text">{EVENT_LABELS[metric.event_name] ?? metric.event_name}</p><p className="text-sm text-ledger-muted"><span className="font-semibold text-ledger-text">{Number(metric.event_count)}</span> eventos</p><p className="text-sm text-ledger-muted"><span className="font-semibold text-ledger-text">{Number(metric.unique_users)}</span> personas</p></div>)}</div> : <div className="px-5 py-10 text-center"><p className="font-medium text-ledger-text">Aún no hay eventos registrados.</p><p className="mt-2 text-sm text-ledger-muted">Los indicadores aparecerán a medida que registremos eventos del producto.</p></div>}
+          </section>
+          <section className="overflow-hidden rounded-2xl border border-ledger-line bg-white">
+            <div className="border-b border-ledger-line/70 px-5 py-4"><p className="section-label">Canal privado autenticado</p><h2 className="mt-1 font-serif text-2xl text-ledger-text">Solicitudes de miembros</h2><p className="mt-1 text-sm text-ledger-muted">Solo se muestran mensajes enviados voluntariamente a soporte, privacidad o seguridad.</p></div>
+            <SupportInbox requests={(supportRequests ?? []) as AdminSupportRequest[]} error={Boolean(supportError)} />
           </section>
         </>
       )}

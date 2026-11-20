@@ -7,7 +7,7 @@ import { TurnstileChallenge } from '@/components/TurnstileChallenge'
 type Mode = 'login' | 'signup'
 
 const TERMS_VERSION = '2026-11-08'
-const PRIVACY_VERSION = '2026-11-08'
+const PRIVACY_VERSION = '2026-11-20'
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 export default function LoginPage() {
@@ -58,7 +58,7 @@ export default function LoginPage() {
       setCaptchaToken('')
       setCaptchaReset((count) => count + 1)
       if (signInError) setError(signInError.status === 429 ? 'Demasiados intentos. Espera un momento y vuelve a intentarlo.' : 'No pudimos iniciar sesión. Verifica tus datos e inténtalo de nuevo.')
-      else window.location.assign('/')
+      else window.location.assign(getSafeReturnPath())
       setLoading(false)
       return
     }
@@ -81,7 +81,7 @@ export default function LoginPage() {
     if (signUpError) {
       setError(signUpError.status === 429 ? 'Demasiados intentos. Espera un momento y vuelve a intentarlo.' : 'No pudimos crear la cuenta. Revisa tus datos e inténtalo de nuevo.')
     } else if (data.session) {
-      window.location.assign('/')
+      window.location.assign(getSafeReturnPath())
     } else {
       setMessage('Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.')
     }
@@ -181,6 +181,11 @@ export default function LoginPage() {
       </section>
     </div>
   )
+}
+
+function getSafeReturnPath() {
+  const next = new URLSearchParams(window.location.search).get('next')
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/'
 }
 
 function Feature({ number, title, description }: { number: string; title: string; description: string }) {

@@ -742,6 +742,12 @@ export type Database = {
         }
         Relationships: []
       }
+      support_requests: {
+        Row: { admin_response: string | null; created_at: string; id: string; message: string; request_type: string; responded_at: string | null; status: string; subject: string; updated_at: string; user_id: string }
+        Insert: { admin_response?: string | null; created_at?: string; id?: string; message: string; request_type: string; responded_at?: string | null; status?: string; subject: string; updated_at?: string; user_id: string }
+        Update: { admin_response?: string | null; created_at?: string; id?: string; message?: string; request_type?: string; responded_at?: string | null; status?: string; subject?: string; updated_at?: string; user_id?: string }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string
@@ -1122,6 +1128,11 @@ export type Database = {
           unique_users: number
         }[]
       }
+      admin_reply_support_request: { Args: { p_request_id: string; p_response: string; p_status: string }; Returns: boolean }
+      admin_support_requests: {
+        Args: never
+        Returns: { admin_response: string | null; created_at: string; id: string; message: string; request_type: string; responded_at: string | null; status: string; subject: string; updated_at: string; user_id: string }[]
+      }
       complete_shopping_list: {
         Args: { p_list_id: string; p_observed_on?: string }
         Returns: undefined
@@ -1162,7 +1173,12 @@ export type Database = {
         Args: { p_event_name: string }
         Returns: undefined
       }
+      list_my_support_requests: {
+        Args: never
+        Returns: { admin_response: string | null; created_at: string; id: string; message: string; request_type: string; responded_at: string | null; status: string; subject: string; updated_at: string }[]
+      }
       reopen_shopping_list: { Args: { p_list_id: string }; Returns: undefined }
+      submit_support_request: { Args: { p_message: string; p_request_type: string; p_subject: string }; Returns: string }
     }
     Enums: {
       rule_match_type: "contains" | "exact" | "regex"

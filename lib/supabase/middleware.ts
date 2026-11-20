@@ -39,6 +39,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isPublicPath = PUBLIC_PATHS.has(request.nextUrl.pathname)
+  const isSignedInSupportPage = user !== null && request.nextUrl.pathname === '/soporte'
 
   if (!user && !isPublicPath && !request.nextUrl.pathname.startsWith('/api/')) {
     return redirectWithCookies(request.nextUrl.pathname === '/' ? '/inicio' : '/login')
@@ -67,7 +68,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  if (!isPublicPath) {
+  if (!isPublicPath || isSignedInSupportPage) {
     response.headers.set('Cache-Control', 'private, no-store')
     response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
   }
