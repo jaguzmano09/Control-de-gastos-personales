@@ -3,6 +3,7 @@
 ## Authorization model
 
 - New accounts receive the `user` role from the `user_profiles.role` database default.
+- Client roles have no INSERT, UPDATE, or DELETE privilege on `user_profiles`; the account creation trigger provisions profiles with trusted database privileges. The hosted migration `20261119235643` and a privilege query verified that authenticated clients retain SELECT but cannot update the role.
 - Authenticated clients can read their own profile. There is no client policy or application action that allows a user to change a role.
 - The `/admin` page checks the signed-in user and their server-read profile role before rendering. Non-admin users receive the not-found response.
 - `admin_product_event_metrics` checks `auth.uid()` against `user_profiles` inside the database function. It returns aggregate product-event counts only. It does not query financial tables, and `product_events` has no direct client read policy.
