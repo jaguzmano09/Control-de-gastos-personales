@@ -2,11 +2,13 @@
 
 import { FormEvent, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { TurnstileChallenge } from '@/components/TurnstileChallenge'
 
 type Mode = 'login' | 'signup'
 
 const TERMS_VERSION = '2026-11-08'
 const PRIVACY_VERSION = '2026-11-08'
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
@@ -17,17 +19,25 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaReset, setCaptchaReset] = useState(0)
 
   function selectMode(nextMode: Mode) {
     setMode(nextMode)
     setError('')
     setMessage('')
+
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     setMessage('')
+
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError('Completa la verificación de seguridad para continuar.')
+      return
+    }
 
     if (mode === 'signup') {
       if (!acceptedTerms) {
@@ -44,7 +54,9 @@ export default function LoginPage() {
     const supabase = createClient()
 
     if (mode === 'login') {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaToken || undefined } })
+      setCaptchaToken('')
+      setCaptchaReset((count) => count + 1)
       if (signInError) setError(signInError.status === 429 ? 'Demasiados intentos. Espera un momento y vuelve a intentarlo.' : 'No pudimos iniciar sesión. Verifica tus datos e inténtalo de nuevo.')
       else window.location.assign('/')
       setLoading(false)
@@ -55,6 +67,7 @@ export default function LoginPage() {
       email,
       password,
       options: {
+        captchaToken: captchaToken || undefined,
         data: {
           terms_version: TERMS_VERSION,
           privacy_version: PRIVACY_VERSION,
@@ -62,6 +75,8 @@ export default function LoginPage() {
         },
       },
     })
+    setCaptchaToken('')
+    setCaptchaReset((count) => count + 1)
 
     if (signUpError) {
       setError(signUpError.status === 429 ? 'Demasiados intentos. Espera un momento y vuelve a intentarlo.' : 'No pudimos crear la cuenta. Revisa tus datos e inténtalo de nuevo.')
@@ -130,6 +145,7 @@ export default function LoginPage() {
               </>}
               {error && <p role="alert" className="feedback feedback-error">{error}</p>}
               {message && <p role="status" className="feedback feedback-success">{message}</p>}
+              {TURNSTILE_SITE_KEY && <TurnstileChallenge siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} resetCount={captchaReset} />}
               <button className="btn btn-primary btn-full min-h-12" disabled={loading}>{loading ? 'Procesando...' : mode === 'login' ? 'Entrar a mi espacio' : 'Crear mi cuenta'}</button>
             </form>
             {mode === 'login' && <p className="mt-5 text-center text-sm text-ledger-muted">¿Aún no tienes cuenta? <button type="button" onClick={() => selectMode('signup')} className="font-semibold text-ledger-green underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ledger-green/30">Crear cuenta</button></p>}
