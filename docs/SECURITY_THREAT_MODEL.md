@@ -4,7 +4,7 @@ Status: source and hosted-configuration review, 2026-11-11. This is an engineeri
 
 Follow-up 2026-11-19: a bounded scan of patches reachable from all local Git refs (446 commits; package-lock.json excluded) found no matches for Google API key, GitHub token, Supabase `sb_secret_`, or PEM private-key signatures. A filename search found no tracked `.env`, `.pem`, `.key`, `.p12`, or `.pfx` files in those refs. This does not cover every credential format, binary content, excluded files, or remote-only refs, and does not establish that all credentials are safe. Docker's daemon was unavailable; authenticated isolated testing remains open. Cloudflare credentials were not present in the agent environment, so CAPTCHA provisioning remains open.
 
-The login and registration form can render a Turnstile widget when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is configured and passes its token to Supabase Auth. This is preparation only: create the widget for the trusted domains, configure the secret in Supabase Auth and the public site key in Vercel, and verify successful, failed, expired, and direct Auth API requests before treating CAPTCHA as enabled. Coordinate activation so existing users can still sign in.
+The login and registration form renders a Turnstile widget using `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and passes its token to Supabase Auth. The owner configured the secret in Supabase Auth; the production widget was observed on the login page and a direct password login request without a token returned HTTP 400 with `captcha_failed`. A successful authenticated sign-in, an expired token, and registration remain to be verified end to end.
 
 ## Assets and trust boundaries
 
