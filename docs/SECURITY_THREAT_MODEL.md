@@ -2,6 +2,8 @@
 
 Status: source and hosted-configuration review, 2026-11-11. This is an engineering assessment, not a penetration-test certification. Findings distinguish controls verified in source/hosted metadata from work that needs an isolated environment.
 
+Follow-up 2026-11-19: a bounded scan of patches reachable from all local Git refs (446 commits; package-lock.json excluded) found no matches for Google API key, GitHub token, Supabase `sb_secret_`, or PEM private-key signatures. A filename search found no tracked `.env`, `.pem`, `.key`, `.p12`, or `.pfx` files in those refs. This does not cover every credential format, binary content, excluded files, or remote-only refs, and does not establish that all credentials are safe. Docker's daemon was unavailable; authenticated isolated testing remains open. Cloudflare credentials were not present in the agent environment, so CAPTCHA provisioning remains open.
+
 ## Assets and trust boundaries
 
 | Asset | Trust boundary | Main concern |
