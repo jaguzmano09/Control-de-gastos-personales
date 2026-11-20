@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { extractTransactionFromImage } from '@/lib/gemini/client'
+import { matchesImageSignature } from '@/lib/ocr/image-signature'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -35,6 +36,9 @@ export async function POST(request: Request) {
   ])
   if (categoriesError) {
     return NextResponse.json({ error: 'No se pudieron cargar las categorías.' }, { status: 500 })
+  }
+  if (!matchesImageSignature(new Uint8Array(bytes), file.type)) {
+    return NextResponse.json({ error: 'El contenido no corresponde al tipo de imagen seleccionado.' }, { status: 400 })
   }
 
   try {

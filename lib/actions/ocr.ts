@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { todayInBogota } from '@/lib/date-utils'
+import { matchesImageSignature } from '@/lib/ocr/image-signature'
 import { matchCategorizationRule } from '@/lib/categorization/match'
 import { discardTesseractWorker, extractTextFromImagesWithTesseract } from '@/lib/ocr/tesseract'
 import { preprocessReceipt } from '@/lib/ocr/preprocess'
@@ -57,6 +58,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
   }
 
   const originalBuffer = Buffer.from(await file.arrayBuffer())
+  if (!matchesImageSignature(originalBuffer, file.type)) {
+    redirect('/transacciones/ocr?error=' + encodeURIComponent('El contenido no corresponde al tipo de imagen seleccionado.'))
+  }
   let imageVariants: Array<{ buffer: Buffer; mimeType: string; label: string }> = [
     { buffer: originalBuffer, mimeType: file.type, label: 'original' },
   ]
