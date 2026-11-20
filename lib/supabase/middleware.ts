@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getCanonicalPageUrl } from "@/lib/site-origin"
 
 const PUBLIC_PATHS = new Set(['/inicio', '/login', '/terminos', '/privacidad', '/seguridad', '/soporte'])
-const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html'])
+const PUBLIC_ASSET_PATHS = new Set(['/manifest.webmanifest', '/sw.js', '/offline.html', '/robots.txt', '/sitemap.xml'])
 
 export async function updateSession(request: NextRequest) {
   const canonicalPage = getCanonicalPageUrl(request.url, request.method)
@@ -67,6 +67,9 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  if (!isPublicPath) response.headers.set('Cache-Control', 'private, no-store')
+  if (!isPublicPath) {
+    response.headers.set('Cache-Control', 'private, no-store')
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+  }
   return response
 }

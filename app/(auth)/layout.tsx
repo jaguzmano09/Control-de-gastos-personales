@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react'
+import type { Metadata } from 'next'
 import { PublicFooter } from '@/components/PublicFooter'
 import { PublicHeader } from '@/components/PublicHeader'
+
+export const metadata: Metadata = {
+  title: 'Iniciar sesión',
+  robots: { index: false, follow: false },
+  alternates: { canonical: '/login' },
+}
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (

@@ -3,6 +3,12 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Organiza tu plata en contexto',
   description: 'Registra tus movimientos y entiende dónde está tu plata y para qué la separaste.',
+  alternates: { canonical: '/inicio' },
+  openGraph: {
+    title: 'Organiza tu plata en contexto | PlaENC',
+    description: 'Registra tus movimientos y entiende dónde está tu plata y para qué la separaste.',
+    url: '/inicio',
+  },
 }
 
 const steps = [

@@ -62,6 +62,10 @@ Organize navigation around overview, transactions, and budgets; group capture/re
 
 Do not treat arbitrary commercial percentages as evidence. Establish a beta baseline and agree on targets before expanding.
 
+## Organic discovery strategy
+
+Treat search visibility as a long-term outcome, not a guaranteed ranking. Start with accurate crawl controls, canonical URLs, and a sitemap for public pages only. Build useful Spanish-language resources for personal finance in Colombia around real product strengths: recording and organizing movements, understanding account/pocket availability, and reviewing imported entries. Each guide must add original, checked examples or tools, cite authoritative sources when explaining financial rules, and avoid unsupported advice, fabricated authority, or keyword-stuffed variations. Publish only when privacy, financial calculations, and product claims can be substantiated. Use free Google Search Console and Bing Webmaster Tools to submit the sitemap and track impressions, queries, and indexing; use privacy-approved aggregate product metrics for signup outcomes. Neither technical SEO nor content can guarantee a first-place result for every query.
+
 ## Recommended first implementation block
 
 Address F01/F02/F04/F07 and define F03 financial semantics. Then complete budgeting and first use. This makes the future identity credible: calm promises supported by figures and tasks people can verify.

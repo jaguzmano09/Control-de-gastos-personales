@@ -1,4 +1,4 @@
-export const metadata = { title: 'Términos de uso' }
+export const metadata = { title: 'Términos de uso', alternates: { canonical: '/terminos' } }
 
 export default function TerminosPage() {
   return <LegalPage title="Términos de uso" intro="Vigente desde el 8 de noviembre de 2026">

@@ -4,8 +4,24 @@ import type { Metadata, Viewport } from 'next'
 import { RegisterServiceWorker } from '@/components/RegisterServiceWorker'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://plaenc.vercel.app'),
   title: { default: 'PlaENC', template: '%s | PlaENC' },
   description: 'Registra tus movimientos y entiende tu plata en contexto.',
+  openGraph: {
+    type: 'website',
+    locale: 'es_CO',
+    siteName: 'PlaENC',
+    title: 'PlaENC | Tu plata, en contexto',
+    description: 'Registra tus movimientos y entiende dónde está tu plata y para qué la separaste.',
+    url: 'https://plaenc.vercel.app/inicio',
+    images: [{ url: '/icons/icon-512.png', width: 512, height: 512, alt: 'PlaENC' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'PlaENC | Tu plata, en contexto',
+    description: 'Registra tus movimientos y entiende dónde está tu plata y para qué la separaste.',
+    images: ['/icons/icon-512.png'],
+  },
   manifest: '/manifest.webmanifest?v=plaenc-b2',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'PlaENC' },
   icons: {
