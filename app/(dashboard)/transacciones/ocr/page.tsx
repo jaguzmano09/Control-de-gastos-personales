@@ -26,12 +26,12 @@ export default async function OcrPage({ searchParams }: { searchParams: Promise<
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ledger-green">Captura inteligente</p>
       <h1 className="mt-2 font-serif text-3xl text-ledger-text sm:text-4xl">Registrar por foto</h1>
       <p className="mt-1 text-sm text-ledger-muted">
-        Sube la foto de un recibo. Los servidores de PlaENC preparan un borrador para que lo revises antes de que afecte tus finanzas.
+        Toma una foto legible y revisa el borrador antes de confirmar. Tus saldos no cambian hasta entonces.
       </p>
       </header>
       <OcrUploadForm
-        accounts={accounts ?? []}
-        wallets={wallets ?? []}
+        accounts={loadError ? [] : accounts ?? []}
+        wallets={loadError ? [] : wallets ?? []}
         submissionId={randomUUID()}
         externalProviders={externalProviders}
         error={error ?? (loadError ? 'No se pudieron cargar las cuentas. Intenta actualizar la página.' : undefined)}
