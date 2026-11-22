@@ -45,7 +45,7 @@ export async function confirmTransaction(formData: FormData) {
   if (error) throw error
   if (!updated || updated.length === 0) throw new Error('No se encontró la transacción para confirmar')
 
-  // Aprendizaje: si corregiste la categoría sugerida, crea/actualiza una regla
+  // Learn from a corrected category after the transaction has been confirmed.
   if (current && category_id && current.category_id !== category_id && description) {
     const pattern = description.trim().toLowerCase()
 
@@ -95,21 +95,42 @@ export async function discardTransaction(formData: FormData) {
 
 export async function resolveDuplicate(formData: FormData) {
   const supabase = await createClient()
-  const id = formData.get('id') as string
-  const matchedId = (formData.get('matched_transaction_id') as string) || null
-  const wasDuplicate = formData.get('was_duplicate') === 'true'
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const id = formData.get('id')
+  const matchedId = formData.get('matched_transaction_id')
+  const duplicateDecision = formData.get('was_duplicate')
+  const isUuid = (value: unknown): value is string => typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  if (!isUuid(id)) throw new Error('No se encontró el movimiento duplicado')
+  if (matchedId !== null && matchedId !== '' && !isUuid(matchedId)) throw new Error('La coincidencia no es válida')
+  if (duplicateDecision !== 'true' && duplicateDecision !== 'false') throw new Error('La decisión no es válida')
+  const wasDuplicate = duplicateDecision === 'true'
 
-  const { error: updateError } = await supabase
+  if (matchedId) {
+    const { data: match, error: matchError } = await supabase.from('transactions')
+      .select('id')
+      .eq('id', matchedId)
+      .eq('user_id', user.id)
+      .eq('status', 'confirmada')
+      .maybeSingle()
+    if (matchError || !match) throw new Error('La coincidencia ya no está disponible')
+  }
+
+  const { data: updated, error: updateError } = await supabase
     .from('transactions')
     .update({ status: wasDuplicate ? 'descartada' : 'confirmada' })
     .eq('id', id)
+    .eq('user_id', user.id)
+    .eq('status', 'duplicado')
+    .select('id')
   if (updateError) throw updateError
+  if (!updated?.length) throw new Error('El movimiento duplicado ya no está disponible')
 
   const { error: logError } = await supabase.from('duplicate_review_log').insert({
-    user_id: user!.id,
+    user_id: user.id,
     transaction_id: id,
-    matched_transaction_id: matchedId,
+    matched_transaction_id: matchedId || null,
     was_duplicate: wasDuplicate,
   })
   if (logError) throw logError

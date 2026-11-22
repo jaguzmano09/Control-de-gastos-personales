@@ -22,6 +22,7 @@ The login and registration form renders a Turnstile widget using `NEXT_PUBLIC_TU
 ## Verified controls and changes
 
 - Session identity is checked with Supabase Auth; financial reads/writes use the session client and depend on RLS. Global cron and Gmail sync use the service-role key and apply explicit user filters where processing user data.
+- Duplicate review now verifies the authenticated member, requires an unresolved duplicate owned by that member, and verifies any matched confirmed transaction belongs to the same member. Hosted policy metadata confirms owner predicates on `transactions` and `duplicate_review_log`; cross-user runtime testing with synthetic accounts remains open.
 - Gmail token table grants expose only status columns to authenticated users; the access and refresh token columns are excluded. The Gmail sync response is aggregated and does not include per-user identifiers or provider error details.
 - Gmail history requests are field-masked to message IDs only. Sync fetches only the `From` header for candidate messages and downloads a full body only after an exact normalized match against that member's sender allowlist.
 - Cron routes fail closed when `CRON_SECRET` is missing, compare bearer credentials with a timing-safe helper, and return generic failure responses. Rollover success returns counts, not account IDs or financial amounts.
