@@ -9,6 +9,7 @@ import { discardTesseractWorker, extractTextFromImagesWithTesseract } from '@/li
 import { preprocessReceipt, validateReceiptImage } from '@/lib/ocr/preprocess'
 import { extractWithConfiguredPaddleOcr } from '@/lib/ocr/paddle'
 import { parseOcrText } from '@/lib/ocr/parse'
+import { classifyReceiptDocument } from '@/lib/ocr/document-kind'
 import {
   extractTransactionFromImage,
   extractTransactionFromImageWithOcr,
@@ -149,6 +150,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let partialExtraction: Partial<Extracted> | undefined
   let extractionEngine: string | undefined
   let dateInferred = false
+  let documentKind: 'transfer' | 'unclassified' = 'unclassified'
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
   const processingDeadline = Date.now() + MAX_OCR_PROCESSING_MS
   const hasTimeRemaining = () => Date.now() < processingDeadline
@@ -160,7 +162,28 @@ export async function createTransactionFromReceipt(formData: FormData) {
   const deadlineTimer = setTimeout(() => processingController.abort(), MAX_OCR_PROCESSING_MS)
 
   try {
-    for (const variant of geminiVariants) {
+    try {
+      ocrResult = await extractTextFromImagesWithTesseract(
+        [...imageVariants.filter((variant) => variant.label !== 'original'), imageVariants[0]].map((variant) => variant.buffer),
+        processingController.signal,
+      )
+      documentKind = classifyReceiptDocument(ocrResult.text)
+      if (documentKind !== 'transfer') {
+        const parsed = parseOcrText(ocrResult.text)
+        if (isUsableExtraction(parsed)) {
+          extracted = { ...parsed, suggested_category: '' }
+          extractionEngine = 'tesseract-local'
+        } else {
+          partialExtraction = parsed
+          extractionEngine = 'tesseract-local'
+        }
+      }
+    } catch (error) {
+      const tesseractError = error instanceof Error ? error : new Error('Unknown Tesseract error')
+      if (/Tesseract timeout/i.test(tesseractError.message)) await discardTesseractWorker()
+    }
+
+    for (const variant of !extracted && documentKind !== 'transfer' ? geminiVariants : []) {
       if (!hasTimeRemaining()) break
       try {
         let paddleResult: Awaited<ReturnType<typeof extractWithConfiguredPaddleOcr>> = null
@@ -188,7 +211,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
         }
 
         if (!allowGemini) continue
-        const geminiResult = await extractTransactionFromImage(variant.buffer.toString('base64'), variant.mimeType, [], processingController.signal)
+        const geminiResult = ocrResult.text
+          ? await extractTransactionFromImageWithOcr(variant.buffer.toString('base64'), variant.mimeType, ocrResult.text, [], processingController.signal)
+          : await extractTransactionFromImage(variant.buffer.toString('base64'), variant.mimeType, [], processingController.signal)
         if (isUsableExtraction(geminiResult)) {
           extracted = geminiResult
           extractionEngine = `gemini-vision-${variant.label}`
@@ -203,49 +228,6 @@ export async function createTransactionFromReceipt(formData: FormData) {
       }
     }
 
-    if (!extracted && hasTimeRemaining()) {
-      try {
-        ocrResult = await extractTextFromImagesWithTesseract(
-          [...imageVariants.filter((variant) => variant.label !== 'original'), imageVariants[0]].map((variant) => variant.buffer),
-          processingController.signal,
-        )
-        if (allowGemini && ocrResult.text && hasTimeRemaining()) {
-          try {
-            const geminiImage = imageVariants.find((variant) => variant.label === 'enhanced') ?? imageVariants[0]
-            const geminiResult = await extractTransactionFromImageWithOcr(
-              geminiImage.buffer.toString('base64'),
-              geminiImage.mimeType,
-              ocrResult.text,
-              [],
-              processingController.signal,
-            )
-            if (isUsableExtraction(geminiResult)) {
-              extracted = geminiResult
-              extractionEngine = 'gemini-vision-ocr'
-            } else if (!partialExtraction) {
-              partialExtraction = geminiResult
-              extractionEngine = 'gemini-vision-ocr'
-            }
-          } catch {
-            // Continue with the local OCR parse path without persisting provider diagnostics.
-          }
-        }
-
-        if (!extracted) {
-          const parsed = parseOcrText(ocrResult.text)
-          if (isUsableExtraction(parsed)) {
-            extracted = { ...parsed, suggested_category: '' }
-            extractionEngine = 'tesseract-local'
-          } else if (!partialExtraction) {
-            partialExtraction = parsed
-            extractionEngine = 'tesseract-local'
-          }
-        }
-      } catch (error) {
-        const tesseractError = error instanceof Error ? error : new Error('Unknown Tesseract error')
-        if (/Tesseract timeout/i.test(tesseractError.message)) await discardTesseractWorker()
-      }
-    }
   } finally {
     clearTimeout(deadlineTimer)
     processingController.abort()
@@ -259,7 +241,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
       amount: typeof partialAmount === 'number' && Number.isFinite(partialAmount) && partialAmount > 0 && partialAmount <= Number.MAX_SAFE_INTEGER ? partialAmount : 0,
       description: typeof partialExtraction?.description === 'string' && partialExtraction.description.trim()
         ? partialExtraction.description.slice(0, 240)
-        : 'Compra pendiente de identificar',
+        : documentKind === 'transfer' ? 'Comprobante de transferencia' : 'Compra pendiente de identificar',
       suggested_category: partialExtraction?.suggested_category || '',
       confidence: partialAmount && partialAmount > 0 && isValidIsoDate(partialExtraction?.occurred_at)
         && typeof partialExtraction?.description === 'string' && partialExtraction.description.trim()
@@ -291,6 +273,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
     raw_data: {
       engine: extractionEngine,
       date_inferred: dateInferred,
+      document_kind: documentKind,
     },
   }).eq('user_id', user.id).eq('submission_id', submission_id).eq('status', 'pendiente_revision')
 

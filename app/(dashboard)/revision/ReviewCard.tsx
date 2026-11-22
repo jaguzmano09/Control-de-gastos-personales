@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { confirmTransaction, discardTransaction } from '@/lib/actions/review'
+import Link from 'next/link'
 
 type Category = { id: string; name: string }
 type Account = { id: string; name: string; has_wallets: boolean }
@@ -17,7 +18,7 @@ type Transaction = {
   wallet_id: string | null
   ai_confidence: number | null
   source: string
-  raw_data: { engine?: string; date_inferred?: boolean } | null
+  raw_data: { engine?: string; date_inferred?: boolean; document_kind?: string } | null
 }
 
 const inputClass = 'input mt-1 w-full'
@@ -55,7 +56,9 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
       </summary>
       <div className="border-t border-black/10 p-4">
       {transaction.source === 'ocr' && transaction.raw_data?.engine === 'processing' && <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">La lectura automática no guardó resultados. Puedes completar los campos manualmente; este borrador no afecta tus saldos ni presupuestos hasta que lo confirmes.</p>}
-      {transaction.source === 'ocr' && transaction.raw_data?.date_inferred && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">No pudimos leer la fecha del comprobante. Selecciónala antes de confirmar.</p>}
+      {transaction.source === 'ocr' && transaction.raw_data?.date_inferred && transaction.raw_data?.document_kind !== 'transfer' && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">No pudimos leer la fecha del comprobante. Selecciónala antes de confirmar.</p>}
+      {transaction.source === 'ocr' && transaction.raw_data?.document_kind === 'transfer' && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">Este archivo parece un comprobante de transferencia entre cuentas. No lo confirmes como gasto. <Link href="/transacciones/nueva" className="font-semibold underline">Registra la transferencia</Link> y descarta este borrador.</p>}
+      {transaction.raw_data?.document_kind !== 'transfer' && (
       <form action={confirmTransaction} className="grid grid-cols-2 gap-3">
         <input type="hidden" name="id" value={transaction.id} />
 
@@ -107,6 +110,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
           </button>
         </div>
       </form>
+      )}
 
       <form action={discardTransaction} className="mt-2">
         <input type="hidden" name="id" value={transaction.id} />

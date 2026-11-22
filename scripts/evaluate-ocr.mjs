@@ -7,6 +7,7 @@ globalThis.require = createRequire(import.meta.url)
 const { preprocessReceipt } = await import('../lib/ocr/preprocess.ts')
 const { extractTextFromImagesWithTesseract, discardTesseractWorker } = await import('../lib/ocr/tesseract.ts')
 const { parseOcrText } = await import('../lib/ocr/parse.ts')
+const { classifyReceiptDocument } = await import('../lib/ocr/document-kind.ts')
 
 const fixtures = [
   { merchant: 'PANADERIA CENTRAL', date: '20/11/2026', total: '$ 20.000', expectedAmount: 20000, expectedDate: '2026-11-20' },
@@ -14,6 +15,7 @@ const fixtures = [
   { merchant: 'TIENDA BARRIO', date: '19/11/2026', total: '$ 35.000', expectedAmount: 35000, expectedDate: '2026-11-19' },
   { merchant: 'CAFETERIA LOCAL', date: '18/11/2026', total: '$ 18.450', expectedAmount: 18450, expectedDate: '2026-11-18', transform: 'blur' },
   { merchant: 'PAPELERIA LOCAL', date: '17/11/2026', total: '$ 42.900', expectedAmount: 42900, expectedDate: '2026-11-17', transform: 'rotate' },
+  { merchant: 'COMPROBANTE DE TRANSFERENCIA', date: '16/11/2026', total: '$ 50.000', expectedAmount: 50000, expectedDate: '2026-11-16', expectedKind: 'transfer' },
 ]
 
 function receiptSvg(receipt) {
@@ -30,6 +32,7 @@ function receiptSvg(receipt) {
 
 let exactAmount = 0
 let exactDate = 0
+let transferDetected = 0
 try {
   for (const fixture of fixtures) {
     let image = sharp(receiptSvg(fixture)).png()
@@ -40,14 +43,17 @@ try {
     const started = performance.now()
     const result = await extractTextFromImagesWithTesseract([variants[0].buffer, original])
     const parsed = parseOcrText(result.text)
+    const kind = classifyReceiptDocument(result.text)
     if (parsed.amount === fixture.expectedAmount) exactAmount += 1
     if (parsed.occurred_at === fixture.expectedDate) exactDate += 1
-    console.log(JSON.stringify({ merchant: fixture.merchant, transform: fixture.transform ?? 'clean', amountCorrect: parsed.amount === fixture.expectedAmount, dateCorrect: parsed.occurred_at === fixture.expectedDate, durationMs: Math.round(performance.now() - started), ocrConfidence: Math.round(result.confidence) }))
+    if (fixture.expectedKind === 'transfer' && kind === 'transfer') transferDetected += 1
+    console.log(JSON.stringify({ merchant: fixture.merchant, transform: fixture.transform ?? 'clean', amountCorrect: parsed.amount === fixture.expectedAmount, dateCorrect: parsed.occurred_at === fixture.expectedDate, kind, durationMs: Math.round(performance.now() - started), ocrConfidence: Math.round(result.confidence) }))
   }
 } finally {
   await discardTesseractWorker()
 }
 
-console.log(JSON.stringify({ fixtures: fixtures.length, exactAmount, exactDate }))
+console.log(JSON.stringify({ fixtures: fixtures.length, exactAmount, exactDate, transferDetected }))
 assert.equal(exactAmount, fixtures.length, 'Synthetic receipt amount accuracy regressed')
 assert.equal(exactDate, fixtures.length, 'Synthetic receipt date accuracy regressed')
+assert.equal(transferDetected, 1, 'Synthetic transfer voucher classification regressed')

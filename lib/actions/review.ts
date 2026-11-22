@@ -22,12 +22,18 @@ export async function confirmTransaction(formData: FormData) {
 
   const { data: current } = await supabase
     .from('transactions')
-    .select('category_id')
+    .select('category_id, source, raw_data')
     .eq('id', id)
     .eq('user_id', user.id)
     .eq('status', 'pendiente_revision')
     .maybeSingle()
   if (!current) throw new Error('No se encontró un borrador pendiente para confirmar')
+  const ocrMetadata = current.raw_data && typeof current.raw_data === 'object' && !Array.isArray(current.raw_data)
+    ? current.raw_data as { document_kind?: string }
+    : null
+  if (current.source === 'ocr' && ocrMetadata?.document_kind === 'transfer') {
+    throw new Error('Este comprobante debe registrarse como transferencia, no como gasto')
+  }
 
   const { data: updated, error } = await supabase
     .from('transactions')
