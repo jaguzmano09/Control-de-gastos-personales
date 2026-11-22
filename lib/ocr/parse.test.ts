@@ -13,6 +13,8 @@ const receipts = [
   { label: 'invoice identifier is not an amount', text: 'COMERCIO LOCAL\nFactura No. 123.456.789\nFecha 20/11/2026', amount: 0, date: '2026-11-20' },
   { label: 'cash and change do not override total', text: 'TIENDA LOCAL\nFecha 20/11/2026\nTOTAL 20.000 EFECTIVO $100.000 CAMBIO $80.000', amount: 20000, date: '2026-11-20' },
   { label: 'tax after total does not override total', text: 'PAPELERIA LOCAL\nFecha 20/11/2026\nTOTAL 20.000 IVA $3.800', amount: 20000, date: '2026-11-20' },
+  { label: 'spaced subtotal does not override final total', text: 'CAFE LOCAL\nFecha 20/11/2026\nSub Total 63.636\nIVA 6.364\nTotal 70.000', amount: 70000, date: '2026-11-20' },
+  { label: 'OCR-spaced thousands on a total line', text: 'CAFE LOCAL\nFecha 20/11/2026\nTOTAL 43 000\nCAMBIO 7.000', amount: 43000, date: '2026-11-20' },
   { label: 'reference before total is ignored', text: 'CAFE LOCAL\nFecha 20/11/2026\nREFERENCIA 998877 TOTAL $18.000', amount: 18000, date: '2026-11-20' },
   { label: 'item count before currency total is ignored', text: 'LIBRERIA LOCAL\nFecha 20/11/2026\nTOTAL 2 ITEMS $18.000', amount: 18000, date: '2026-11-20' },
   { label: 'unlabeled item prices are not guessed as a total', text: 'TIENDA LOCAL\nFecha 20/11/2026\nPAN $3.000\nLECHE $5.000', amount: 0, date: '2026-11-20' },

@@ -36,11 +36,12 @@ function findAmount(lines: string[]) {
   const label = /\b(?:t[o0]tal|f[o0]tal|t[o0]t[aá]l|valor\s+(?:total|a\s+pagar)|a\s+pagar|pago\s+(?:realizado|total|por))\b/i
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
-    if (/^(?:subtotal|impuesto|iva|cambio|devuelta)\b/i.test(line)) continue
+    if (/^(?:sub\s*total|impuesto|iva|cambio|devuelta)\b/i.test(line)) continue
     const match = label.exec(line)
     if (!match) continue
     const afterLabel = line.slice(match.index + match[0].length).split(/\b(?:cambio|devuelta|efectivo|iva|impuesto|nit|referencia)\b/i)[0]
-    const candidate = afterLabel.trim() || (lines[index + 1] && /^[$\d\s.,]+$/.test(lines[index + 1]) ? lines[index + 1] : '')
+    const candidate = (afterLabel.trim() || (lines[index + 1] && /^[$\d\s.,]+$/.test(lines[index + 1]) ? lines[index + 1] : ''))
+      .replace(/\b\d{1,3}(?:\s+\d{3})+\b/g, (value) => value.replace(/\s+/g, ''))
     if (!candidate) continue
     const currency = candidate.match(/\$\s*(\d[\d.,]*)/)
     if (currency) return parseMoney(currency[1])
