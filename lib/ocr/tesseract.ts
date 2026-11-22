@@ -12,6 +12,7 @@ type TesseractWorker = Awaited<ReturnType<typeof import('tesseract.js')['createW
 let workerPromise: Promise<TesseractWorker> | undefined
 let recognitionQueue = Promise.resolve()
 const OCR_TIMEOUT_MS = 20_000
+const OCR_BATCH_TIMEOUT_MS = 10_000
 const TESSERACT_WORKER_PATH = require.resolve('tesseract.js/src/worker-script/node/index.js')
 
 async function raceWithOcrDeadline<T>(task: Promise<T>, signal?: AbortSignal): Promise<T> {
@@ -87,16 +88,28 @@ export async function extractTextWithTesseract(image: Buffer, signal?: AbortSign
 export async function extractTextFromImagesWithTesseract(images: Buffer[], signal?: AbortSignal): Promise<OcrResult> {
   const candidates: OcrCandidate[] = []
   const errors: string[] = []
+  const batchController = new AbortController()
+  const abortBatch = () => batchController.abort()
+  signal?.addEventListener('abort', abortBatch, { once: true })
+  if (signal?.aborted) abortBatch()
+  const batchTimer = setTimeout(abortBatch, OCR_BATCH_TIMEOUT_MS)
 
-  for (const image of images) {
-    try {
-      const result = await extractTextWithTesseract(image, signal)
-      if (result.text) candidates.push(result)
-      if (hasFinancialConsensus(candidates)) break
-    } catch (error) {
-      if (signal?.aborted || (error instanceof Error && error.message === 'Tesseract cancelled')) throw error
-      errors.push(error instanceof Error ? error.message : 'Error desconocido de Tesseract')
+  try {
+    for (const image of images) {
+      if (batchController.signal.aborted) break
+      try {
+        const result = await extractTextWithTesseract(image, batchController.signal)
+        if (result.text) candidates.push(result)
+        if (hasFinancialConsensus(candidates)) break
+      } catch (error) {
+        if (signal?.aborted) throw error
+        if (batchController.signal.aborted) break
+        errors.push(error instanceof Error ? error.message : 'Error desconocido de Tesseract')
+      }
     }
+  } finally {
+    clearTimeout(batchTimer)
+    signal?.removeEventListener('abort', abortBatch)
   }
 
   if (candidates.length === 0 && errors.length > 0) throw new Error(errors.join('; '))
