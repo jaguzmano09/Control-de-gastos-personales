@@ -16,7 +16,7 @@ interface PendingTransaction {
   wallet_id: string | null
   ai_confidence: number | null
   source: string
-  raw_data: { engine?: string; date_inferred?: boolean; document_kind?: string } | null
+  raw_data: { engine?: string; date_inferred?: boolean; amount_conflict?: boolean; document_kind?: string } | null
 }
 
 interface DuplicateTransaction {

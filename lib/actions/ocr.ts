@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { todayInBogota } from '@/lib/date-utils'
 import { matchesImageSignature } from '@/lib/ocr/image-signature'
-import { discardTesseractWorker, extractTextFromImagesWithTesseract } from '@/lib/ocr/tesseract'
+import { discardTesseractWorker, extractTextFromImagesWithTesseract, type OcrResult } from '@/lib/ocr/tesseract'
 import { preprocessReceipt, validateReceiptImage } from '@/lib/ocr/preprocess'
 import { extractWithConfiguredPaddleOcr } from '@/lib/ocr/paddle'
 import { parseOcrText } from '@/lib/ocr/parse'
@@ -151,7 +151,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let extractionEngine: string | undefined
   let dateInferred = false
   let documentKind: 'transfer' | 'unclassified' = 'unclassified'
-  let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
+  let ocrResult: OcrResult = { text: '', confidence: 0 }
   const processingDeadline = Date.now() + MAX_OCR_PROCESSING_MS
   const hasTimeRemaining = () => Date.now() < processingDeadline
   const geminiVariants = [
@@ -164,13 +164,13 @@ export async function createTransactionFromReceipt(formData: FormData) {
   try {
     try {
       ocrResult = await extractTextFromImagesWithTesseract(
-        [...imageVariants.filter((variant) => variant.label !== 'original'), imageVariants[0]].map((variant) => variant.buffer),
+        [imageVariants[0], ...imageVariants.filter((variant) => variant.label !== 'original')].map((variant) => variant.buffer),
         processingController.signal,
       )
-      documentKind = classifyReceiptDocument(ocrResult.text)
+      documentKind = ocrResult.documentKind ?? classifyReceiptDocument(ocrResult.text)
       if (documentKind !== 'transfer') {
         const parsed = parseOcrText(ocrResult.text)
-        if (isUsableExtraction(parsed)) {
+        if (isUsableExtraction(parsed) && !ocrResult.amountConflict && !ocrResult.dateConflict) {
           extracted = { ...parsed, suggested_category: '' }
           extractionEngine = 'tesseract-local'
         } else {
@@ -251,6 +251,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
     }
     extractionEngine = extractionEngine ?? 'manual-review'
   }
+  dateInferred = dateInferred || Boolean(ocrResult.dateConflict)
 
   const extractionConfidence = extractionEngine === 'tesseract-local'
     ? Math.max(
@@ -262,7 +263,9 @@ export async function createTransactionFromReceipt(formData: FormData) {
       : extracted!.amount > 0
         ? 0.35
         : 0
-  const safeConfidence = Number.isFinite(extractionConfidence) ? Math.max(0, Math.min(1, extractionConfidence)) : 0
+  const safeConfidence = Number.isFinite(extractionConfidence)
+    ? Math.max(0, Math.min(ocrResult.amountConflict || ocrResult.dateConflict ? 0.25 : 1, extractionConfidence))
+    : 0
 
   const { error } = await supabase.from('transactions').update({
     occurred_at: extracted!.occurred_at,
@@ -273,6 +276,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
     raw_data: {
       engine: extractionEngine,
       date_inferred: dateInferred,
+      amount_conflict: Boolean(ocrResult.amountConflict),
       document_kind: documentKind,
     },
   }).eq('user_id', user.id).eq('submission_id', submission_id).eq('status', 'pendiente_revision')

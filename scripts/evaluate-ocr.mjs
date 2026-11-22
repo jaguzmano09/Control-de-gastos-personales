@@ -39,15 +39,15 @@ try {
     if (fixture.transform === 'blur') image = image.blur(1.2)
     if (fixture.transform === 'rotate') image = image.rotate(3, { background: '#fff' })
     const original = await image.toBuffer()
-    const variants = await preprocessReceipt(original)
     const started = performance.now()
-    const result = await extractTextFromImagesWithTesseract([variants[0].buffer, original])
+    const variants = await preprocessReceipt(original)
+    const result = await extractTextFromImagesWithTesseract([original, ...variants.map((variant) => variant.buffer)])
     const parsed = parseOcrText(result.text)
     const kind = classifyReceiptDocument(result.text)
     if (parsed.amount === fixture.expectedAmount) exactAmount += 1
     if (parsed.occurred_at === fixture.expectedDate) exactDate += 1
     if (fixture.expectedKind === 'transfer' && kind === 'transfer') transferDetected += 1
-    console.log(JSON.stringify({ merchant: fixture.merchant, transform: fixture.transform ?? 'clean', amountCorrect: parsed.amount === fixture.expectedAmount, dateCorrect: parsed.occurred_at === fixture.expectedDate, kind, durationMs: Math.round(performance.now() - started), ocrConfidence: Math.round(result.confidence) }))
+    console.log(JSON.stringify({ merchant: fixture.merchant, transform: fixture.transform ?? 'clean', amountCorrect: parsed.amount === fixture.expectedAmount, dateCorrect: parsed.occurred_at === fixture.expectedDate, kind, durationMs: Math.round(performance.now() - started), variantsRead: result.variantsRead, ocrConfidence: Math.round(result.confidence) }))
   }
 } finally {
   await discardTesseractWorker()

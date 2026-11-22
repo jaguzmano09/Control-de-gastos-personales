@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --experimental-strip-types --test lib/date-utils.test.ts lib/finance/transfer.test.ts lib/finance/validate-transaction.test.ts lib/ocr/document-kind.test.ts lib/ocr/image-signature.test.ts lib/ocr/parse.test.ts lib/yield-calculation.test.ts lib/gmail/client.test.ts lib/site-origin.test.ts",
+    "test:unit": "node --experimental-strip-types --test lib/date-utils.test.ts lib/finance/transfer.test.ts lib/finance/validate-transaction.test.ts lib/ocr/document-kind.test.ts lib/ocr/image-signature.test.ts lib/ocr/parse.test.ts lib/ocr/select-result.test.ts lib/yield-calculation.test.ts lib/gmail/client.test.ts lib/site-origin.test.ts",
     "test:ocr:images": "node --experimental-strip-types scripts/evaluate-ocr.mjs",
     "verify:foundation": "node scripts/verify-foundation.cjs"
   },

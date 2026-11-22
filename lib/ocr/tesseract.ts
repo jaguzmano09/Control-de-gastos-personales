@@ -1,6 +1,10 @@
-export type OcrResult = {
-  text: string
-  confidence: number
+import { hasFinancialConsensus, selectOcrResult, type OcrCandidate } from './select-result.ts'
+
+export type OcrResult = OcrCandidate & {
+  amountConflict?: boolean
+  dateConflict?: boolean
+  documentKind?: 'transfer' | 'unclassified'
+  variantsRead?: number
 }
 
 type TesseractWorker = Awaited<ReturnType<typeof import('tesseract.js')['createWorker']>>
@@ -81,21 +85,22 @@ export async function extractTextWithTesseract(image: Buffer, signal?: AbortSign
 }
 
 export async function extractTextFromImagesWithTesseract(images: Buffer[], signal?: AbortSignal): Promise<OcrResult> {
-  let best: OcrResult = { text: '', confidence: 0 }
+  const candidates: OcrCandidate[] = []
   const errors: string[] = []
 
   for (const image of images) {
     try {
       const result = await extractTextWithTesseract(image, signal)
-      if (result.confidence > best.confidence || (!best.text && result.text)) best = result
+      if (result.text) candidates.push(result)
+      if (hasFinancialConsensus(candidates)) break
     } catch (error) {
       if (signal?.aborted || (error instanceof Error && error.message === 'Tesseract cancelled')) throw error
       errors.push(error instanceof Error ? error.message : 'Error desconocido de Tesseract')
     }
   }
 
-  if (!best.text && errors.length > 0) throw new Error(errors.join('; '))
-  return best
+  if (candidates.length === 0 && errors.length > 0) throw new Error(errors.join('; '))
+  return { ...selectOcrResult(candidates), variantsRead: candidates.length }
 }
 
 export async function discardTesseractWorker() {
