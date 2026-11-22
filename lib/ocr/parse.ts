@@ -20,7 +20,11 @@ function parseMoney(value: string) {
 
   const lastComma = normalized.lastIndexOf(',')
   const lastDot = normalized.lastIndexOf('.')
-  const decimalSeparator = lastComma > lastDot ? ',' : lastDot > -1 && normalized.length - lastDot - 1 === 2 ? '.' : null
+  const lastSeparator = Math.max(lastComma, lastDot)
+  const fractionalDigits = lastSeparator < 0 ? 0 : normalized.length - lastSeparator - 1
+  const decimalSeparator = fractionalDigits > 0 && fractionalDigits <= 2
+    ? normalized[lastSeparator]
+    : null
   const integerPart = decimalSeparator ? normalized.slice(0, normalized.lastIndexOf(decimalSeparator)) : normalized
   const decimalPart = decimalSeparator ? normalized.slice(normalized.lastIndexOf(decimalSeparator) + 1) : ''
   const amount = Number(`${integerPart.replace(/[.,]/g, '')}.${decimalPart}`)
@@ -38,11 +42,11 @@ function findAmount(lines: string[]) {
     const sameLineMatches = lines[totalLineIndex].match(/[$]?\s*(\d[\d.,]*)/g) ?? []
     const nextLineMatches = lines[totalLineIndex + 1]?.match(/[$]?\s*(\d[\d.,]*)/g) ?? []
     const totalMatches = sameLineMatches.length > 0 ? sameLineMatches : nextLineMatches
-    const totalMatch = totalMatches[totalMatches.length - 1]
-    if (totalMatch) return parseMoney(totalMatch)
+    const totalAmount = Math.max(0, ...totalMatches.map(parseMoney))
+    if (totalAmount > 0) return totalAmount
   }
 
-  const amountLabelIndex = lines.findIndex((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago|factura)/i.test(line))
+  const amountLabelIndex = lines.findIndex((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago\s+(?:realizado|total|por))/i.test(line))
   if (amountLabelIndex >= 0) {
     const amountText = lines.slice(amountLabelIndex, amountLabelIndex + 3).join(' ')
     const amountMatch = amountText.match(amountPattern)
@@ -54,12 +58,7 @@ function findAmount(lines: string[]) {
     if (currencyMatch) return parseMoney(currencyMatch[1])
   }
 
-  const candidates = lines
-    .flatMap((line) => line.match(/\b\d{1,3}(?:[.,]\d{3})+\b/g) ?? [])
-    .map(parseMoney)
-    .filter((amount) => amount > 0)
-  if (candidates.length > 0) return Math.max(...candidates)
-
+  // Unlabeled numbers may be invoice IDs, tax IDs, dates, or account numbers.
   return 0
 }
 
