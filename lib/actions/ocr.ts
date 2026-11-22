@@ -148,6 +148,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
   let extracted: Extracted | undefined
   let partialExtraction: Partial<Extracted> | undefined
   let extractionEngine: string | undefined
+  let dateInferred = false
   let ocrResult: { text: string; confidence: number } = { text: '', confidence: 0 }
   const processingDeadline = Date.now() + MAX_OCR_PROCESSING_MS
   const hasTimeRemaining = () => Date.now() < processingDeadline
@@ -252,6 +253,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
 
   if (!extracted) {
     const partialAmount = partialExtraction?.amount
+    dateInferred = !isValidIsoDate(partialExtraction?.occurred_at)
     extracted = {
       occurred_at: isValidIsoDate(partialExtraction?.occurred_at) ? partialExtraction.occurred_at : todayInBogota(),
       amount: typeof partialAmount === 'number' && Number.isFinite(partialAmount) && partialAmount > 0 && partialAmount <= Number.MAX_SAFE_INTEGER ? partialAmount : 0,
@@ -288,6 +290,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
     ai_confidence: safeConfidence,
     raw_data: {
       engine: extractionEngine,
+      date_inferred: dateInferred,
     },
   }).eq('user_id', user.id).eq('submission_id', submission_id).eq('status', 'pendiente_revision')
 

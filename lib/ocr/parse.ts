@@ -33,32 +33,23 @@ function parseMoney(value: string) {
 }
 
 function findAmount(lines: string[]) {
-  const amountPattern = /[$]?\s*(\d[\d.,]*)/
-  const totalLineIndex = lines.findIndex((line) =>
-    /\b(?:t[o0]tal|f[o0]tal|t[o0]t[aá]l|valor\s+(?:total|a\s+pagar)|a\s+pagar)\b/i.test(line)
-    && !/impuesto/i.test(line),
-  )
-  if (totalLineIndex >= 0) {
-    const sameLineMatches = lines[totalLineIndex].match(/[$]?\s*(\d[\d.,]*)/g) ?? []
-    const nextLineMatches = lines[totalLineIndex + 1]?.match(/[$]?\s*(\d[\d.,]*)/g) ?? []
-    const totalMatches = sameLineMatches.length > 0 ? sameLineMatches : nextLineMatches
-    const totalAmount = Math.max(0, ...totalMatches.map(parseMoney))
-    if (totalAmount > 0) return totalAmount
+  const label = /\b(?:t[o0]tal|f[o0]tal|t[o0]t[aá]l|valor\s+(?:total|a\s+pagar)|a\s+pagar|pago\s+(?:realizado|total|por))\b/i
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
+    if (/^(?:subtotal|impuesto|iva|cambio|devuelta)\b/i.test(line)) continue
+    const match = label.exec(line)
+    if (!match) continue
+    const afterLabel = line.slice(match.index + match[0].length).split(/\b(?:cambio|devuelta|efectivo|iva|impuesto|nit|referencia)\b/i)[0]
+    const candidate = afterLabel.trim() || (lines[index + 1] && /^[$\d\s.,]+$/.test(lines[index + 1]) ? lines[index + 1] : '')
+    if (!candidate) continue
+    const currency = candidate.match(/\$\s*(\d[\d.,]*)/)
+    if (currency) return parseMoney(currency[1])
+    const amounts = (candidate.match(/\d[\d.,]*/g) ?? []).map(parseMoney)
+    const amount = amounts.find((value) => value >= 100) ?? amounts[0] ?? 0
+    if (amount > 0) return amount
   }
 
-  const amountLabelIndex = lines.findIndex((line) => /(?:cu[aá]nto|valor\s+(?:total|a pagar)|pago\s+(?:realizado|total|por))/i.test(line))
-  if (amountLabelIndex >= 0) {
-    const amountText = lines.slice(amountLabelIndex, amountLabelIndex + 3).join(' ')
-    const amountMatch = amountText.match(amountPattern)
-    if (amountMatch) return parseMoney(amountMatch[1])
-  }
-
-  for (const line of lines) {
-    const currencyMatch = line.match(/[$]\s*(\d[\d.,]*)/)
-    if (currencyMatch) return parseMoney(currencyMatch[1])
-  }
-
-  // Unlabeled numbers may be invoice IDs, tax IDs, dates, or account numbers.
+  // Unlabeled prices may be line items, tax, invoice IDs, or account numbers.
   return 0
 }
 
@@ -70,17 +61,25 @@ function findDate(text: string) {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   }
 
-  const isoDate = text.match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/)
-  if (isoDate) return toIsoDate(Number(isoDate[1]), Number(isoDate[2]), Number(isoDate[3]))
-
-  // Colombian receipts commonly print dates as day/month/year.
-  const colombianDate = text.match(/\b(\d{1,2})[./-](\d{1,2})[./-](20\d{2})\b/)
-  if (colombianDate) return toIsoDate(Number(colombianDate[3]), Number(colombianDate[2]), Number(colombianDate[1]))
-
-  const writtenDate = text.match(/\b(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(20\d{2})\b/i)
-  if (!writtenDate) return ''
-  const month = MONTHS[writtenDate[2].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()]
-  return month ? toIsoDate(Number(writtenDate[3]), Number(month), Number(writtenDate[1])) : ''
+  const lines = text.split(/\r?\n/).filter((line) => !/\b(?:vencimiento|vence|fecha\s+l[ií]mite)\b/i.test(line))
+  const datedLines = lines.filter((line) => /\b(?:fecha|emisi[oó]n|compra|transacci[oó]n)\b/i.test(line))
+  for (const line of [...datedLines, ...lines]) {
+    for (const match of Array.from(line.matchAll(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/g))) {
+      const date = toIsoDate(Number(match[1]), Number(match[2]), Number(match[3]))
+      if (date) return date
+    }
+    // Colombian receipts commonly print dates as day/month/year.
+    for (const match of Array.from(line.matchAll(/\b(\d{1,2})[./-](\d{1,2})[./-](20\d{2})\b/g))) {
+      const date = toIsoDate(Number(match[3]), Number(match[2]), Number(match[1]))
+      if (date) return date
+    }
+    for (const match of Array.from(line.matchAll(/\b(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(20\d{2})\b/gi))) {
+      const month = MONTHS[match[2].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()]
+      const date = month ? toIsoDate(Number(match[3]), Number(month), Number(match[1])) : ''
+      if (date) return date
+    }
+  }
+  return ''
 }
 
 function findDescription(lines: string[]) {

@@ -17,7 +17,7 @@ type Transaction = {
   wallet_id: string | null
   ai_confidence: number | null
   source: string
-  raw_data: { engine?: string } | null
+  raw_data: { engine?: string; date_inferred?: boolean } | null
 }
 
 const inputClass = 'input mt-1 w-full'
@@ -55,6 +55,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
       </summary>
       <div className="border-t border-black/10 p-4">
       {transaction.source === 'ocr' && transaction.raw_data?.engine === 'processing' && <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">La lectura automática no guardó resultados. Puedes completar los campos manualmente; este borrador no afecta tus saldos ni presupuestos hasta que lo confirmes.</p>}
+      {transaction.source === 'ocr' && transaction.raw_data?.date_inferred && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">No pudimos leer la fecha del comprobante. Selecciónala antes de confirmar.</p>}
       <form action={confirmTransaction} className="grid grid-cols-2 gap-3">
         <input type="hidden" name="id" value={transaction.id} />
 
@@ -65,7 +66,7 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
 
         <div>
           <label className="text-xs text-ledger-muted">Fecha</label>
-          <input type="date" lang="es-CO" name="occurred_at" defaultValue={transaction.occurred_at} required className={inputClass} />
+          <input type="date" lang="es-CO" name="occurred_at" defaultValue={transaction.raw_data?.date_inferred ? '' : transaction.occurred_at} required className={inputClass} />
         </div>
 
         <div>
