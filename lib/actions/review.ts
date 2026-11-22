@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function confirmTransaction(formData: FormData) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
   const id = formData.get('id') as string
   const category_id = (formData.get('category_id') as string) || null
   const account_id = formData.get('account_id') as string
@@ -22,19 +24,23 @@ export async function confirmTransaction(formData: FormData) {
     .from('transactions')
     .select('category_id')
     .eq('id', id)
-    .single()
+    .eq('user_id', user.id)
+    .eq('status', 'pendiente_revision')
+    .maybeSingle()
+  if (!current) throw new Error('No se encontró un borrador pendiente para confirmar')
 
   const { data: updated, error } = await supabase
     .from('transactions')
     .update({ status: 'confirmada', occurred_at, category_id, account_id, wallet_id, description, amount })
     .eq('id', id)
+    .eq('user_id', user.id)
+    .eq('status', 'pendiente_revision')
     .select('id')
   if (error) throw error
   if (!updated || updated.length === 0) throw new Error('No se encontró la transacción para confirmar')
 
   // Aprendizaje: si corregiste la categoría sugerida, crea/actualiza una regla
   if (current && category_id && current.category_id !== category_id && description) {
-    const { data: { user } } = await supabase.auth.getUser()
     const pattern = description.trim().toLowerCase()
 
     const { data: existingRule } = await supabase
@@ -71,8 +77,10 @@ export async function confirmTransaction(formData: FormData) {
 
 export async function discardTransaction(formData: FormData) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
   const id = formData.get('id') as string
-  const { error } = await supabase.from('transactions').update({ status: 'descartada' }).eq('id', id)
+  const { error } = await supabase.from('transactions').update({ status: 'descartada' }).eq('id', id).eq('user_id', user.id).eq('status', 'pendiente_revision')
   if (error) throw error
   revalidatePath('/revision')
   revalidatePath('/transacciones')

@@ -205,15 +205,15 @@ export async function createTransactionFromReceipt(formData: FormData) {
     if (!extracted && hasTimeRemaining()) {
       try {
         ocrResult = await extractTextFromImagesWithTesseract(
-          imageVariants.filter((variant) => variant.label !== 'original').map((variant) => variant.buffer),
+          [...imageVariants.filter((variant) => variant.label !== 'original'), imageVariants[0]].map((variant) => variant.buffer),
           processingController.signal,
         )
         if (allowGemini && ocrResult.text && hasTimeRemaining()) {
           try {
+            const geminiImage = imageVariants.find((variant) => variant.label === 'enhanced') ?? imageVariants[0]
             const geminiResult = await extractTransactionFromImageWithOcr(
-              imageVariants.find((variant) => variant.label === 'enhanced')?.buffer.toString('base64')
-                ?? originalBuffer.toString('base64'),
-              'image/jpeg',
+              geminiImage.buffer.toString('base64'),
+              geminiImage.mimeType,
               ocrResult.text,
               [],
               processingController.signal,

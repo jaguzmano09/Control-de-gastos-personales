@@ -34,7 +34,7 @@ async function getWorker() {
     workerPromise = import('tesseract.js')
       .then(({ createWorker }) => createWorker('spa', undefined, {
         logger: () => undefined,
-        cacheMethod: 'write',
+        cacheMethod: 'none',
         workerPath: TESSERACT_WORKER_PATH,
       }))
       .catch((error) => {
