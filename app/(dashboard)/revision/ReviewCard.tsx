@@ -5,8 +5,8 @@ import { confirmTransaction, discardTransaction } from '@/lib/actions/review'
 import Link from 'next/link'
 
 type Category = { id: string; name: string }
-type Account = { id: string; name: string; has_wallets: boolean }
-type Wallet = { id: string; name: string; account_id: string }
+type Account = { id: string; name: string; has_wallets: boolean; category_id: string | null }
+type Wallet = { id: string; name: string; account_id: string; category_id: string | null }
 type Transaction = {
   id: string
   occurred_at: string
@@ -36,12 +36,36 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
   accounts: Account[]
   wallets: Wallet[]
 }) {
-  const [accountId, setAccountId] = useState(transaction.account_id ?? accounts[0]?.id ?? '')
+  const initialAccount = accounts.find((account) => account.id === transaction.account_id) ?? accounts[0]
+  const initialAccountId = initialAccount?.id ?? ''
+  const initialWallet = wallets.find((wallet) => wallet.id === transaction.wallet_id && wallet.account_id === initialAccountId)
+  const initialAssignedCategory = initialWallet?.category_id ?? (initialAccount?.has_wallets ? null : initialAccount?.category_id)
+  const [accountId, setAccountId] = useState(initialAccountId)
+  const [walletId, setWalletId] = useState(initialWallet?.id ?? '')
+  const [categoryId, setCategoryId] = useState(initialAssignedCategory
+    ?? (transaction.type === 'Gasto' || !categories.some((category) => category.id === transaction.category_id) ? '' : transaction.category_id ?? ''))
   const selectedAccount = accounts.find((a) => a.id === accountId)
   const walletsForAccount = useMemo(
     () => wallets.filter((w) => w.account_id === accountId),
     [wallets, accountId]
   )
+  const requiresWallet = Boolean(selectedAccount?.has_wallets || walletsForAccount.length > 0)
+  const selectedWallet = walletsForAccount.find((wallet) => wallet.id === walletId)
+  const assignedCategoryId = requiresWallet ? selectedWallet?.category_id : selectedAccount?.category_id
+  const canConfirm = Boolean(accountId && (!requiresWallet || selectedWallet) && categoryId && (transaction.type !== 'Gasto' || assignedCategoryId))
+
+  function chooseAccount(nextAccountId: string) {
+    const nextAccount = accounts.find((account) => account.id === nextAccountId)
+    const hasWallets = Boolean(nextAccount?.has_wallets || wallets.some((wallet) => wallet.account_id === nextAccountId))
+    setAccountId(nextAccountId)
+    setWalletId('')
+    setCategoryId(hasWallets ? '' : nextAccount?.category_id ?? '')
+  }
+
+  function chooseWallet(nextWalletId: string) {
+    setWalletId(nextWalletId)
+    setCategoryId(walletsForAccount.find((wallet) => wallet.id === nextWalletId)?.category_id ?? '')
+  }
 
   return (
     <details className="rounded-xl border border-black/10 bg-white">
@@ -80,31 +104,37 @@ export function ReviewCard({ transaction, categories, accounts, wallets }: {
 
         <div>
           <label className="text-xs text-ledger-muted">Categoría</label>
-          <select name="category_id" defaultValue={transaction.category_id ?? ''} className={inputClass}>
-            <option value="">— Sin categoría —</option>
+          <select name="category_id" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} disabled={Boolean(assignedCategoryId) || transaction.type === 'Gasto'} required className={inputClass}>
+            <option value="">Sin categoría asignada</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+          {(assignedCategoryId || transaction.type === 'Gasto') && <input type="hidden" name="category_id" value={categoryId} />}
         </div>
 
         <div>
           <label className="text-xs text-ledger-muted">Cuenta</label>
-          <select name="account_id" value={accountId} onChange={(e) => setAccountId(e.target.value)} className={inputClass}>
+          <select name="account_id" value={accountId} onChange={(e) => chooseAccount(e.target.value)} className={inputClass}>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
 
-        {selectedAccount?.has_wallets && (
+        {requiresWallet && (
           <div>
             <label className="text-xs text-ledger-muted">Bolsillo</label>
-            <select name="wallet_id" defaultValue={transaction.wallet_id ?? ''} className={inputClass}>
+            <select name="wallet_id" value={walletId} onChange={(event) => chooseWallet(event.target.value)} required className={inputClass}>
+              <option value="">Selecciona un bolsillo</option>
               {walletsForAccount.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
         )}
 
+        {requiresWallet && !selectedWallet && <p role="alert" className="col-span-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">Selecciona un bolsillo de {selectedAccount?.name ?? 'esta cuenta'} antes de confirmar.</p>}
+        {transaction.type === 'Gasto' && (!requiresWallet || selectedWallet) && !assignedCategoryId && <p role="alert" className="col-span-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">{selectedWallet?.name ?? selectedAccount?.name ?? 'Esta ubicación'} no tiene categoría ni presupuesto asignado. Registra primero un ingreso allí para poder confirmar el gasto.</p>}
+
         <div className="col-span-2 mt-2">
           <button
             type="submit"
+            disabled={!canConfirm}
             className="btn btn-primary btn-full"
           >
             Confirmar

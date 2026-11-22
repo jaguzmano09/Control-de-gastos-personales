@@ -43,15 +43,29 @@ interface Account {
   id: string
   name: string
   has_wallets: boolean
+  category_id: string | null
 }
 
 interface Wallet {
   id: string
   name: string
   account_id: string
+  category_id: string | null
 }
 
-export default async function RevisionPage() {
+const reviewErrors: Record<string, string> = {
+  invalid: 'Revisa la fecha, el monto, la categoría y la cuenta antes de confirmar.',
+  unavailable: 'Este movimiento ya no está pendiente de revisión. Actualiza la página.',
+  unsupported: 'Este comprobante no se puede confirmar como gasto o ingreso desde aquí.',
+  location: 'La cuenta, el bolsillo o la categoría ya no están disponibles. Vuelve a seleccionarlos.',
+  category: 'La categoría debe coincidir con la asignada a la cuenta o al bolsillo.',
+  save: 'No pudimos confirmar el movimiento. Revisa que la cuenta o bolsillo tenga un presupuesto disponible e inténtalo de nuevo.',
+  processing: 'El comprobante sigue en revisión. Completa los datos manualmente.',
+}
+
+export default async function RevisionPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error: errorCode } = await searchParams
+  const reviewError = errorCode ? reviewErrors[errorCode] : undefined
   const supabase = await createClient()
   const currentMonth = yearMonthToDate(currentYearMonth())
 
@@ -84,13 +98,13 @@ export default async function RevisionPage() {
 
     supabase
       .from('accounts')
-      .select('id, name, has_wallets')
+      .select('id, name, has_wallets, category_id')
       .eq('is_active', true)
       .order('name'),
 
     supabase
       .from('wallets')
-      .select('id, name, account_id')
+      .select('id, name, account_id, category_id')
       .eq('is_active', true)
       .order('name'),
 
@@ -161,6 +175,8 @@ export default async function RevisionPage() {
           </span>
         </div>
       </header>
+
+      {reviewError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-800">{reviewError}</p>}
 
       <details open={pendientes.length > 0} className="panel overflow-hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">

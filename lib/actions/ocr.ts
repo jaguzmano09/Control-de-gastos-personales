@@ -281,7 +281,7 @@ export async function createTransactionFromReceipt(formData: FormData) {
     },
   }).eq('user_id', user.id).eq('submission_id', submission_id).eq('status', 'pendiente_revision')
 
-  if (error) redirect('/revision?error=' + encodeURIComponent('El comprobante sigue en revisión. Completa los datos manualmente.'))
+  if (error) redirect('/revision?error=processing')
 
   revalidatePath('/revision')
   redirect('/revision')
